@@ -1,0 +1,16 @@
+{
+  "name": "ChatGPA",
+  "short_name": "ChatGPA",
+  "description": "Cursor for School — educational copilot",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

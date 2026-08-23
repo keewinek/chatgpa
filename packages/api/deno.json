@@ -1,0 +1,11 @@
+{
+  "name": "@chatgpa/api",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
+  "tasks": {
+    "dev": "deno run --watch -A main.ts"
+  },
+  "imports": {
+    "hono": "npm:hono@^4.11.3"
+  }
+}

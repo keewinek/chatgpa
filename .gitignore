@@ -9,3 +9,18 @@
 # https://docs.deno.com/runtime/reference/cli/coverage/
 coverage/
 *.lcov
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Fresh build output and npm deps (web package)
+_fresh/
+node_modules/
+packages/web/_fresh/
+packages/web/node_modules/
