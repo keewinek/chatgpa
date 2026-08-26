@@ -25,3 +25,11 @@ export interface TaskPriority {
   weight: number;
   roiScore: number;
 }
+
+/** Chat roles used by the free-AI cascade. */
+export type ChatRole = "system" | "user" | "assistant";
+
+export interface ChatMessage {
+  role: ChatRole;
+  content: string;
+}
