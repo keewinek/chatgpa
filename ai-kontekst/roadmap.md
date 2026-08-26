@@ -1,36 +1,53 @@
 # Roadmap
 
-## Teraz (ten sprint)
+## Faza 0 — Chat + darmowe AI ✅
 
-- [x] Folder `ai-kontekst/` z wizją i decyzjami
+- [x] Folder `ai-kontekst/`
 - [x] Backend AI cascade (Gemini → Groq → OpenRouter → …)
-- [x] Endpoint `POST /api/chat`
-- [x] UI chatu w stylu ChatGPT + badge modelu
+- [x] Endpoint `POST /api/chat` + `GET /api/ai/models`
+- [x] UI chatu + badge modelu
 - [x] `.env.example` z darmowymi kluczami
+- [x] Rozszerzony kontekst (zasady, model danych, prompty, UI, …)
 
-## Krótko (następne)
+## Faza 1 — Rdzeń osobisty
 
 - [ ] Historia rozmów (localStorage → później DB)
 - [ ] Streaming odpowiedzi (SSE)
-- [ ] Profil ucznia + system prompt z kontekstem
-- [ ] TODO + kalendarz (UI + API stub)
-- [ ] Plan dnia (prompt + zapis)
+- [ ] Profil ucznia + ContextPacket w system prompcie
+- [ ] TODO CRUD (API + panel UI)
+- [ ] Kalendarz stub (API + panel)
+- [ ] Komendy `/plan`, `/quiz` (seed prompty)
+- [ ] Plan dnia (generuj + zapisz)
 
-## Średnio
+## Faza 2 — Szkoła
 
-- [ ] Wtyczka Librus + sync
-- [ ] Tracker wiedzy / spaced repetition
-- [ ] Powiadomienia PWA
-- [ ] Notatki / RAG (opcjonalnie Samsung Notes)
+- [ ] Wtyczka Librus + `POST /api/librus/sync`
+- [ ] ROI ranking po syncu
+- [ ] Alerty T-3 / T-1 (in-app → Web Push)
+- [ ] Diff wiedzy / średniej (`/diff`)
+- [ ] Weekly review
 
-## Później / nice-to-have
+## Faza 3 — Nauka głęboka
 
-- [ ] Lokalny Ollama jako ostateczny offline fallback
-- [ ] Discord / webhook alerty
-- [ ] Eksport postępów / wykresy średniej
-- [ ] Multi-device sync (gdy będzie DB)
+- [ ] Tracker wiedzy + spaced repetition
+- [ ] Focus mode (timer + quiz)
+- [ ] Tool-calling / `chatgpa-action`
+- [ ] Notatki / RAG (opcjonalnie)
+- [ ] Ollama jako offline slot
+
+## Nice-to-have
+
+- [ ] Discord webhook
+- [ ] Wykresy średniej
+- [ ] Multi-device sync (gdy DB)
+- [ ] Privacy mode (tylko lokalne modele)
 
 ## Definition of Done — Faza 0
 
 Możesz otworzyć web UI, napisać wiadomość, dostać odpowiedź z darmowego AI i zobaczyć pod spodem
 który model odpowiedział. Jeśli jeden dostawca padnie, kolejny przejmuje bez Twojej interwencji.
+
+## Definition of Done — Faza 1
+
+Profil + TODO + kalendarz wpływają na odpowiedzi AI; plan dnia da się wygenerować i zapisać; historia
+czatów przeżywa odświeżenie strony.

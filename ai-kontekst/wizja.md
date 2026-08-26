@@ -5,6 +5,13 @@
 Uczeń ma rozproszone źródła: Librus (oceny, zadania, sprawdziany), notatki, kalendarz, chaty z AI.
 Brakuje jednego miejsca, które **wie wszystko o Tobie i szkole**, planuje dzień i pilnuje nauki.
 
+Typowy chaos:
+
+- „Kiedy mam sprawdzian z chemii?” — w Librusie, ale nie w głowie.
+- „Co powtórzyć dziś?” — zero priorytetów względem wag ocen.
+- ChatGPT nie zna Twojej średniej ani zaległych prac.
+- Notatki są, ale nie ma quizów / spaced repetition.
+
 ## Produkt
 
 **ChatGPA** = osobisty AI-copilot edukacyjny (jak Cursor, ale do szkoły).
@@ -16,35 +23,46 @@ zł**:
 - self-host / lokalny Deno,
 - Librus przez własną wtyczkę / scraper (osobny tor).
 
-## Doświadczenie docelowe
+## Doświadczenie docelowe (dzień z ChatGPA)
 
-1. Otwierasz ChatGPA jak ChatGPT — piszesz naturalnie.
-2. AI zna Twoje przedmioty, oceny, prace domowe, etap nauki.
-3. Rano dostajesz plan dnia; wieczorem podsumowanie i TODO na jutro.
-4. Widzisz postęp: co już umiesz, czego jeszcze nie, co warto powtórzyć.
-5. Kalendarz + lista zadań zintegrowane z rozmową („dodaj powtórkę matematyki”).
+| Moment     | Co się dzieje                                              |
+| ---------- | ---------------------------------------------------------- |
+| Rano       | Push / otwarcie: plan dnia (3–5 bloków nauki + szkoły)     |
+| W szkole   | Szybki Ask: „o co chodziło na lekcji” / notatka → quiz     |
+| Po szkole  | Agent układa TODO według ROI (wagi × luki wiedzy)          |
+| Przed kartkówką | Focus mode: tylko ten temat, pytania, bez rozpraszaczy |
+| Wieczór    | Retrospektywa: co zrobione, co przełożyć, energia          |
+| Niedziela  | Plan tygodnia + sync Librus                                |
 
 ## Metafora „Cursor”
 
 | Cursor (kod)       | ChatGPA (szkoła)                        |
 | ------------------ | --------------------------------------- |
 | Workspace projektu | Profil ucznia + kontekst szkoły         |
-| Pliki / git        | Notatki, materiały, Librus              |
+| Pliki / git        | Notatki, materiały, snapshot Librus     |
 | Agent / chat       | Chat edukacyjny z narzędziami           |
 | Autocomplete       | Sugestie planu nauki                    |
 | Background agents  | Automatyzacje w tle (plan dnia, alerty) |
+| Diff / PR          | Diff wiedzy / zmiana średniej           |
+| Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil       |
+| MCP / tools        | Narzędzia: TODO, kalendarz, Librus sync |
 
-## Zasady produktowe
+## North-star metrics (osobiste)
 
-1. **Darmowe albo nie istnieje** — żadna ścieżka nie wymaga płatnego API.
-2. **Zawsze działa** — kaskada modeli; jeśli smart pada, bierze głupszy.
-3. **Transparentność** — pod odpowiedzią widać użyty model i dostawcę.
-4. **Kontekst osobisty** — AI ma wiedzieć o Tobie i szkole jak najwięcej.
-5. **Jeden UI** — chat jest centrum; planer / kalendarz / TODO to panele wokół.
-6. **Prywatność** — dane szkolne zostają u Ciebie; klucze w `.env`.
+- Średnia ważona ↑ w kierunku targetu (np. 4.75).
+- Zero „zaskoczeń” terminami (alert T-3 / T-1).
+- Czas nauki idzie w tematy o najwyższym ROI, nie losowo.
+- Chat używany codziennie jako hub, nie tylko „gdy panika”.
 
 ## Persona
 
 - Ty: uczeń, chcesz podnieść średnią / ogarnąć tydzień bez chaosu.
 - Język UI: polski.
 - Ton AI: konkretny, motywujący, bez lania wody; tłumaczy jak dobry korepetytor.
+- Preferencje (do profilu): ile minut dziennie, kiedy quiet hours, słabe przedmioty.
+
+## Anti-persona / czego to NIE jest
+
+- Nie LMS dla szkoły / nauczycieli.
+- Nie ściąga na sprawdzian (tłumaczy i trenuje — nie oszukuje).
+- Nie kolejny notatnik bez AI i bez kontekstu ocen.

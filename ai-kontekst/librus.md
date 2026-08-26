@@ -1,36 +1,81 @@
-# Librus — integracja (osobny tor)
+# Librus — integracja
 
 ChatGPA ma „wiedzieć wszystko o szkole”. Librus jest głównym źródłem prawdy dla ocen, terminów i
 zadań.
 
-## Założenie
+## Status
 
-Pełna integracja Librus **nie jest w tym samym sprincie** co chat AI. Raczej:
+`planned` — chat + AI cascade są pierwsze; wtyczka / sync osobnym torem (może osobne repo).
 
-1. **Wtyczka do przeglądarki** (Chrome/Firefox) loguje się na Librus / czyta dane gdy jesteś
-   zalogowany.
-2. Wtyczka wysyła znormalizowany JSON do lokalnego API ChatGPA (`POST /api/librus/sync`).
-3. ChatGPA trzyma snapshot kontekstu i karmi nim AI.
+## Preferowana architektura: wtyczka przeglądarki
 
-## Alternatywy (research)
+```
+[ Librus w przeglądarce (zalogowany) ]
+            │ content script czyta DOM / XHR
+            ▼
+[ Extension ] ──POST JSON──▶ [ ChatGPA API /api/librus/sync ]
+            │
+            ▼
+     LibrusSnapshot w storage
+            │
+            ▼
+     ContextPacket → AI
+```
 
-- Oficjalne API Librus — ograniczone / dla szkół.
-- Nieoficjalne biblioteki (np. librus-api) — kruche, ToS, 2FA.
-- Ręczny eksport / CSV — awaryjnie.
+### Dlaczego wtyczka
 
-## Co syncujemy
+- Sesja Librus zostaje w przeglądarce (hasło nie musi iść do ChatGPA).
+- Omija kruche nieoficjalne logowanie / 2FA po stronie serwera.
+- Sync na żądanie gdy jesteś zalogowany.
 
-- Przedmioty + oceny (wartość, waga, kategoria, data)
-- Terminy (sprawdziany, prace klasowe)
-- Zadania domowe
-- (opcjonalnie) frekwencja, ogłoszenia
+## Kontrakt sync (szkic)
+
+`POST /api/librus/sync`
+
+```json
+{
+  "syncedAt": "2026-08-26T18:00:00+02:00",
+  "grades": [ /* Grade[] */ ],
+  "exams": [ /* CalendarEvent[] */ ],
+  "homeworks": [ /* Task[] */ ],
+  "subjects": [ /* Subject[] */ ]
+}
+```
+
+Odpowiedź: `{ ok: true, counts: { grades, exams, homeworks } }`.
+
+## Alternatywy
+
+| Ścieżka                    | Plus                | Minus                    |
+| -------------------------- | ------------------- | ------------------------ |
+| Oficjalne API Librus       | stabilne            | zwykle dla szkół, nie ucznia |
+| Nieoficjalne lib (Node)    | szybki prototyp     | ToS, 2FA, kruche         |
+| CSV / ręczny eksport       | proste              | uciążliwe                |
+| Wtyczka (wybór)            | bezpieczniejsza sesja | trzeba zainstalować     |
+
+## Co syncujemy (MVP)
+
+1. Przedmioty
+2. Oceny (wartość, waga, kategoria, data)
+3. Terminy sprawdzianów / prac
+4. Zadania domowe
+
+Opcjonalnie później: frekwencja, ogłoszenia, wiadomości.
 
 ## Bezpieczeństwo
 
-- Hasła Librus **nie** lądują w ChatGPA, jeśli idziemy ścieżką wtyczki (sesja przeglądarki).
-- Dane tylko lokalnie / w Twojej bazie.
-- Sync na żądanie + okresowy.
+- Hasła Librus **nie** w ChatGPA przy ścieżce wtyczki.
+- Snapshot tylko lokalnie.
+- Extension origin whitelist → tylko `localhost` / Twój host.
+- Nie commituj raw dumpów Librus do gita.
 
-## Status
+## UX sync
 
-`planned` — najpierw chat + AI cascade, potem wtyczka / sync.
+- Przycisk „Sync Librus” w UI + timestamp ostatniego syncu.
+- Jeśli sync > 24h → ostrzeżenie w ContextPacket i w statusie.
+- Po sync: opcjonalnie automatyczne `plan.today` / ROI refresh.
+
+## Osobne repo?
+
+OK trzymać extension w `packages/extension` albo osobnym repo `chatgpa-librus-ext`.
+Decyzja: gdy zaczynamy implementację — wpis w [decyzje.md](./decyzje.md).
