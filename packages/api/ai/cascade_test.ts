@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
-import { availableSlots, listPublicModels, MODEL_CASCADE } from "./providers.ts";
+import { MODEL_CASCADE } from "./cascade-config.ts";
+import { availableSlots, listPublicModels } from "./providers.ts";
 
 Deno.test("MODEL_CASCADE is ordered smart → dumb by priority", () => {
   for (let i = 1; i < MODEL_CASCADE.length; i++) {

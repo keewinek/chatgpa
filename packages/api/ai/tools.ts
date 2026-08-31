@@ -1,4 +1,5 @@
 import type { ChatAction } from "./actions.ts";
+import type { ChatAttachment } from "@chatgpa/core";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
 
@@ -7,12 +8,7 @@ export interface ToolResult {
   ok: boolean;
   output?: string;
   error?: string;
-  attachment?: {
-    id: string;
-    name: string;
-    mimeType: string;
-    size?: number;
-  };
+  attachment?: ChatAttachment;
 }
 
 export interface ToolRunSummary {
