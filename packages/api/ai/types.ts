@@ -1,11 +1,6 @@
-/** Shared chat / AI types for the API layer. */
+import type { ChatMessage, ChatRole } from "@chatgpa/core";
 
-export type ChatRole = "system" | "user" | "assistant";
-
-export interface ChatMessage {
-  role: ChatRole;
-  content: string;
-}
+export type { ChatMessage, ChatRole };
 
 export interface AiAttempt {
   provider: string;
@@ -32,20 +27,14 @@ export type AiResult =
   | ({ ok: false } & AiFailure);
 
 export interface ModelSlot {
-  /** Human-readable provider id, e.g. "gemini" | "groq" | "openrouter" */
   provider: string;
-  /** Model id sent to the provider API */
   model: string;
-  /** Env var that must be set for this slot to be active */
   apiKeyEnv: string;
-  /** Higher = smarter / preferred earlier in the cascade */
   priority: number;
-  /** Short label shown in UI */
   label: string;
 }
 
 export interface ChatRequestBody {
   messages: ChatMessage[];
-  /** Optional override — force a single model id */
   model?: string;
 }

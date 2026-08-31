@@ -60,10 +60,10 @@ Guardrails:
 
 ## Mapowanie na UI
 
-| Tryb   | Wejście UI              | Faza |
-| ------ | ----------------------- | ---- |
-| Ask    | domyślny chat           | 0 ✅ |
-| Plan   | przełącznik / komenda   | 1    |
-| Agent  | przełącznik + tools     | 2–3  |
-| Focus  | osobny panel sesji      | 3    |
-| Diff   | komenda `/diff`         | 2    |
+| Tryb  | Wejście UI            | Faza |
+| ----- | --------------------- | ---- |
+| Ask   | domyślny chat         | 0 ✅ |
+| Plan  | przełącznik / komenda | 1    |
+| Agent | przełącznik + tools   | 2–3  |
+| Focus | osobny panel sesji    | 3    |
+| Diff  | komenda `/diff`       | 2    |

@@ -9,12 +9,12 @@
 
 ## Kanały (darmowe)
 
-| Kanał              | Kiedy                         | Koszt |
-| ------------------ | ----------------------------- | ----- |
-| In-app banner      | zawsze, gdy otwarte           | 0     |
-| Web Push (PWA)     | tło, telefon / desktop        | 0     |
-| Discord webhook    | jeśli już masz serwer         | 0     |
-| E-mail             | tylko darmowy SMTP / pomiń    | ostrożnie |
+| Kanał           | Kiedy                      | Koszt     |
+| --------------- | -------------------------- | --------- |
+| In-app banner   | zawsze, gdy otwarte        | 0         |
+| Web Push (PWA)  | tło, telefon / desktop     | 0         |
+| Discord webhook | jeśli już masz serwer      | 0         |
+| E-mail          | tylko darmowy SMTP / pomiń | ostrożnie |
 
 Bez płatnych usług push (OneSignal paid, etc.) — Web Push standard + własny VAPID.
 

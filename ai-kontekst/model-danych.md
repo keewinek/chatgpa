@@ -1,6 +1,6 @@
 # Model danych
 
-Docelowe encje (najpierw typy w `@chatgpa/core`, potem tabele Drizzle).
+Docelowe encje (Faza 1+: typy w `@chatgpa/core`, potem tabele Drizzle). **Faza 0:** w core są tylko `ChatMessage` / `ChatRole`.
 
 ## Profile (StudentProfile)
 

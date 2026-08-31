@@ -10,13 +10,13 @@
 
 ## Threat model (uproszczony)
 
-| Zagrożenie                    | Mitygacja                                      |
-| ----------------------------- | ---------------------------------------------- |
-| Wyciek `.env`                 | gitignore, nie commitować, rotacja kluczy      |
-| XSS kradnie chat              | zaufany UI; później sanitize markdown          |
-| CORS zbyt szeroki             | whitelist localhost na start                   |
-| Prompt injection z notatek    | tool-calls tylko whitelisted; nie wykonuj blind |
-| Publiczny tunnel bez auth     | nie używać / dodać token bearer                |
+| Zagrożenie                 | Mitygacja                                       |
+| -------------------------- | ----------------------------------------------- |
+| Wyciek `.env`              | gitignore, nie commitować, rotacja kluczy       |
+| XSS kradnie chat           | zaufany UI; później sanitize markdown           |
+| CORS zbyt szeroki          | whitelist localhost na start                    |
+| Prompt injection z notatek | tool-calls tylko whitelisted; nie wykonuj blind |
+| Publiczny tunnel bez auth  | nie używać / dodać token bearer                 |
 
 ## Darmowe AI a prywatność
 
@@ -29,5 +29,4 @@ Opcja: flaga `PRIVACY_MODE=strict` → tylko Ollama / lokalne.
 
 ## Auth (później, jeśli potrzebne)
 
-Dla single-user na LAN: wspólny `CHAT_GPA_TOKEN` w headerze.
-Bez OAuth Google „na zapas”.
+Dla single-user na LAN: wspólny `CHAT_GPA_TOKEN` w headerze. Bez OAuth Google „na zapas”.

@@ -13,7 +13,8 @@
 ## Techniczne
 
 1. **Deno-only** w monorepo (API + Fresh web + core).
-2. **Klucze tylko po stronie API** — frontend woła `localhost:8000`, nigdy Gemini/Groq bezpośrednio.
+2. **Klucze tylko po stronie API** — frontend woła `/api/*` na tej samej originie, nigdy Gemini/Groq
+   bezpośrednio.
 3. **Kaskada smart → dumb** — błąd / 429 / timeout = następny slot.
 4. **Graceful degrade** — brak kluczy → czytelny 503 z instrukcją, nie crash.
 5. **Typy w `@chatgpa/core`** — współdzielone kontrakty, nie duplikuj.

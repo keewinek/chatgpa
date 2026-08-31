@@ -35,10 +35,10 @@ zadań.
 ```json
 {
   "syncedAt": "2026-08-26T18:00:00+02:00",
-  "grades": [ /* Grade[] */ ],
-  "exams": [ /* CalendarEvent[] */ ],
-  "homeworks": [ /* Task[] */ ],
-  "subjects": [ /* Subject[] */ ]
+  "grades": [/* Grade[] */],
+  "exams": [/* CalendarEvent[] */],
+  "homeworks": [/* Task[] */],
+  "subjects": [/* Subject[] */]
 }
 ```
 
@@ -46,12 +46,12 @@ Odpowiedź: `{ ok: true, counts: { grades, exams, homeworks } }`.
 
 ## Alternatywy
 
-| Ścieżka                    | Plus                | Minus                    |
-| -------------------------- | ------------------- | ------------------------ |
-| Oficjalne API Librus       | stabilne            | zwykle dla szkół, nie ucznia |
-| Nieoficjalne lib (Node)    | szybki prototyp     | ToS, 2FA, kruche         |
-| CSV / ręczny eksport       | proste              | uciążliwe                |
-| Wtyczka (wybór)            | bezpieczniejsza sesja | trzeba zainstalować     |
+| Ścieżka                 | Plus                  | Minus                        |
+| ----------------------- | --------------------- | ---------------------------- |
+| Oficjalne API Librus    | stabilne              | zwykle dla szkół, nie ucznia |
+| Nieoficjalne lib (Node) | szybki prototyp       | ToS, 2FA, kruche             |
+| CSV / ręczny eksport    | proste                | uciążliwe                    |
+| Wtyczka (wybór)         | bezpieczniejsza sesja | trzeba zainstalować          |
 
 ## Co syncujemy (MVP)
 
@@ -77,5 +77,5 @@ Opcjonalnie później: frekwencja, ogłoszenia, wiadomości.
 
 ## Osobne repo?
 
-OK trzymać extension w `packages/extension` albo osobnym repo `chatgpa-librus-ext`.
-Decyzja: gdy zaczynamy implementację — wpis w [decyzje.md](./decyzje.md).
+OK trzymać extension w `packages/extension` albo osobnym repo `chatgpa-librus-ext`. Decyzja: gdy
+zaczynamy implementację — wpis w [decyzje.md](./decyzje.md).

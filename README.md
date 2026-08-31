@@ -12,14 +12,14 @@ your day, track learning, and (soon) pull context from Librus.
 
 ## AI kontekst
 
-Żywa dokumentacja wizji i decyzji: [`ai-kontekst/`](./ai-kontekst/).
+Product context for agents and humans: [`ai-kontekst/`](./ai-kontekst/).
 
 ## Monorepo layout
 
 ```
 ai-kontekst/   # Product / AI context (Markdown)
 packages/
-├── core/      # Shared types (@chatgpa/core)
+├── core/      # Shared chat types (@chatgpa/core)
 ├── api/       # Hono REST + AI cascade (@chatgpa/api)
 └── web/       # Fresh app — UI + mounted API (@chatgpa/web)
 ```
@@ -31,7 +31,6 @@ https://your-app.deno.dev/
   /              → chat UI
   /api/chat      → AI cascade
   /api/health    → health check
-  …
 ```
 
 ## Prerequisites
@@ -81,10 +80,10 @@ deno task test
 
 Create **one** project from this repo:
 
-| Setting | Value |
-| ------- | ----- |
-| App Directory | `./packages/web/` |
-| Build command | `deno task build` |
+| Setting       | Value                                         |
+| ------------- | --------------------------------------------- |
+| App Directory | `./packages/web/`                             |
+| Build command | `deno task build`                             |
 | Entry / start | `deno task start` (serves `_fresh/server.js`) |
 
 Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_API_KEY`, or
@@ -95,7 +94,6 @@ Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_A
 | Method | Path             | Description                     |
 | ------ | ---------------- | ------------------------------- |
 | GET    | `/api/health`    | Health check                    |
-| GET    | `/api/subjects`  | Subject list (stub)             |
 | GET    | `/api/ai/models` | Free model cascade + key status |
 | POST   | `/api/chat`      | Chat (smart → dumb AI fallback) |
 

@@ -2,16 +2,16 @@
 
 ## Stack
 
-| Warstwa      | Tech                                    | Status   |
-| ------------ | --------------------------------------- | -------- |
-| Runtime      | Deno 2.9+                               | ✅       |
-| API          | Hono (`packages/api`)                   | ✅       |
-| Web          | Fresh 2 + Preact (`packages/web`)       | ✅       |
-| Shared       | `@chatgpa/core` (typy)                  | ✅       |
-| AI           | Multi-provider cascade                  | ✅       |
-| DB           | PostgreSQL + pgvector + Drizzle         | planned  |
-| PWA          | manifest + (później) service worker     | partial  |
-| Ext          | Browser extension (Librus)              | planned  |
+| Warstwa | Tech                                | Status  |
+| ------- | ----------------------------------- | ------- |
+| Runtime | Deno 2.9+                           | ✅      |
+| API     | Hono (`packages/api`)               | ✅      |
+| Web     | Fresh 2 + Preact (`packages/web`)   | ✅      |
+| Shared  | `@chatgpa/core` (chat types)        | ✅      |
+| AI      | Multi-provider cascade              | ✅      |
+| DB      | PostgreSQL + pgvector + Drizzle     | planned |
+| PWA     | manifest + (później) service worker | partial |
+| Ext     | Browser extension (Librus)          | planned |
 
 ## Monorepo
 
@@ -19,24 +19,24 @@
 chatgpa/
 ├── ai-kontekst/          # Kontekst dla AI i ludzi
 ├── packages/
-│   ├── core/             # Typy współdzielone (@chatgpa/core)
+│   ├── core/             # ChatMessage, ChatRole
 │   ├── api/              # Hono REST + AI cascade
 │   │   └── ai/           # Dostawcy, ranking, fallback
-│   └── web/              # Fresh PWA — UI chatu
+│   └── web/              # Fresh — UI + mounted API
 │       ├── islands/      # Interaktywny chat
 │       └── routes/       # Strony
 ├── deno.json             # Workspace root
 └── .env                  # Klucze API (nigdy w git)
 ```
 
-## Przepływ chatu (Faza 0) — zaimplementowany
+## Przepływ chatu (Faza 0)
 
 ```
 Browser (Fresh island ChatApp)
-  POST /api/chat { messages: [...] }
+  POST /api/chat { messages: [...] }   # same origin, no CORS
         │
         ▼
-Hono + CORS
+Hono (mounted in Fresh at /api/*)
         │
         ▼
 runCascade(messages)
@@ -44,7 +44,7 @@ runCascade(messages)
         ├─ slot #1 (najwyższy priority, ma klucz) ──fail──┐
         ├─ slot #2                                        │
         ├─ …                                              │
-        └─ slot #N (najniższy / „zawsze działa”) ◀────────┘
+        └─ slot #N (najniższy) ◀──────────────────────────┘
         │
         ▼
 { message, model, provider, attempts[] }
@@ -67,29 +67,28 @@ User message
 
 ## Endpointy API
 
-| Method | Path             | Opis                          | Status |
-| ------ | ---------------- | ----------------------------- | ------ |
-| GET    | `/health`        | Health                        | ✅     |
-| GET    | `/api/subjects`  | Stub przedmiotów              | stub   |
-| GET    | `/api/ai/models` | Lista kaskady + configured    | ✅     |
-| POST   | `/api/chat`      | Chat + cascade                | ✅     |
-| POST   | `/api/librus/sync` | Snapshot z wtyczki          | planned |
-| CRUD   | `/api/todos`     | TODO                          | planned |
-| CRUD   | `/api/calendar`  | Wydarzenia                    | planned |
-| GET/PUT| `/api/profile`   | Profil ucznia                 | planned |
+| Method  | Path               | Opis                       | Status  |
+| ------- | ------------------ | -------------------------- | ------- |
+| GET     | `/api/health`      | Health                     | ✅      |
+| GET     | `/api/ai/models`   | Lista kaskady + configured | ✅      |
+| POST    | `/api/chat`        | Chat + cascade             | ✅      |
+| POST    | `/api/librus/sync` | Snapshot z wtyczki         | planned |
+| CRUD    | `/api/todos`       | TODO                       | planned |
+| CRUD    | `/api/calendar`    | Wydarzenia                 | planned |
+| GET/PUT | `/api/profile`     | Profil ucznia              | planned |
 
-## CORS / porty
+## Dev / deploy
 
-- API: `http://localhost:8000`
-- Web: `http://localhost:5173`
-- Web woła API bezpośrednio; CORS whitelista localhost.
+- **Dev:** `deno task dev` → Fresh/Vite on `http://localhost:5173` (UI + API same origin)
+- **API-only:** `deno task dev:api` → `http://localhost:8000`
+- **Prod:** Deno Deploy, `packages/web`, `deno task build` + `deno task start`
 
 ## Env
 
-Klucze w `.env` (ładowane w `packages/api/main.ts`). Brak klucza = pominięty dostawca.
-Brak jakiegokolwiek klucza = 503 z instrukcją.
+Klucze w `.env` (repo root, ładowane przez `loadEnv()`). Brak klucza = pominięty dostawca. Brak
+jakiegokolwiek klucza = 503 z instrukcją.
 
 ## Skalowanie (nie teraz)
 
-Single-user lokalnie wystarczy. Gdy DB: jeden user_id, bez multi-tenant.
-Ollama jako ostatni offline slot w kaskadzie.
+Single-user lokalnie wystarczy. Gdy DB: jeden user_id, bez multi-tenant. Ollama jako ostatni offline
+slot w kaskadzie.

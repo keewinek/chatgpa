@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import type { Subject } from "@chatgpa/core";
 import { listPublicModels, runCascade } from "./ai/mod.ts";
 import type { ChatMessage, ChatRequestBody } from "./ai/mod.ts";
 
@@ -17,11 +16,6 @@ export function createApp() {
   const app = new Hono();
 
   app.get("/api/health", (c) => c.json({ status: "ok" }));
-
-  app.get("/api/subjects", (c) => {
-    const subjects: Subject[] = [];
-    return c.json(subjects);
-  });
 
   app.get("/api/ai/models", (c) => {
     return c.json({ models: listPublicModels() });

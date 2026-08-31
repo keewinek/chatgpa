@@ -12,6 +12,8 @@
     "jsr:@hono/hono@4": "4.13.5",
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/bytes@^1.0.6": "1.0.6",
+    "jsr:@std/dotenv@*": "0.225.8",
+    "jsr:@std/dotenv@0.225": "0.225.8",
     "jsr:@std/dotenv@~0.225.5": "0.225.8",
     "jsr:@std/encoding@^1.0.10": "1.0.11",
     "jsr:@std/encoding@^1.0.11": "1.0.11",
@@ -27,6 +29,7 @@
     "jsr:@std/media-types@1": "1.1.0",
     "jsr:@std/media-types@^1.1.0": "1.1.0",
     "jsr:@std/net@^1.0.6": "1.0.6",
+    "jsr:@std/path@*": "1.1.6",
     "jsr:@std/path@1": "1.1.6",
     "jsr:@std/path@^1.1.1": "1.1.6",
     "jsr:@std/path@^1.1.2": "1.1.6",
@@ -103,7 +106,7 @@
         "jsr:@deno/loader@0.4",
         "jsr:@fresh/core@2",
         "jsr:@fresh/core@^2.3.3",
-        "jsr:@std/dotenv",
+        "jsr:@std/dotenv@~0.225.5",
         "jsr:@std/fmt@^1.0.7",
         "jsr:@std/media-types@1",
         "jsr:@std/path@1",
@@ -1292,7 +1295,9 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1"
+      "jsr:@std/assert@1",
+      "jsr:@std/dotenv@0.225",
+      "jsr:@std/path@1"
     ],
     "members": {
       "packages/api": {

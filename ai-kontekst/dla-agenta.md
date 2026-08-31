@@ -28,17 +28,17 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 
 ## Gdzie co jest w kodzie
 
-| Temat            | Ścieżka                                      |
-| ---------------- | -------------------------------------------- |
-| Kaskada AI       | `packages/api/ai/`                           |
-| Endpointy chat   | `packages/api/app.ts`                        |
-| UI chatu         | `packages/web/islands/ChatApp.tsx`           |
-| Style            | `packages/web/assets/styles.css`             |
-| Typy shared      | `packages/core/types.ts`                     |
-| Env przykładowy  | `.env.example`                               |
+| Temat           | Ścieżka                            |
+| --------------- | ---------------------------------- |
+| Kaskada AI      | `packages/api/ai/`                 |
+| Endpointy chat  | `packages/api/app.ts`              |
+| UI chatu        | `packages/web/islands/ChatApp.tsx` |
+| Style           | `packages/web/assets/styles.css`   |
+| Typy shared     | `packages/core/types.ts`           |
+| Env przykładowy | `.env.example`                     |
 
 ## Jak aktualizować kontekst
 
-Gdy podejmiesz decyzję architektoniczną → dopisz wpis do [decyzje.md](./decyzje.md).
-Gdy dodasz feature → zaktualizuj [roadmap.md](./roadmap.md) i ewentualnie [funkcje.md](./funkcje.md).
-Gdy zmienisz listę modeli → zsynchronizuj [AI-dostawcy.md](./AI-dostawcy.md) z `MODEL_CASCADE`.
+Gdy podejmiesz decyzję architektoniczną → dopisz wpis do [decyzje.md](./decyzje.md). Gdy dodasz
+feature → zaktualizuj [roadmap.md](./roadmap.md). Gdy zmienisz listę modeli → zsynchronizuj
+[AI-dostawcy.md](./AI-dostawcy.md) z `MODEL_CASCADE`.

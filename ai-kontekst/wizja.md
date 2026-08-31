@@ -25,14 +25,14 @@ zł**:
 
 ## Doświadczenie docelowe (dzień z ChatGPA)
 
-| Moment     | Co się dzieje                                              |
-| ---------- | ---------------------------------------------------------- |
-| Rano       | Push / otwarcie: plan dnia (3–5 bloków nauki + szkoły)     |
-| W szkole   | Szybki Ask: „o co chodziło na lekcji” / notatka → quiz     |
-| Po szkole  | Agent układa TODO według ROI (wagi × luki wiedzy)          |
+| Moment          | Co się dzieje                                          |
+| --------------- | ------------------------------------------------------ |
+| Rano            | Push / otwarcie: plan dnia (3–5 bloków nauki + szkoły) |
+| W szkole        | Szybki Ask: „o co chodziło na lekcji” / notatka → quiz |
+| Po szkole       | Agent układa TODO według ROI (wagi × luki wiedzy)      |
 | Przed kartkówką | Focus mode: tylko ten temat, pytania, bez rozpraszaczy |
-| Wieczór    | Retrospektywa: co zrobione, co przełożyć, energia          |
-| Niedziela  | Plan tygodnia + sync Librus                                |
+| Wieczór         | Retrospektywa: co zrobione, co przełożyć, energia      |
+| Niedziela       | Plan tygodnia + sync Librus                            |
 
 ## Metafora „Cursor”
 
@@ -44,7 +44,7 @@ zł**:
 | Autocomplete       | Sugestie planu nauki                    |
 | Background agents  | Automatyzacje w tle (plan dnia, alerty) |
 | Diff / PR          | Diff wiedzy / zmiana średniej           |
-| Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil       |
+| Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil      |
 | MCP / tools        | Narzędzia: TODO, kalendarz, Librus sync |
 
 ## North-star metrics (osobiste)

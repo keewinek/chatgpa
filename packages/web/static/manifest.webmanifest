@@ -4,8 +4,8 @@
   "description": "Cursor for School — educational copilot",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#12100e",
+  "theme_color": "#12100e",
   "icons": [
     {
       "src": "/favicon.ico",

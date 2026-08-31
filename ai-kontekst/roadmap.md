@@ -49,5 +49,5 @@ który model odpowiedział. Jeśli jeden dostawca padnie, kolejny przejmuje bez 
 
 ## Definition of Done — Faza 1
 
-Profil + TODO + kalendarz wpływają na odpowiedzi AI; plan dnia da się wygenerować i zapisać; historia
-czatów przeżywa odświeżenie strony.
+Profil + TODO + kalendarz wpływają na odpowiedzi AI; plan dnia da się wygenerować i zapisać;
+historia czatów przeżywa odświeżenie strony.

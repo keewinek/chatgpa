@@ -62,13 +62,13 @@ API parsuje → wykonuje → w odpowiedzi UI: „Dodano TODO”.
 
 ## Szablony użytkownika (slash / przyciski)
 
-| Komenda        | Prompt seed                                              |
-| -------------- | -------------------------------------------------------- |
-| `/plan`        | „Ułóż plan dnia na dziś w ramach budżetu minut…”         |
-| `/roi`         | „Na podstawie ocen i luk wskaż 3 tematy o najwyższym ROI”|
-| `/quiz [temat]`| „Zrób 8 pytań zamkniętych + 2 otwarte z tematu…”         |
-| `/diff`        | „Podsumuj zmiany ocen i wiedzy od ostatniego tygodnia”   |
-| `/focus`       | „Przygotuj sesję Focus 25 min z tematu…”                 |
+| Komenda         | Prompt seed                                               |
+| --------------- | --------------------------------------------------------- |
+| `/plan`         | „Ułóż plan dnia na dziś w ramach budżetu minut…”          |
+| `/roi`          | „Na podstawie ocen i luk wskaż 3 tematy o najwyższym ROI” |
+| `/quiz [temat]` | „Zrób 8 pytań zamkniętych + 2 otwarte z tematu…”          |
+| `/diff`         | „Podsumuj zmiany ocen i wiedzy od ostatniego tygodnia”    |
+| `/focus`        | „Przygotuj sesję Focus 25 min z tematu…”                  |
 
 ## Ewaluacja jakości (manual)
 
