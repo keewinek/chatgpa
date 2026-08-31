@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { listPublicModels, runChat } from "./ai/mod.ts";
+import { listPublicModels, runChat, runChatStream } from "./ai/mod.ts";
 import type { ChatRequestBody } from "./ai/mod.ts";
 import {
   ALLOWED_MIME_TYPES,
@@ -52,6 +52,57 @@ export function createApp() {
         "Content-Type": file.mimeType,
         "Content-Disposition": `inline; filename="${encodeURIComponent(file.name)}"`,
         "Cache-Control": "private, max-age=3600",
+      },
+    });
+  });
+
+  app.post("/api/chat/stream", async (c) => {
+    const body = await c.req.json<ChatRequestBody>().catch(() => null);
+    if (!body) return c.json({ error: "Nieprawidłowy JSON" }, 400);
+    if (!Array.isArray(body.messages) || !body.messages.length) {
+      return c.json({ error: "Pole messages jest wymagane" }, 400);
+    }
+    if (!body.messages.every(isChatMessage)) {
+      return c.json(
+        { error: "Nieprawidłowe messages (najpierw POST /api/upload dla plików)" },
+        400,
+      );
+    }
+
+    const memory = sanitizeMemory(body.memory);
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        };
+        try {
+          for await (
+            const event of runChatStream(body.messages, {
+              forceModel: body.model,
+              memory,
+            })
+          ) {
+            send(event);
+          }
+        } catch (err) {
+          send({
+            type: "error",
+            error: err instanceof Error ? err.message : String(err),
+            attempts: [],
+            memory,
+          });
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
       },
     });
   });

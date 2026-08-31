@@ -485,6 +485,31 @@ body {
   animation: rise 0.35s ease both;
 }
 
+.bubble--streaming {
+  animation: none;
+}
+
+.stream-cursor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 1.1em;
+  margin-left: 0.15rem;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: cursor-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes cursor-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;

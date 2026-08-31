@@ -20,11 +20,15 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
   }
 
   return (
-    <article class={`bubble bubble--${message.role}${message.error ? " bubble--error" : ""}`}>
+    <article
+      class={`bubble bubble--${message.role}${message.error ? " bubble--error" : ""}${
+        message.streaming ? " bubble--streaming" : ""
+      }`}
+    >
       <div class="bubble-head">
         <div class="bubble-role">{role}</div>
         <div class="bubble-actions">
-          {isAssistant && (
+          {isAssistant && !message.streaming && (
             <button
               type="button"
               class="bubble-action"
@@ -41,7 +45,12 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
         </div>
       </div>
       {isAssistant
-        ? <MarkdownBody content={message.content} />
+        ? (
+          <>
+            <MarkdownBody content={message.content || (message.streaming ? " " : "")} />
+            {message.streaming && <span class="stream-cursor" aria-hidden="true" />}
+          </>
+        )
         : <div class="bubble-body">{message.content}</div>}
       {message.attachments?.length && <MessageAttachments attachments={message.attachments} />}
       {message.toolResults?.length && (
@@ -56,7 +65,7 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
           </div>
         </details>
       )}
-      {message.role === "assistant" && message.model && (
+      {message.role === "assistant" && message.model && !message.streaming && (
         <div class="bubble-meta">
           {message.provider}/{message.model}
         </div>

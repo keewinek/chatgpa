@@ -7,6 +7,7 @@ export interface StoredMessage {
   model?: string;
   provider?: string;
   error?: boolean;
+  streaming?: boolean;
   toolResults?: Array<{ tool: string; ok: boolean; output?: string; error?: string }>;
   attachments?: ChatAttachment[];
 }

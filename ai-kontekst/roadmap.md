@@ -15,8 +15,7 @@
 - [x] Pamięć ucznia (localStorage + narzędzia memory.*)
 - [x] Markdown w odpowiedziach asystenta
 - [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator)
-- [ ] Streaming odpowiedzi (SSE)
-- [ ] Streaming odpowiedzi (SSE)
+- [x] Streaming odpowiedzi (SSE via `/api/chat/stream`)
 - [ ] Profil ucznia + ContextPacket w system prompcie
 - [ ] TODO CRUD (API + panel UI)
 - [ ] Kalendarz stub (API + panel)

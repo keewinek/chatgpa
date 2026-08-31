@@ -18,11 +18,12 @@ import {
   upsertSession,
 } from "../lib/chat-storage.ts";
 import {
+  type ChatStreamEvent,
   fetchModels,
   type PendingFile,
   pendingFrom,
-  postChat,
   releasePending,
+  streamChat,
   uploadFile,
 } from "../lib/chat-api.ts";
 import type { ChatAttachment } from "@chatgpa/core";
@@ -124,11 +125,6 @@ export default function ChatApp() {
     saveStore(next);
   }
 
-  function addAssistant(sess: ChatSession, message: StoredMessage, mem: string[]) {
-    const updated = { ...sess, messages: [...sess.messages, message], updatedAt: Date.now() };
-    setStore(updateStore(store.value, updated, mem));
-  }
-
   async function send(overrideText?: string) {
     const text = (overrideText ?? input.value).trim();
     if ((!text && !pending.value.length) || loading.value) return;
@@ -165,50 +161,83 @@ export default function ChatApp() {
     loading.value = false;
   }
 
+  function patchMessage(id: string, patch: Partial<StoredMessage>) {
+    const s = session();
+    const messages = s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m));
+    setStore(
+      updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, store.value.memory),
+    );
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+
   async function completeChat(history: StoredMessage[], memBefore: string[]) {
-    const { ok, data } = await postChat(history, memBefore).catch((err) => ({
-      ok: false,
-      data: { error: err instanceof Error ? err.message : String(err) },
-    }));
-
-    const mem = Array.isArray(data.memory) ? data.memory : memBefore;
-    if (!ok) {
-      const detail = data.attempts?.map((a: { model: string; error?: string }) =>
-        `${a.model}${a.error ? ` (${a.error})` : ""}`
-      ).join(" → ");
-      addAssistant(session(), {
-        id: msgId(),
+    const assistantId = msgId();
+    const s = session();
+    setStore(updateStore(store.value, {
+      ...s,
+      messages: [...s.messages, {
+        id: assistantId,
         role: "assistant",
-        content: `${data.error ?? "Błąd AI"}${detail ? `\n\nPróby: ${detail}` : ""}`,
-        error: true,
-      }, mem);
-      return;
-    }
+        content: "",
+        streaming: true,
+      }],
+      updatedAt: Date.now(),
+    }, memBefore));
 
-    if (!data.message?.content) {
-      addAssistant(session(), {
-        id: msgId(),
-        role: "assistant",
-        content: "Błąd: pusta odpowiedź API",
-        error: true,
-      }, mem);
-      return;
-    }
-
-    addAssistant(session(), {
-      id: msgId(),
-      role: "assistant",
-      content: data.message.content,
-      model: data.model,
-      provider: data.provider,
-      toolResults: data.toolResults ?? [],
-      attachments: data.message.attachments ?? data.attachments,
-    }, mem);
-
-    const ready = status.value.includes("modele");
-    status.value = ready
-      ? `Online · odpowiedź: ${data.model}${mem.length ? ` · ${mem.length} faktów` : ""}`
-      : status.value;
+    await streamChat(history, memBefore, (event: ChatStreamEvent) => {
+      if (event.type === "delta") {
+        const current = getActiveSession(store.value).messages.find((m) => m.id === assistantId);
+        patchMessage(assistantId, { content: (current?.content ?? "") + event.text });
+        return;
+      }
+      if (event.type === "replace") {
+        patchMessage(assistantId, { content: event.text });
+        return;
+      }
+      if (event.type === "tool") {
+        patchMessage(assistantId, { toolResults: event.results });
+        return;
+      }
+      if (event.type === "error") {
+        const detail = (event.attempts as Array<{ model?: string; error?: string }>)?.map((a) =>
+          `${a.model ?? "?"}${a.error ? ` (${a.error})` : ""}`
+        ).join(" → ");
+        const s = session();
+        const messages = s.messages.map((m) =>
+          m.id === assistantId
+            ? {
+              ...m,
+              content: `${event.error}${detail ? `\n\nPróby: ${detail}` : ""}`,
+              error: true,
+              streaming: false,
+            }
+            : m
+        );
+        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, event.memory));
+        return;
+      }
+      if (event.type === "done") {
+        const s = session();
+        const messages = s.messages.map((m) =>
+          m.id === assistantId
+            ? {
+              ...m,
+              content: event.content,
+              model: event.model,
+              provider: event.provider,
+              toolResults: event.toolResults,
+              attachments: event.attachments,
+              streaming: false,
+            }
+            : m
+        );
+        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, event.memory));
+        status.value = `Online · odpowiedź: ${event.model}${
+          event.memory.length ? ` · ${event.memory.length} faktów` : ""
+        }`;
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    });
   }
 
   async function retryLast() {
@@ -273,12 +302,6 @@ export default function ChatApp() {
               onRetry={m.error && i === messages.length - 1 ? () => void retryLast() : undefined}
             />
           ))}
-          {loading.value && (
-            <article class="bubble bubble--assistant bubble--pending">
-              <div class="bubble-role">ChatGPA</div>
-              <div class="bubble-body thinking">Myślę…</div>
-            </article>
-          )}
           <div ref={bottomRef} />
         </div>
 

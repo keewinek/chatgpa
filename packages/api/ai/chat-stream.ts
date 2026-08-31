@@ -1,0 +1,126 @@
+import { hydrateMessageFiles } from "../files/store.ts";
+import { parseActions, stripActions } from "./actions.ts";
+import { runCascadeStream } from "./cascade.ts";
+import { withMemoryContext } from "./providers.ts";
+import { executeActions, formatToolResults } from "./tools.ts";
+import type { ChatAttachment } from "@chatgpa/core";
+import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
+
+const MAX_TOOL_ROUNDS = 2;
+
+export type ChatStreamEvent =
+  | { type: "delta"; text: string }
+  | { type: "replace"; text: string }
+  | { type: "tool"; results: ToolResultPublic[] }
+  | {
+    type: "done";
+    content: string;
+    model: string;
+    provider: string;
+    attempts: AiAttempt[];
+    memory: string[];
+    toolResults: ToolResultPublic[];
+    attachments?: ChatAttachment[];
+  }
+  | { type: "error"; error: string; attempts: AiAttempt[]; memory: string[] };
+
+export async function* runChatStream(
+  messages: ChatMessage[],
+  options: { forceModel?: string; memory?: string[] } = {},
+): AsyncGenerator<ChatStreamEvent> {
+  const memory = [...(options.memory ?? [])];
+  await hydrateMessageFiles(messages);
+  const allAttempts: AiAttempt[] = [];
+  const allToolResults: ToolResultPublic[] = [];
+  const allAttachments: ChatAttachment[] = [];
+  let conversation = withMemoryContext(messages, memory);
+  let provider = "";
+  let model = "";
+
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+    const gen = runCascadeStream(conversation, options.forceModel, { skipSystemWrap: true });
+    let roundContent = "";
+    let result = await gen.next();
+
+    while (!result.done) {
+      roundContent += result.value;
+      yield { type: "delta", text: result.value };
+      result = await gen.next();
+    }
+
+    const cascade = result.value;
+    allAttempts.push(...cascade.attempts);
+
+    if (!cascade.ok) {
+      yield { type: "error", error: cascade.error, attempts: allAttempts, memory };
+      return;
+    }
+
+    provider = cascade.provider;
+    model = cascade.model;
+    const actions = parseActions(cascade.content);
+    const stripped = stripActions(cascade.content);
+
+    if (!actions.length) {
+      if (stripped !== roundContent) {
+        yield { type: "replace", text: stripped };
+      }
+      yield {
+        type: "done",
+        content: stripped,
+        model,
+        provider,
+        attempts: allAttempts,
+        memory,
+        toolResults: allToolResults,
+        attachments: allAttachments.length ? allAttachments : undefined,
+      };
+      return;
+    }
+
+    const { results } = await executeActions(actions, memory);
+    allToolResults.push(...results);
+    for (const r of results) {
+      if (r.ok && r.attachment && !allAttachments.some((a) => a.id === r.attachment!.id)) {
+        allAttachments.push(r.attachment);
+      }
+    }
+    yield { type: "tool", results };
+
+    if (round === MAX_TOOL_ROUNDS - 1) {
+      const suffix = results.map((
+        r,
+      ) => (r.ok ? `✓ ${r.tool}: ${r.output}` : `✗ ${r.tool}: ${r.error}`)).join("\n");
+      const content = `${stripped}\n\n${suffix}`.trim();
+      yield { type: "replace", text: content };
+      yield {
+        type: "done",
+        content,
+        model,
+        provider,
+        attempts: allAttempts,
+        memory,
+        toolResults: allToolResults,
+        attachments: allAttachments.length ? allAttachments : undefined,
+      };
+      return;
+    }
+
+    yield { type: "replace", text: stripped || "(wywołano narzędzia)" };
+    conversation = withMemoryContext(
+      [
+        ...messages,
+        { role: "assistant", content: stripped || "(wywołano narzędzia)" },
+        {
+          role: "user",
+          content: `Wyniki narzędzi:\n${
+            formatToolResults(results)
+          }\n\nKontynuuj odpowiedź dla ucznia.`,
+        },
+      ],
+      memory,
+    );
+  }
+
+  yield { type: "error", error: "Zbyt wiele rund narzędzi", attempts: allAttempts, memory };
+}
