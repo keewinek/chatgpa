@@ -72,7 +72,11 @@ export async function runChat(
 
     const { results } = await executeActions(actions, memory);
     toolResults.push(...results);
-    for (const r of results) if (r.ok && r.attachment) attachments.push(r.attachment);
+    for (const r of results) {
+      if (r.ok && r.attachment && !attachments.some((a) => a.id === r.attachment!.id)) {
+        attachments.push(r.attachment);
+      }
+    }
 
     if (round === MAX_TOOL_ROUNDS - 1) {
       const suffix = results.map((

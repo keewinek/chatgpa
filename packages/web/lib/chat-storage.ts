@@ -127,6 +127,10 @@ export function getActiveSession(store: ChatStore): ChatSession {
   return session ?? store.sessions[0];
 }
 
+export function clearMemory(store: ChatStore): ChatStore {
+  return { ...store, memory: [] };
+}
+
 export function upsertSession(store: ChatStore, session: ChatSession): ChatStore {
   const idx = store.sessions.findIndex((s) => s.id === session.id);
   const sessions = [...store.sessions];

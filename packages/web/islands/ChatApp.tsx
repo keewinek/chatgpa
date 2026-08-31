@@ -2,10 +2,12 @@ import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import ChatBubble from "./ChatBubble.tsx";
 import ChatComposer from "./ChatComposer.tsx";
+import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import {
   type ChatSession,
   type ChatStore,
+  clearMemory,
   createEmptySession,
   getActiveSession,
   loadStore,
@@ -39,31 +41,44 @@ export default function ChatApp() {
   const store = useSignal<ChatStore>(loadStore());
   const input = useSignal("");
   const loading = useSignal(false);
-  const status = useSignal("Sprawdzam modele…");
+  const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
   const pending = useSignal<PendingFile[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const session = () => getActiveSession(store.value);
   const memory = () => store.value.memory;
+  const messages = session().messages;
 
   useEffect(() => {
     fetchModels()
       .then(({ models }) => {
         const ready = models.filter((m) => m.configured);
-        const mem = memory().length ? ` · pamięć: ${memory().length} faktów` : "";
+        const mem = memory().length ? ` · ${memory().length} faktów` : "";
         status.value = ready.length
-          ? `${ready.length} slotów · ${ready.map((m) => m.label).join(" → ")}${mem}`
-          : "Brak kluczy AI — dodaj GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY do .env.";
+          ? `Online · ${ready.length} modele AI${mem}`
+          : "Brak kluczy AI — ustaw GEMINI_API_KEY w Deno Deploy.";
       })
       .catch(() => {
-        status.value = "API niedostępne — uruchom `deno task dev`.";
+        status.value = "Offline — uruchom `deno task dev` lokalnie.";
       });
   }, []);
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        newChat();
+      }
+      if (e.key === "Escape" && sidebarOpen.value) sidebarOpen.value = false;
+    };
+    globalThis.addEventListener("keydown", onKey);
+    return () => globalThis.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  });
+  }, [messages.length, loading.value]);
 
   function setStore(next: ChatStore) {
     store.value = next;
@@ -103,13 +118,19 @@ export default function ChatApp() {
     sidebarOpen.value = false;
   }
 
-  function addAssistant(session: ChatSession, message: StoredMessage, mem: string[]) {
-    const updated = { ...session, messages: [...session.messages, message], updatedAt: Date.now() };
+  function clearStudentMemory() {
+    const next = clearMemory(store.value);
+    setStore(next);
+    saveStore(next);
+  }
+
+  function addAssistant(sess: ChatSession, message: StoredMessage, mem: string[]) {
+    const updated = { ...sess, messages: [...sess.messages, message], updatedAt: Date.now() };
     setStore(updateStore(store.value, updated, mem));
   }
 
-  async function send() {
-    const text = input.value.trim();
+  async function send(overrideText?: string) {
+    const text = (overrideText ?? input.value).trim();
     if ((!text && !pending.value.length) || loading.value) return;
 
     let attachments: ChatAttachment[] = [];
@@ -137,16 +158,20 @@ export default function ChatApp() {
     current.updatedAt = Date.now();
     if (current.title === "Nowa rozmowa" && text) current.title = titleFromText(text);
     setStore(updateStore(store.value, current, memory()));
-    input.value = "";
+    if (!overrideText) input.value = "";
     loading.value = true;
 
-    const history = current.messages.filter((m) => !m.error);
-    const { ok, data } = await postChat(history, memory()).catch((err) => ({
+    await completeChat(current.messages.filter((m) => !m.error), memory());
+    loading.value = false;
+  }
+
+  async function completeChat(history: StoredMessage[], memBefore: string[]) {
+    const { ok, data } = await postChat(history, memBefore).catch((err) => ({
       ok: false,
       data: { error: err instanceof Error ? err.message : String(err) },
     }));
 
-    const mem = Array.isArray(data.memory) ? data.memory : memory();
+    const mem = Array.isArray(data.memory) ? data.memory : memBefore;
     if (!ok) {
       const detail = data.attempts?.map((a: { model: string; error?: string }) =>
         `${a.model}${a.error ? ` (${a.error})` : ""}`
@@ -157,28 +182,47 @@ export default function ChatApp() {
         content: `${data.error ?? "Błąd AI"}${detail ? `\n\nPróby: ${detail}` : ""}`,
         error: true,
       }, mem);
-    } else if (data.message?.content) {
-      addAssistant(session(), {
-        id: msgId(),
-        role: "assistant",
-        content: data.message.content,
-        model: data.model,
-        provider: data.provider,
-        toolResults: data.toolResults ?? [],
-        attachments: data.message.attachments ?? data.attachments,
-      }, mem);
-    } else {
+      return;
+    }
+
+    if (!data.message?.content) {
       addAssistant(session(), {
         id: msgId(),
         role: "assistant",
         content: "Błąd: pusta odpowiedź API",
         error: true,
       }, mem);
+      return;
     }
-    loading.value = false;
+
+    addAssistant(session(), {
+      id: msgId(),
+      role: "assistant",
+      content: data.message.content,
+      model: data.model,
+      provider: data.provider,
+      toolResults: data.toolResults ?? [],
+      attachments: data.message.attachments ?? data.attachments,
+    }, mem);
+
+    const ready = status.value.includes("modele");
+    status.value = ready
+      ? `Online · odpowiedź: ${data.model}${mem.length ? ` · ${mem.length} faktów` : ""}`
+      : status.value;
   }
 
-  const messages = session().messages;
+  async function retryLast() {
+    if (loading.value) return;
+    const s = session();
+    const msgs = [...s.messages];
+    if (!msgs.length || !msgs[msgs.length - 1].error) return;
+    msgs.pop();
+    const updated = { ...s, messages: msgs, updatedAt: Date.now() };
+    setStore(updateStore(store.value, updated, memory()));
+    loading.value = true;
+    await completeChat(msgs.filter((m) => !m.error), memory());
+    loading.value = false;
+  }
 
   return (
     <div class="chat-app">
@@ -187,12 +231,14 @@ export default function ChatApp() {
         activeId={store.value.activeSessionId}
         loading={loading.value}
         open={sidebarOpen.value}
+        memory={memory()}
         onSelect={switchSession}
         onNew={newChat}
         onDelete={deleteChat}
         onClose={() => {
           sidebarOpen.value = false;
         }}
+        onClearMemory={clearStudentMemory}
       />
 
       <div class="chat-main">
@@ -215,15 +261,18 @@ export default function ChatApp() {
 
         <div class="chat-messages" role="log" aria-live="polite">
           {!messages.length && !loading.value && (
-            <div class="chat-empty">
-              <p class="chat-empty-title">Cześć — tu ChatGPA</p>
-              <p class="chat-empty-hint">
-                Zapytaj o naukę, plan dnia albo poproś o quiz. Odpowiadam w Markdown i mogę
-                zapamiętać fakty o Tobie.
-              </p>
-            </div>
+            <ChatEmpty
+              disabled={loading.value}
+              onPick={(prompt) => void send(prompt)}
+            />
           )}
-          {messages.map((m) => <ChatBubble key={m.id} message={m} />)}
+          {messages.map((m, i) => (
+            <ChatBubble
+              key={m.id}
+              message={m}
+              onRetry={m.error && i === messages.length - 1 ? () => void retryLast() : undefined}
+            />
+          ))}
           {loading.value && (
             <article class="bubble bubble--assistant bubble--pending">
               <div class="bubble-role">ChatGPA</div>

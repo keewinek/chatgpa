@@ -5,10 +5,12 @@ interface ChatSidebarProps {
   activeId: string;
   loading: boolean;
   open: boolean;
+  memory: string[];
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
+  onClearMemory: () => void;
 }
 
 export default function ChatSidebar({
@@ -16,10 +18,12 @@ export default function ChatSidebar({
   activeId,
   loading,
   open,
+  memory,
   onSelect,
   onNew,
   onDelete,
   onClose,
+  onClearMemory,
 }: ChatSidebarProps) {
   return (
     <>
@@ -31,12 +35,7 @@ export default function ChatSidebar({
       <aside class={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Historia rozmów">
         <div class="sidebar-top">
           <span class="sidebar-logo">ChatGPA</span>
-          <button
-            class="sidebar-new"
-            type="button"
-            onClick={onNew}
-            disabled={loading}
-          >
+          <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
             + Nowa rozmowa
           </button>
         </div>
@@ -55,9 +54,7 @@ export default function ChatSidebar({
                 disabled={loading}
               >
                 <span class="sidebar-item-title">{session.title}</span>
-                <span class="sidebar-item-date">
-                  {formatSessionDate(session.updatedAt)}
-                </span>
+                <span class="sidebar-item-date">{formatSessionDate(session.updatedAt)}</span>
               </button>
               <button
                 type="button"
@@ -76,6 +73,27 @@ export default function ChatSidebar({
           ))}
         </nav>
 
+        {memory.length > 0 && (
+          <div class="sidebar-memory">
+            <div class="sidebar-memory-head">
+              <span class="sidebar-memory-title">Pamięć</span>
+              <button
+                type="button"
+                class="sidebar-memory-clear"
+                disabled={loading}
+                onClick={onClearMemory}
+              >
+                Wyczyść
+              </button>
+            </div>
+            <ul class="sidebar-memory-list">
+              {memory.map((fact, i) => (
+                <li key={`${i}-${fact}`} class="sidebar-memory-item">{fact}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <p class="sidebar-foot">Cursor do szkoły · darmowe AI</p>
       </aside>
     </>
@@ -85,8 +103,7 @@ export default function ChatSidebar({
 function formatSessionDate(ts: number): string {
   const d = new Date(ts);
   const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  if (sameDay) {
+  if (d.toDateString() === now.toDateString()) {
     return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
   }
   return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
