@@ -1,6 +1,11 @@
 import { App, staticFiles } from "fresh";
+import { createApp, loadEnv } from "@chatgpa/api";
 
-export const app = new App();
+await loadEnv();
 
-app.use(staticFiles());
-app.fsRoutes();
+const api = createApp();
+
+export const app = new App()
+  .use(staticFiles())
+  .all("/api/*", (ctx) => api.fetch(ctx.req))
+  .fsRoutes();

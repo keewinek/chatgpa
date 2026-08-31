@@ -10,8 +10,7 @@ export interface UiMessage {
   error?: boolean;
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ??
-  "http://localhost:8000";
+const API_BASE = "";
 
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -40,7 +39,7 @@ export default function ChatApp() {
         const ready = data.models.filter((m) => m.configured);
         if (ready.length === 0) {
           status.value =
-            "Brak kluczy AI — dodaj GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY do .env i zrestartuj API.";
+            "Brak kluczy AI — dodaj GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY do .env i zrestartuj serwer.";
         } else {
           status.value = `${ready.length} slotów gotowych · kaskada: ${
             ready.map((m) => m.label).join(" → ")
@@ -48,7 +47,7 @@ export default function ChatApp() {
         }
       })
       .catch(() => {
-        status.value = "API niedostępne — uruchom `deno task dev:api` (port 8000).";
+        status.value = "API niedostępne — uruchom `deno task dev`.";
       });
   }, []);
 

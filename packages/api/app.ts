@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import type { Subject } from "@chatgpa/core";
 import { listPublicModels, runCascade } from "./ai/mod.ts";
 import type { ChatMessage, ChatRequestBody } from "./ai/mod.ts";
@@ -17,21 +16,7 @@ function isChatMessage(value: unknown): value is ChatMessage {
 export function createApp() {
   const app = new Hono();
 
-  app.use(
-    "*",
-    cors({
-      origin: [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-      ],
-      allowMethods: ["GET", "POST", "OPTIONS"],
-      allowHeaders: ["Content-Type"],
-    }),
-  );
-
-  app.get("/health", (c) => c.json({ status: "ok" }));
+  app.get("/api/health", (c) => c.json({ status: "ok" }));
 
   app.get("/api/subjects", (c) => {
     const subjects: Subject[] = [];
