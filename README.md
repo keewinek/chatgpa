@@ -91,11 +91,14 @@ Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_A
 
 ## API endpoints
 
-| Method | Path             | Description                     |
-| ------ | ---------------- | ------------------------------- |
-| GET    | `/api/health`    | Health check                    |
-| GET    | `/api/ai/models` | Free model cascade + key status |
-| POST   | `/api/chat`      | Chat (smart → dumb AI fallback) |
+| Method | Path             | Description                                   |
+| ------ | ---------------- | --------------------------------------------- |
+| GET    | `/api/health`    | Health check                                  |
+| GET    | `/api/ai/models` | Free model cascade + key status               |
+| POST   | `/api/chat`      | Chat with memory, tools, and markdown replies |
+
+Chat requests accept `{ messages, memory?: string[] }` and return updated `memory` plus
+`toolResults`.
 
 ## Environment variables
 

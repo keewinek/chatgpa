@@ -28,14 +28,17 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 
 ## Gdzie co jest w kodzie
 
-| Temat           | Ścieżka                            |
-| --------------- | ---------------------------------- |
-| Kaskada AI      | `packages/api/ai/`                 |
-| Endpointy chat  | `packages/api/app.ts`              |
-| UI chatu        | `packages/web/islands/ChatApp.tsx` |
-| Style           | `packages/web/assets/styles.css`   |
-| Typy shared     | `packages/core/types.ts`           |
-| Env przykładowy | `.env.example`                     |
+| Temat            | Ścieżka                                 |
+| ---------------- | --------------------------------------- |
+| Kaskada AI       | `packages/api/ai/`                      |
+| Narzędzia / chat | `packages/api/ai/chat.ts`, `tools.ts`   |
+| Endpointy chat   | `packages/api/app.ts`                   |
+| UI chatu         | `packages/web/islands/ChatApp.tsx`      |
+| Markdown         | `packages/web/islands/MarkdownBody.tsx` |
+| Historia/pamięć  | `packages/web/lib/chat-storage.ts`      |
+| Style            | `packages/web/assets/styles.css`        |
+| Typy shared      | `packages/core/types.ts`                |
+| Env przykładowy  | `.env.example`                          |
 
 ## Jak aktualizować kontekst
 

@@ -1,3 +1,4 @@
+import { buildMemoryBlock } from "./tools.ts";
 import type { ChatMessage, ModelSlot } from "./types.ts";
 
 /**
@@ -60,7 +61,25 @@ export const DEFAULT_SYSTEM_PROMPT =
   `Jesteś ChatGPA — osobisty asystent edukacyjny ucznia (jak Cursor, ale do szkoły).
 Odpowiadasz po polsku, konkretnie i przyjaźnie. Pomagasz planować naukę, tłumaczyć
 materiały i ogarniać dzień szkolny. Nie wymyślaj ocen ani terminów, których nie znasz —
-jeśli brakuje kontekstu, powiedz wprost i zaproponuj, co ustalić.`;
+jeśli brakuje kontekstu, powiedz wprost i zaproponuj, co ustalić.
+
+Formatowanie: używaj Markdown (nagłówki, listy, **pogrubienia**, bloki kodu).
+Gdy uczeń poda ważny fakt o sobie (przedmioty, terminy, preferencje), zapisz go narzędziem.
+
+Narzędzia — gdy potrzebujesz wykonać akcję, dodaj blok (bez komentarza przed nim):
+
+\`\`\`chatgpa-action
+{ "tool": "memory.remember", "args": { "text": "fakt do zapamiętania" } }
+\`\`\`
+
+Dostępne narzędzia:
+- memory.remember — zapisz fakt o uczniu (args.text)
+- memory.list — pokaż zapisaną pamięć
+- memory.forget — usuń fakt (args.text)
+- datetime.now — aktualna data i czas (Warszawa)
+- calc.eval — oblicz wyrażenie (args.expression, np. "(2+3)*4")
+
+Możesz zwrócić kilka bloków chatgpa-action w jednej odpowiedzi. Po narzędziu kontynuujesz rozmowę normalnie.`;
 
 const OPENAI_COMPAT: Record<
   string,
@@ -216,4 +235,15 @@ export function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
   const hasSystem = messages.some((m) => m.role === "system");
   if (hasSystem) return messages;
   return [{ role: "system", content: DEFAULT_SYSTEM_PROMPT }, ...messages];
+}
+
+/** System prompt + optional student memory block for tool-aware chat. */
+export function withMemoryContext(messages: ChatMessage[], memory: string[]): ChatMessage[] {
+  const memoryBlock = buildMemoryBlock(memory);
+  const systemContent = memoryBlock
+    ? `${DEFAULT_SYSTEM_PROMPT}\n\n${memoryBlock}`
+    : DEFAULT_SYSTEM_PROMPT;
+
+  const withoutSystem = messages.filter((m) => m.role !== "system");
+  return [{ role: "system", content: systemContent }, ...withoutSystem];
 }

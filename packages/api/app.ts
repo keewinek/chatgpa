@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { listPublicModels, runCascade } from "./ai/mod.ts";
+import { listPublicModels, runChat } from "./ai/mod.ts";
 import type { ChatMessage, ChatRequestBody } from "./ai/mod.ts";
 
 function isChatMessage(value: unknown): value is ChatMessage {
@@ -10,6 +10,15 @@ function isChatMessage(value: unknown): value is ChatMessage {
     typeof m.content === "string" &&
     m.content.trim().length > 0
   );
+}
+
+function sanitizeMemory(memory: unknown): string[] {
+  if (!Array.isArray(memory)) return [];
+  return memory
+    .filter((item): item is string => typeof item === "string")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .slice(0, 100);
 }
 
 export function createApp() {
@@ -39,12 +48,14 @@ export function createApp() {
       }, 400);
     }
 
-    const result = await runCascade(body.messages, body.model);
+    const memory = sanitizeMemory(body.memory);
+    const result = await runChat(body.messages, { forceModel: body.model, memory });
 
     if (!result.ok) {
       return c.json({
         error: result.error,
         attempts: result.attempts,
+        memory: result.memory,
       }, 503);
     }
 
@@ -56,6 +67,8 @@ export function createApp() {
       model: result.model,
       provider: result.provider,
       attempts: result.attempts,
+      memory: result.memory,
+      toolResults: result.toolResults,
     });
   });
 

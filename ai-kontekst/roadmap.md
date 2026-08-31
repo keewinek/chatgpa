@@ -11,7 +11,11 @@
 
 ## Faza 1 — Rdzeń osobisty
 
-- [ ] Historia rozmów (localStorage → później DB)
+- [x] Historia rozmów (localStorage)
+- [x] Pamięć ucznia (localStorage + narzędzia memory.*)
+- [x] Markdown w odpowiedziach asystenta
+- [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator)
+- [ ] Streaming odpowiedzi (SSE)
 - [ ] Streaming odpowiedzi (SSE)
 - [ ] Profil ucznia + ContextPacket w system prompcie
 - [ ] TODO CRUD (API + panel UI)

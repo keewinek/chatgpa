@@ -9,8 +9,9 @@ const ATTEMPT_TIMEOUT_MS = 45_000;
 export async function runCascade(
   messages: ChatMessage[],
   forceModel?: string,
+  options?: { skipSystemWrap?: boolean },
 ): Promise<AiResult> {
-  const prepared = withSystemPrompt(messages);
+  const prepared = options?.skipSystemWrap ? messages : withSystemPrompt(messages);
   const slots = availableSlots(forceModel);
   const attempts: AiAttempt[] = [];
 

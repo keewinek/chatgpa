@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-
-export interface UiMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  model?: string;
-  provider?: string;
-  error?: boolean;
-}
+import MarkdownBody from "./MarkdownBody.tsx";
+import {
+  clearChatStorage,
+  loadMemory,
+  loadMessages,
+  saveMemory,
+  saveMessages,
+  type StoredMessage,
+  WELCOME_MESSAGE,
+} from "../lib/chat-storage.ts";
 
 const API_BASE = "";
 
@@ -17,16 +18,8 @@ function uid() {
 }
 
 export default function ChatApp() {
-  const messages = useSignal<UiMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content:
-        "Cześć — tu ChatGPA. Napisz cokolwiek, a odpiszę darmowym modelem AI (od najmądrzejszego do najgłupszego, aż coś zadziała). Pod odpowiedzią zobaczysz, który model odpowiedział.",
-      provider: "system",
-      model: "welcome",
-    },
-  ]);
+  const messages = useSignal<StoredMessage[]>(loadMessages());
+  const memory = useSignal<string[]>(loadMemory());
   const input = useSignal("");
   const loading = useSignal(false);
   const status = useSignal("Sprawdzam modele…");
@@ -37,13 +30,15 @@ export default function ChatApp() {
       .then((r) => r.json())
       .then((data: { models: Array<{ configured: boolean; label: string }> }) => {
         const ready = data.models.filter((m) => m.configured);
+        const memCount = memory.value.length;
+        const memNote = memCount > 0 ? ` · pamięć: ${memCount} faktów` : "";
         if (ready.length === 0) {
           status.value =
-            "Brak kluczy AI — dodaj GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY do .env i zrestartuj serwer.";
+            "Brak kluczy AI — dodaj GEMINI_API_KEY / GROQ_API_KEY / OPENROUTER_API_KEY do .env.";
         } else {
-          status.value = `${ready.length} slotów gotowych · kaskada: ${
+          status.value = `${ready.length} slotów · kaskada: ${
             ready.map((m) => m.label).join(" → ")
-          }`;
+          }${memNote}`;
         }
       })
       .catch(() => {
@@ -55,11 +50,25 @@ export default function ChatApp() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   });
 
+  function persist() {
+    saveMessages(messages.value);
+    saveMemory(memory.value);
+  }
+
+  function newChat() {
+    clearChatStorage();
+    messages.value = [WELCOME_MESSAGE];
+    memory.value = [];
+    input.value = "";
+    status.value = status.value.replace(/ · pamięć: \d+ faktów/, "");
+    persist();
+  }
+
   async function send() {
     const text = input.value.trim();
     if (!text || loading.value) return;
 
-    const userMsg: UiMessage = { id: uid(), role: "user", content: text };
+    const userMsg: StoredMessage = { id: uid(), role: "user", content: text };
     messages.value = [...messages.value, userMsg];
     input.value = "";
     loading.value = true;
@@ -72,7 +81,7 @@ export default function ChatApp() {
       const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, memory: memory.value }),
       });
       const data = await res.json();
 
@@ -95,7 +104,9 @@ export default function ChatApp() {
             error: true,
           },
         ];
+        if (Array.isArray(data.memory)) memory.value = data.memory;
       } else {
+        if (Array.isArray(data.memory)) memory.value = data.memory;
         messages.value = [
           ...messages.value,
           {
@@ -104,6 +115,7 @@ export default function ChatApp() {
             content: data.message.content,
             model: data.model,
             provider: data.provider,
+            toolResults: data.toolResults ?? [],
           },
         ];
       }
@@ -121,6 +133,7 @@ export default function ChatApp() {
       ];
     } finally {
       loading.value = false;
+      persist();
     }
   }
 
@@ -137,6 +150,9 @@ export default function ChatApp() {
         <div class="chat-brand">
           <span class="chat-logo">ChatGPA</span>
           <span class="chat-tag">Cursor do szkoły · darmowe AI</span>
+          <button class="chat-new" type="button" onClick={newChat} disabled={loading.value}>
+            Nowa rozmowa
+          </button>
         </div>
         <p class="chat-status">{status.value}</p>
       </header>
@@ -150,7 +166,21 @@ export default function ChatApp() {
             <div class="bubble-role">
               {m.role === "user" ? "Ty" : "ChatGPA"}
             </div>
-            <div class="bubble-body">{m.content}</div>
+            {m.role === "assistant" && !m.error
+              ? <MarkdownBody content={m.content} />
+              : <div class="bubble-body">{m.content}</div>}
+            {m.toolResults && m.toolResults.length > 0 && (
+              <div class="bubble-tools">
+                {m.toolResults.map((t, i) => (
+                  <span
+                    key={`${m.id}-tool-${i}`}
+                    class={`tool-chip${t.ok ? " tool-chip--ok" : " tool-chip--err"}`}
+                  >
+                    {t.ok ? t.output ?? t.tool : `${t.tool}: ${t.error}`}
+                  </span>
+                ))}
+              </div>
+            )}
             {m.role === "assistant" && m.model && m.model !== "welcome" && (
               <div class="bubble-meta">
                 model: <code>{m.provider}/{m.model}</code>
@@ -161,7 +191,7 @@ export default function ChatApp() {
         {loading.value && (
           <article class="bubble bubble--assistant bubble--pending">
             <div class="bubble-role">ChatGPA</div>
-            <div class="bubble-body thinking">Myślę (kaskada darmowych modeli)…</div>
+            <div class="bubble-body thinking">Myślę (kaskada + narzędzia)…</div>
           </article>
         )}
         <div ref={bottomRef} />
@@ -177,7 +207,7 @@ export default function ChatApp() {
         <textarea
           class="chat-input"
           rows={1}
-          placeholder="Napisz wiadomość… (Enter wyślij, Shift+Enter nowa linia)"
+          placeholder="Napisz wiadomość… Markdown w odpowiedziach. Enter wyślij."
           value={input.value}
           onInput={(e) => {
             input.value = (e.target as HTMLTextAreaElement).value;

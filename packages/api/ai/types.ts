@@ -34,7 +34,25 @@ export interface ModelSlot {
   label: string;
 }
 
+export interface ToolResultPublic {
+  tool: string;
+  ok: boolean;
+  output?: string;
+  error?: string;
+}
+
 export interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
+  /** Facts the client remembers about the student (localStorage). */
+  memory?: string[];
+}
+
+export interface ChatResponseBody {
+  message: { role: "assistant"; content: string };
+  model: string;
+  provider: string;
+  attempts: AiAttempt[];
+  memory: string[];
+  toolResults: ToolResultPublic[];
 }

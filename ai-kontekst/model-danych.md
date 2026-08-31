@@ -1,6 +1,7 @@
 # Model danych
 
-Docelowe encje (Faza 1+: typy w `@chatgpa/core`, potem tabele Drizzle). **Faza 0:** w core są tylko `ChatMessage` / `ChatRole`.
+Docelowe encje (Faza 1+: typy w `@chatgpa/core`, potem tabele Drizzle). **Faza 0:** w core są tylko
+`ChatMessage` / `ChatRole`.
 
 ## Profile (StudentProfile)
 
@@ -122,8 +123,8 @@ Im wyższy score, tym wcześniej w planie dnia / TODO.
 
 ## Storage path
 
-| Faza | Storage                                      |
-| ---- | -------------------------------------------- |
-| 0    | brak (tylko ephemeral chat w pamięci UI)     |
-| 1    | localStorage / SQLite / JSON na dysku        |
-| 2+   | PostgreSQL + pgvector (notatki / RAG)        |
+| Faza | Storage                                  |
+| ---- | ---------------------------------------- |
+| 0    | brak (tylko ephemeral chat w pamięci UI) |
+| 1    | localStorage / SQLite / JSON na dysku    |
+| 2+   | PostgreSQL + pgvector (notatki / RAG)    |
