@@ -1,5 +1,5 @@
 import type { ChatMessage } from "@chatgpa/core";
-import { attachmentTextSnippet, bytesToBase64, describeAttachment, getFile } from "./store.ts";
+import { attachmentTextSnippet, bytesToBase64, describeAttachment, ensureFile } from "./store.ts";
 import { isVisionMime } from "./mime.ts";
 
 export interface ResolvedParts {
@@ -17,7 +17,7 @@ export async function resolveMessageParts(message: ChatMessage): Promise<Resolve
   if (message.content.trim()) lines.push(message.content.trim());
 
   for (const att of message.attachments ?? []) {
-    const file = getFile(att.id);
+    const file = await ensureFile(att.id);
     if (!file) continue;
 
     if (isVisionMime(file.mimeType)) {

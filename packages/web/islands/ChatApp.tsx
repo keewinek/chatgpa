@@ -157,7 +157,7 @@ export default function ChatApp() {
         content: `${data.error ?? "Błąd AI"}${detail ? `\n\nPróby: ${detail}` : ""}`,
         error: true,
       }, mem);
-    } else {
+    } else if (data.message?.content) {
       addAssistant(session(), {
         id: msgId(),
         role: "assistant",
@@ -166,6 +166,13 @@ export default function ChatApp() {
         provider: data.provider,
         toolResults: data.toolResults ?? [],
         attachments: data.message.attachments ?? data.attachments,
+      }, mem);
+    } else {
+      addAssistant(session(), {
+        id: msgId(),
+        role: "assistant",
+        content: "Błąd: pusta odpowiedź API",
+        error: true,
       }, mem);
     }
     loading.value = false;

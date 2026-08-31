@@ -1,9 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { bytesToBase64, getFile, putFile, toAttachment } from "./store.ts";
 
-Deno.test("putFile stores and retrieves bytes", () => {
+Deno.test("putFile stores and retrieves bytes", async () => {
   const bytes = new TextEncoder().encode("hello");
-  const stored = putFile({ name: "test.txt", mimeType: "text/plain", bytes });
+  const stored = await putFile({ name: "test.txt", mimeType: "text/plain", bytes });
   const loaded = getFile(stored.id);
   assertEquals(loaded?.name, "test.txt");
   assertEquals(loaded?.mimeType, "text/plain");
@@ -14,7 +14,7 @@ Deno.test("putFile stores and retrieves bytes", () => {
 Deno.test("putFile rejects unknown mime", async () => {
   await assertRejects(
     async () => {
-      putFile({
+      await putFile({
         name: "evil.exe",
         mimeType: "application/x-msdownload",
         bytes: new Uint8Array([1, 2, 3]),

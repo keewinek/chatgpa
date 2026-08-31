@@ -1,3 +1,4 @@
+import { hydrateMessageFiles } from "../files/store.ts";
 import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
 import { withMemoryContext } from "./providers.ts";
@@ -44,6 +45,7 @@ export async function runChat(
   options: { forceModel?: string; memory?: string[] } = {},
 ): Promise<ChatRunOutcome> {
   const memory = [...(options.memory ?? [])];
+  await hydrateMessageFiles(messages);
   const attempts: AiAttempt[] = [];
   const toolResults: ToolResultPublic[] = [];
   const attachments: ChatAttachment[] = [];
@@ -68,7 +70,7 @@ export async function runChat(
       );
     }
 
-    const { results } = executeActions(actions, memory);
+    const { results } = await executeActions(actions, memory);
     toolResults.push(...results);
     for (const r of results) if (r.ok && r.attachment) attachments.push(r.attachment);
 

@@ -30,7 +30,8 @@ export async function postChat(messages: StoredMessage[], memory: string[]) {
       memory,
     }),
   });
-  return { ok: res.ok, data: await res.json() };
+  const data = await res.json().catch(() => ({ error: "Nieprawidłowa odpowiedź API" }));
+  return { ok: res.ok, data };
 }
 
 export const ACCEPTED_FILES =

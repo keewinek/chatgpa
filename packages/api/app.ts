@@ -33,7 +33,7 @@ export function createApp() {
     }
 
     try {
-      const stored = putFile({
+      const stored = await putFile({
         name: sanitizeFilename(file.name),
         mimeType,
         bytes: new Uint8Array(await file.arrayBuffer()),

@@ -18,16 +18,34 @@ export interface StoredFile {
 }
 
 const TTL_MS = 24 * 60 * 60 * 1000;
-const files = new Map<string, StoredFile>();
+const memory = new Map<string, StoredFile>();
+let kv: Deno.Kv | null = null;
+let kvReady: Promise<Deno.Kv | null> | null = null;
 
-function fileId(): string {
+function fileId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+async function openKv(): Promise<Deno.Kv | null> {
+  if (kv) return kv;
+  if (!kvReady) {
+    kvReady = (async () => {
+      try {
+        if (typeof Deno.openKv !== "function") return null;
+        kv = await Deno.openKv();
+        return kv;
+      } catch {
+        return null;
+      }
+    })();
+  }
+  return await kvReady;
 }
 
 function pruneExpired() {
   const now = Date.now();
-  for (const [id, file] of files) {
-    if (now - file.createdAt > TTL_MS) files.delete(id);
+  for (const [id, file] of memory) {
+    if (now - file.createdAt > TTL_MS) memory.delete(id);
   }
 }
 
@@ -40,11 +58,11 @@ export function toAttachment(file: StoredFile): ChatAttachment {
   };
 }
 
-export function putFile(input: {
+export async function putFile(input: {
   name: string;
   mimeType: string;
   bytes: Uint8Array;
-}): StoredFile {
+}): Promise<StoredFile> {
   pruneExpired();
 
   if (input.bytes.byteLength > MAX_FILE_BYTES) {
@@ -52,9 +70,7 @@ export function putFile(input: {
   }
 
   const mimeType = normalizeMimeType(input.mimeType, input.name);
-  if (!ALLOWED_MIME_TYPES.has(mimeType)) {
-    throw new Error("Nieobsługiwany typ pliku");
-  }
+  if (!ALLOWED_MIME_TYPES.has(mimeType)) throw new Error("Nieobsługiwany typ pliku");
 
   const file: StoredFile = {
     id: fileId(),
@@ -63,13 +79,55 @@ export function putFile(input: {
     bytes: input.bytes,
     createdAt: Date.now(),
   };
-  files.set(file.id, file);
+
+  memory.set(file.id, file);
+
+  const store = await openKv();
+  if (store) {
+    await store.set(
+      ["file", file.id],
+      { name: file.name, mimeType: file.mimeType, bytes: file.bytes, createdAt: file.createdAt },
+      { expireIn: TTL_MS },
+    );
+  }
+
   return file;
 }
 
+/** Sync read from local memory (same request / isolate). */
 export function getFile(id: string): StoredFile | undefined {
   pruneExpired();
-  return files.get(id);
+  return memory.get(id);
+}
+
+/** Load from memory or Deno KV (production multi-isolate). */
+export async function ensureFile(id: string): Promise<StoredFile | undefined> {
+  const cached = getFile(id);
+  if (cached) return cached;
+
+  const store = await openKv();
+  if (!store) return undefined;
+
+  const entry = await store.get<{
+    name: string;
+    mimeType: string;
+    bytes: Uint8Array;
+    createdAt: number;
+  }>(["file", id]);
+
+  if (!entry.value) return undefined;
+
+  const file: StoredFile = { id, ...entry.value };
+  memory.set(id, file);
+  return file;
+}
+
+export async function hydrateMessageFiles(
+  messages: Array<{ attachments?: ChatAttachment[] }>,
+): Promise<void> {
+  for (const message of messages) {
+    for (const att of message.attachments ?? []) await ensureFile(att.id);
+  }
 }
 
 export function bytesToBase64(bytes: Uint8Array): string {
@@ -81,7 +139,6 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-/** Text extracted from docx or plain text files for non-vision models. */
 export async function attachmentTextSnippet(file: StoredFile, max = 8000): Promise<string> {
   if (isTextMime(file.mimeType)) {
     const text = new TextDecoder("utf-8", { fatal: false }).decode(file.bytes).trim();
@@ -94,12 +151,12 @@ export async function attachmentTextSnippet(file: StoredFile, max = 8000): Promi
   return "";
 }
 
-export function messagesNeedVision(
+export async function messagesNeedVision(
   messages: Array<{ attachments?: ChatAttachment[] }>,
-): boolean {
+): Promise<boolean> {
   for (const message of messages) {
     for (const att of message.attachments ?? []) {
-      const file = getFile(att.id);
+      const file = await ensureFile(att.id);
       if (file && isVisionMime(file.mimeType)) return true;
     }
   }
@@ -107,8 +164,7 @@ export function messagesNeedVision(
 }
 
 export function describeAttachment(file: StoredFile): string {
-  if (isVisionMime(file.mimeType)) {
-    return `[plik: ${file.name} (${file.mimeType})]`;
-  }
-  return `[plik: ${file.name}]`;
+  return isVisionMime(file.mimeType)
+    ? `[plik: ${file.name} (${file.mimeType})]`
+    : `[plik: ${file.name}]`;
 }

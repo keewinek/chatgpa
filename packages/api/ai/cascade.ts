@@ -12,7 +12,7 @@ export async function runCascade(
   options?: { skipSystemWrap?: boolean },
 ): Promise<AiResult> {
   const prepared = options?.skipSystemWrap ? messages : withSystemPrompt(messages);
-  const visionOnly = messagesNeedVision(prepared);
+  const visionOnly = await messagesNeedVision(prepared);
   const slots = availableSlots(forceModel, visionOnly);
   const attempts: AiAttempt[] = [];
 

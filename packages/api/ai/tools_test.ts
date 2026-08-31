@@ -1,9 +1,9 @@
 import { assertEquals } from "@std/assert";
 import { executeActions } from "./tools.ts";
 
-Deno.test("memory.remember adds fact", () => {
+Deno.test("memory.remember adds fact", async () => {
   const memory: string[] = [];
-  const { results, memory: updated } = executeActions(
+  const { results, memory: updated } = await executeActions(
     [{ tool: "memory.remember", args: { text: "Klasa 3A" } }],
     memory,
   );
@@ -11,8 +11,8 @@ Deno.test("memory.remember adds fact", () => {
   assertEquals(updated, ["Klasa 3A"]);
 });
 
-Deno.test("calc.eval computes expression", () => {
-  const { results } = executeActions(
+Deno.test("calc.eval computes expression", async () => {
+  const { results } = await executeActions(
     [{ tool: "calc.eval", args: { expression: "(2+3)*4" } }],
     [],
   );
@@ -20,8 +20,8 @@ Deno.test("calc.eval computes expression", () => {
   assertEquals(results[0].output, "20");
 });
 
-Deno.test("memory.forget removes fact", () => {
-  const { results, memory } = executeActions(
+Deno.test("memory.forget removes fact", async () => {
+  const { results, memory } = await executeActions(
     [{ tool: "memory.forget", args: { text: "stary fakt" } }],
     ["Stary fakt", "Inny"],
   );
@@ -29,8 +29,8 @@ Deno.test("memory.forget removes fact", () => {
   assertEquals(memory, ["Inny"]);
 });
 
-Deno.test("file.send stores downloadable file", () => {
-  const { results } = executeActions(
+Deno.test("file.send stores downloadable file", async () => {
+  const { results } = await executeActions(
     [{
       tool: "file.send",
       args: {

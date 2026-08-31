@@ -1,5 +1,4 @@
 import type { ChatAttachment, ChatMessage } from "@chatgpa/core";
-import { getFile } from "./files/store.ts";
 
 export function sanitizeMemory(memory: unknown): string[] {
   if (!Array.isArray(memory)) return [];
@@ -23,9 +22,7 @@ export function isChatMessage(value: unknown): value is ChatMessage {
   if (role !== "system" && role !== "user" && role !== "assistant") return false;
   const content = typeof m.content === "string" ? m.content : "";
   const attachments = m.attachments;
-  const hasFiles = Array.isArray(attachments) &&
-    attachments.length > 0 &&
-    attachments.every(isAttachment) &&
-    attachments.every((a) => getFile(a.id) !== undefined);
+  const hasFiles = Array.isArray(attachments) && attachments.length > 0 &&
+    attachments.every(isAttachment);
   return content.trim().length > 0 || hasFiles;
 }

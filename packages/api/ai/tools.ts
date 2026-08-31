@@ -49,7 +49,7 @@ function warsawNow(): string {
   }).format(new Date());
 }
 
-function runOne(action: ChatAction, memory: string[]): ToolResult {
+async function runOne(action: ChatAction, memory: string[]): Promise<ToolResult> {
   const args = action.args ?? {};
   switch (action.tool) {
     case "memory.remember": {
@@ -103,7 +103,7 @@ function runOne(action: ChatAction, memory: string[]): ToolResult {
       try {
         const name = sanitizeFilename(rawName);
         const mimeType = normalizeMimeType(mimeArg, name);
-        const stored = putFile({
+        const stored = await putFile({
           name,
           mimeType,
           bytes: new TextEncoder().encode(content),
@@ -129,10 +129,13 @@ function runOne(action: ChatAction, memory: string[]): ToolResult {
   }
 }
 
-export function executeActions(actions: ChatAction[], memory: string[]): ToolRunSummary {
+export async function executeActions(
+  actions: ChatAction[],
+  memory: string[],
+): Promise<ToolRunSummary> {
   const results: ToolResult[] = [];
   for (const action of actions) {
-    results.push(runOne(action, memory));
+    results.push(await runOne(action, memory));
   }
   return { results, memory };
 }
