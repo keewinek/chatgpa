@@ -6,6 +6,6 @@
     "dev": "deno run --watch -A main.ts"
   },
   "imports": {
-    "hono": "npm:hono@^4.11.3"
+    "hono": "jsr:@hono/hono@^4"
   }
 }
