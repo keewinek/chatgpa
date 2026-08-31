@@ -28,3 +28,21 @@ Deno.test("memory.forget removes fact", () => {
   assertEquals(results[0].ok, true);
   assertEquals(memory, ["Inny"]);
 });
+
+Deno.test("file.send stores downloadable file", () => {
+  const { results } = executeActions(
+    [{
+      tool: "file.send",
+      args: {
+        name: "quiz.txt",
+        content: "Pytanie 1: …",
+        mimeType: "text/plain",
+      },
+    }],
+    [],
+  );
+  assertEquals(results[0].ok, true);
+  assertEquals(results[0].attachment?.name, "quiz.txt");
+  assertEquals(results[0].attachment?.mimeType, "text/plain");
+  assertEquals(results[0].output?.includes("/api/files/"), true);
+});

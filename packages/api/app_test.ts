@@ -53,3 +53,28 @@ Deno.test("POST /api/chat without keys returns 503", async () => {
     }
   }
 });
+
+Deno.test("POST /api/upload stores file", async () => {
+  const app = createApp();
+  const form = new FormData();
+  form.append("file", new File(["test body"], "note.txt", { type: "text/plain" }));
+
+  const res = await app.request("/api/upload", {
+    method: "POST",
+    body: form,
+  });
+  assertEquals(res.status, 200);
+  const body = await res.json() as { id: string; name: string; url: string };
+  assertEquals(body.name, "note.txt");
+  assertEquals(body.url, `/api/files/${body.id}`);
+
+  const fileRes = await app.request(body.url);
+  assertEquals(fileRes.status, 200);
+  assertEquals(await fileRes.text(), "test body");
+});
+
+Deno.test("GET /api/files missing returns 404", async () => {
+  const app = createApp();
+  const res = await app.request("/api/files/nie-istnieje");
+  assertEquals(res.status, 404);
+});

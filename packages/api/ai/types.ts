@@ -1,6 +1,6 @@
-import type { ChatMessage, ChatRole } from "@chatgpa/core";
+import type { ChatAttachment, ChatMessage, ChatRole } from "@chatgpa/core";
 
-export type { ChatMessage, ChatRole };
+export type { ChatAttachment, ChatMessage, ChatRole };
 
 export interface AiAttempt {
   provider: string;
@@ -39,6 +39,7 @@ export interface ToolResultPublic {
   ok: boolean;
   output?: string;
   error?: string;
+  attachment?: ChatAttachment;
 }
 
 export interface ChatRequestBody {
@@ -49,10 +50,11 @@ export interface ChatRequestBody {
 }
 
 export interface ChatResponseBody {
-  message: { role: "assistant"; content: string };
+  message: { role: "assistant"; content: string; attachments?: ChatAttachment[] };
   model: string;
   provider: string;
   attempts: AiAttempt[];
   memory: string[];
   toolResults: ToolResultPublic[];
+  attachments?: ChatAttachment[];
 }

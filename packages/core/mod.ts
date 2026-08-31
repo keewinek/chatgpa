@@ -1,1 +1,1 @@
-export type { ChatMessage, ChatRole } from "./types.ts";
+export type { ChatAttachment, ChatMessage, ChatRole } from "./types.ts";

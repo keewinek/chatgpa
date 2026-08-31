@@ -1,5 +1,26 @@
 import { buildMemoryBlock } from "./tools.ts";
+import {
+  attachmentTextSnippet,
+  bytesToBase64,
+  describeAttachment,
+  getFile,
+  messagesNeedVision,
+} from "../files/store.ts";
+import { isVisionMime } from "../files/mime.ts";
 import type { ChatMessage, ModelSlot } from "./types.ts";
+
+type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
+
+type OpenAiContentPart =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
+type OpenAiMessage = {
+  role: string;
+  content: string | OpenAiContentPart[];
+};
 
 /**
  * Cascade order: smartest free models first, dumbest last.
@@ -78,6 +99,7 @@ Dostępne narzędzia:
 - memory.forget — usuń fakt (args.text)
 - datetime.now — aktualna data i czas (Warszawa)
 - calc.eval — oblicz wyrażenie (args.expression, np. "(2+3)*4")
+- file.send — wyślij plik do ucznia (args.name, args.content, opcjonalnie args.mimeType jak text/plain lub text/markdown)
 
 Możesz zwrócić kilka bloków chatgpa-action w jednej odpowiedzi. Po narzędziu kontynuujesz rozmowę normalnie.`;
 
@@ -103,10 +125,14 @@ function getApiKey(envName: string): string | undefined {
 }
 
 /** Active slots sorted by priority desc (smart → dumb). */
-export function availableSlots(forceModel?: string): ModelSlot[] {
-  const slots = MODEL_CASCADE
+export function availableSlots(forceModel?: string, visionOnly = false): ModelSlot[] {
+  let slots = MODEL_CASCADE
     .filter((s) => getApiKey(s.apiKeyEnv))
     .sort((a, b) => b.priority - a.priority);
+
+  if (visionOnly) {
+    slots = slots.filter((s) => s.provider === "gemini");
+  }
 
   if (forceModel) {
     return slots.filter((s) => s.model === forceModel);
@@ -124,6 +150,76 @@ export function listPublicModels() {
   }));
 }
 
+async function buildGeminiParts(message: ChatMessage): Promise<GeminiPart[]> {
+  const parts: GeminiPart[] = [];
+  const textChunks: string[] = [];
+
+  if (message.content.trim()) textChunks.push(message.content.trim());
+
+  for (const att of message.attachments ?? []) {
+    const file = getFile(att.id);
+    if (!file) continue;
+
+    if (isVisionMime(file.mimeType)) {
+      parts.push({
+        inlineData: {
+          mimeType: file.mimeType,
+          data: bytesToBase64(file.bytes),
+        },
+      });
+      continue;
+    }
+
+    const snippet = await attachmentTextSnippet(file);
+    if (snippet) {
+      textChunks.push(`Treść pliku „${file.name}”:\n${snippet}`);
+    } else {
+      textChunks.push(describeAttachment(file));
+    }
+  }
+
+  if (textChunks.length > 0) {
+    parts.unshift({ text: textChunks.join("\n\n") });
+  }
+
+  return parts.length > 0 ? parts : [{ text: "(pusta wiadomość)" }];
+}
+
+async function buildOpenAiParts(message: ChatMessage): Promise<OpenAiContentPart[]> {
+  const parts: OpenAiContentPart[] = [];
+  const textChunks: string[] = [];
+
+  if (message.content.trim()) textChunks.push(message.content.trim());
+
+  for (const att of message.attachments ?? []) {
+    const file = getFile(att.id);
+    if (!file) continue;
+
+    if (file.mimeType.startsWith("image/")) {
+      parts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${file.mimeType};base64,${bytesToBase64(file.bytes)}`,
+        },
+      });
+      continue;
+    }
+
+    const snippet = await attachmentTextSnippet(file);
+    if (snippet) {
+      textChunks.push(`Treść pliku „${file.name}”:\n${snippet}`);
+    } else {
+      textChunks.push(describeAttachment(file));
+    }
+  }
+
+  if (textChunks.length > 0) {
+    parts.unshift({ type: "text", text: textChunks.join("\n\n") });
+  }
+
+  return parts.length > 0 ? parts : [{ type: "text", text: "(pusta wiadomość)" }];
+}
+
 async function callOpenAiCompat(
   provider: string,
   model: string,
@@ -134,6 +230,20 @@ async function callOpenAiCompat(
   const cfg = OPENAI_COMPAT[provider];
   if (!cfg) throw new Error(`Unknown OpenAI-compat provider: ${provider}`);
 
+  const openAiMessages: OpenAiMessage[] = [];
+  for (const m of messages) {
+    if (m.role === "system") {
+      openAiMessages.push({ role: "system", content: m.content });
+      continue;
+    }
+    const parts = await buildOpenAiParts(m);
+    const hasOnlyText = parts.length === 1 && parts[0].type === "text";
+    openAiMessages.push({
+      role: m.role,
+      content: hasOnlyText ? (parts[0] as { type: "text"; text: string }).text : parts,
+    });
+  }
+
   const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
@@ -143,7 +253,7 @@ async function callOpenAiCompat(
     },
     body: JSON.stringify({
       model,
-      messages,
+      messages: openAiMessages,
       temperature: 0.7,
     }),
     signal,
@@ -171,7 +281,7 @@ async function callGemini(
   signal?: AbortSignal,
 ): Promise<string> {
   const systemParts: string[] = [];
-  const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
+  const contents: Array<{ role: string; parts: GeminiPart[] }> = [];
 
   for (const m of messages) {
     if (m.role === "system") {
@@ -180,7 +290,7 @@ async function callGemini(
     }
     contents.push({
       role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
+      parts: await buildGeminiParts(m),
     });
   }
 
@@ -229,6 +339,10 @@ export async function invokeSlot(
     return await callGemini(slot.model, apiKey, messages, signal);
   }
   return await callOpenAiCompat(slot.provider, slot.model, apiKey, messages, signal);
+}
+
+export function cascadeNeedsVision(messages: ChatMessage[]): boolean {
+  return messagesNeedVision(messages);
 }
 
 export function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {

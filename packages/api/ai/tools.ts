@@ -1,10 +1,18 @@
 import type { ChatAction } from "./actions.ts";
+import { putFile, toAttachment } from "../files/store.ts";
+import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
 
 export interface ToolResult {
   tool: string;
   ok: boolean;
   output?: string;
   error?: string;
+  attachment?: {
+    id: string;
+    name: string;
+    mimeType: string;
+    size?: number;
+  };
 }
 
 export interface ToolRunSummary {
@@ -83,6 +91,35 @@ function runOne(action: ChatAction, memory: string[]): ToolResult {
       try {
         const value = safeCalc(expression);
         return { tool: action.tool, ok: true, output: String(value) };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "file.send": {
+      const rawName = typeof args.name === "string" ? args.name.trim() : "plik.txt";
+      const content = typeof args.content === "string" ? args.content : "";
+      const mimeArg = typeof args.mimeType === "string" ? args.mimeType : "text/plain";
+      if (!content.trim()) return { tool: action.tool, ok: false, error: "Brak pola content" };
+      try {
+        const name = sanitizeFilename(rawName);
+        const mimeType = normalizeMimeType(mimeArg, name);
+        const stored = putFile({
+          name,
+          mimeType,
+          bytes: new TextEncoder().encode(content),
+        });
+        const attachment = toAttachment(stored);
+        const url = `/api/files/${stored.id}`;
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `Plik gotowy: ${url}`,
+          attachment,
+        };
       } catch (err) {
         return {
           tool: action.tool,

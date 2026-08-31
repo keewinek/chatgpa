@@ -2,6 +2,7 @@ import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
 import { withMemoryContext } from "./providers.ts";
 import { buildMemoryBlock, executeActions, formatToolResults } from "./tools.ts";
+import type { ChatAttachment } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage } from "./types.ts";
 
 const MAX_TOOL_ROUNDS = 2;
@@ -14,6 +15,7 @@ export interface ChatRunResult {
   attempts: AiAttempt[];
   memory: string[];
   toolResults: Array<{ tool: string; ok: boolean; output?: string; error?: string }>;
+  attachments: ChatAttachment[];
 }
 
 export interface ChatRunFailure {
@@ -32,6 +34,7 @@ export async function runChat(
   const memory = [...(options.memory ?? [])];
   const allAttempts: AiAttempt[] = [];
   const allToolResults: ChatRunResult["toolResults"] = [];
+  const allAttachments: ChatAttachment[] = [];
 
   let conversation = withMemoryContext(messages, memory);
 
@@ -55,11 +58,15 @@ export async function runChat(
         attempts: allAttempts,
         memory,
         toolResults: allToolResults,
+        attachments: allAttachments,
       };
     }
 
     const { results } = executeActions(actions, memory);
     allToolResults.push(...results);
+    for (const r of results) {
+      if (r.ok && r.attachment) allAttachments.push(r.attachment);
+    }
 
     if (round === MAX_TOOL_ROUNDS - 1) {
       const suffix = results
@@ -73,6 +80,7 @@ export async function runChat(
         attempts: allAttempts,
         memory,
         toolResults: allToolResults,
+        attachments: allAttachments,
       };
     }
 

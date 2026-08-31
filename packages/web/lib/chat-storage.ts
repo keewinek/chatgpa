@@ -1,3 +1,5 @@
+import type { ChatAttachment } from "@chatgpa/core";
+
 export interface StoredMessage {
   id: string;
   role: "user" | "assistant";
@@ -6,6 +8,7 @@ export interface StoredMessage {
   provider?: string;
   error?: boolean;
   toolResults?: Array<{ tool: string; ok: boolean; output?: string; error?: string }>;
+  attachments?: ChatAttachment[];
 }
 
 export interface ChatSession {

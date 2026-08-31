@@ -1,4 +1,4 @@
-import { availableSlots, invokeSlot, withSystemPrompt } from "./providers.ts";
+import { availableSlots, cascadeNeedsVision, invokeSlot, withSystemPrompt } from "./providers.ts";
 import type { AiAttempt, AiResult, ChatMessage } from "./types.ts";
 
 const ATTEMPT_TIMEOUT_MS = 45_000;
@@ -12,14 +12,16 @@ export async function runCascade(
   options?: { skipSystemWrap?: boolean },
 ): Promise<AiResult> {
   const prepared = options?.skipSystemWrap ? messages : withSystemPrompt(messages);
-  const slots = availableSlots(forceModel);
+  const visionOnly = cascadeNeedsVision(prepared);
+  const slots = availableSlots(forceModel, visionOnly);
   const attempts: AiAttempt[] = [];
 
   if (slots.length === 0) {
     return {
       ok: false,
-      error:
-        "Brak skonfigurowanych darmowych kluczy AI. Ustaw GEMINI_API_KEY, GROQ_API_KEY lub OPENROUTER_API_KEY w .env (patrz .env.example).",
+      error: visionOnly
+        ? "Pliki wymagają GEMINI_API_KEY (obrazy i PDF). Ustaw klucz w .env."
+        : "Brak skonfigurowanych darmowych kluczy AI. Ustaw GEMINI_API_KEY, GROQ_API_KEY lub OPENROUTER_API_KEY w .env (patrz .env.example).",
       attempts,
     };
   }

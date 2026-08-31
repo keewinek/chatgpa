@@ -2,6 +2,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import MarkdownBody from "./MarkdownBody.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
+import MessageAttachments from "./MessageAttachments.tsx";
 import {
   type ChatSession,
   type ChatStore,
@@ -14,6 +15,14 @@ import {
   titleFromText,
   upsertSession,
 } from "../lib/chat-storage.ts";
+import {
+  ACCEPTED_FILE_TYPES,
+  createPendingFile,
+  type PendingFile,
+  releasePendingFile,
+  uploadFile,
+} from "../lib/file-upload.ts";
+import type { ChatAttachment } from "@chatgpa/core";
 
 const API_BASE = "";
 
@@ -27,6 +36,8 @@ export default function ChatApp() {
   const loading = useSignal(false);
   const status = useSignal("Sprawdzam modele…");
   const sidebarOpen = useSignal(false);
+  const pendingFiles = useSignal<PendingFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const active = () => getActiveSession(store.value);
@@ -113,12 +124,49 @@ export default function ChatApp() {
     saveStore(next);
   }
 
+  function removePending(localId: string) {
+    const item = pendingFiles.value.find((p) => p.localId === localId);
+    if (item) releasePendingFile(item);
+    pendingFiles.value = pendingFiles.value.filter((p) => p.localId !== localId);
+  }
+
+  function onFilesSelected(fileList: FileList | null) {
+    if (!fileList || loading.value) return;
+    const next = [...pendingFiles.value];
+    for (const file of Array.from(fileList)) {
+      next.push(createPendingFile(file));
+    }
+    pendingFiles.value = next;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function send() {
     const text = input.value.trim();
-    if (!text || loading.value) return;
+    const hasFiles = pendingFiles.value.length > 0;
+    if ((!text && !hasFiles) || loading.value) return;
 
     const session = { ...active() };
-    const userMsg: StoredMessage = { id: uid(), role: "user", content: text };
+    let attachments: ChatAttachment[] = [];
+
+    if (hasFiles) {
+      try {
+        attachments = await Promise.all(
+          pendingFiles.value.map((pending) => uploadFile(pending.file)),
+        );
+      } catch (err) {
+        status.value = err instanceof Error ? err.message : String(err);
+        return;
+      }
+      for (const pending of pendingFiles.value) releasePendingFile(pending);
+      pendingFiles.value = [];
+    }
+
+    const userMsg: StoredMessage = {
+      id: uid(),
+      role: "user",
+      content: text || (attachments.length > 0 ? "Przesłane pliki." : ""),
+      attachments: attachments.length > 0 ? attachments : undefined,
+    };
     session.messages = [...session.messages, userMsg];
     session.updatedAt = Date.now();
     if (session.title === "Nowa rozmowa") session.title = titleFromText(text);
@@ -128,7 +176,11 @@ export default function ChatApp() {
 
     const history = session.messages
       .filter((m) => !m.error)
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({
+        role: m.role,
+        content: m.content,
+        attachments: m.attachments,
+      }));
 
     try {
       const res = await fetch(`${API_BASE}/api/chat`, {
@@ -169,6 +221,7 @@ export default function ChatApp() {
             model: data.model,
             provider: data.provider,
             toolResults: data.toolResults ?? [],
+            attachments: data.message.attachments ?? data.attachments,
           },
         ];
         updated.updatedAt = Date.now();
@@ -258,6 +311,9 @@ export default function ChatApp() {
               {m.role === "assistant" && !m.error
                 ? <MarkdownBody content={m.content} />
                 : <div class="bubble-body">{m.content}</div>}
+              {m.attachments && m.attachments.length > 0 && (
+                <MessageAttachments attachments={m.attachments} />
+              )}
               {m.toolResults && m.toolResults.length > 0 && (
                 <div class="bubble-tools">
                   {m.toolResults.map((t, i) => (
@@ -294,24 +350,70 @@ export default function ChatApp() {
             void send();
           }}
         >
-          <textarea
-            class="chat-input"
-            rows={1}
-            placeholder="Wyślij wiadomość…"
-            value={input.value}
-            onInput={(e) => {
-              input.value = (e.target as HTMLTextAreaElement).value;
-            }}
-            onKeyDown={onKeyDown}
-            disabled={loading.value}
-          />
-          <button
-            class="chat-send"
-            type="submit"
-            disabled={loading.value || !input.value.trim()}
-          >
-            Wyślij
-          </button>
+          {pendingFiles.value.length > 0 && (
+            <div class="composer-attachments">
+              {pendingFiles.value.map((pending) => (
+                <div key={pending.localId} class="composer-attachment">
+                  {pending.previewUrl
+                    ? (
+                      <img
+                        class="composer-attachment-thumb"
+                        src={pending.previewUrl}
+                        alt={pending.file.name}
+                      />
+                    )
+                    : <span class="composer-attachment-icon">📄</span>}
+                  <span class="composer-attachment-name">{pending.file.name}</span>
+                  <button
+                    type="button"
+                    class="composer-attachment-remove"
+                    aria-label="Usuń plik"
+                    onClick={() =>
+                      removePending(pending.localId)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div class="composer-row">
+            <input
+              ref={fileInputRef}
+              type="file"
+              class="composer-file-input"
+              accept={ACCEPTED_FILE_TYPES}
+              multiple
+              onChange={(e) => onFilesSelected((e.target as HTMLInputElement).files)}
+            />
+            <button
+              type="button"
+              class="composer-file-btn"
+              aria-label="Dodaj plik"
+              disabled={loading.value}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              📎
+            </button>
+            <textarea
+              class="chat-input"
+              rows={1}
+              placeholder="Wyślij wiadomość lub plik…"
+              value={input.value}
+              onInput={(e) => {
+                input.value = (e.target as HTMLTextAreaElement).value;
+              }}
+              onKeyDown={onKeyDown}
+              disabled={loading.value}
+            />
+            <button
+              class="chat-send"
+              type="submit"
+              disabled={loading.value || (!input.value.trim() && pendingFiles.value.length === 0)}
+            >
+              Wyślij
+            </button>
+          </div>
         </form>
       </div>
     </div>
