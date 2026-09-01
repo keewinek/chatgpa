@@ -102,6 +102,60 @@ body {
   cursor: not-allowed;
 }
 
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sidebar-nav-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-input);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-nav-btn:hover {
+  color: var(--ink);
+  border-color: rgba(232, 165, 75, 0.35);
+}
+
+.sidebar-nav-btn--active {
+  color: var(--ink);
+  border-color: rgba(232, 165, 75, 0.5);
+  background: var(--accent-soft);
+}
+
+.chat-timetable-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.chat-timetable-btn:hover {
+  border-color: rgba(232, 165, 75, 0.45);
+  background: var(--accent-soft);
+}
+
 .sidebar-list {
   flex: 1;
   overflow-y: auto;
@@ -964,5 +1018,429 @@ body {
   .chat-send {
     grid-column: 1 / -1;
     width: 100%;
+  }
+}
+
+/* ── Timetable ── */
+
+.timetable {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0 1rem 2rem;
+  max-width: 56rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.timetable-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 0 1rem;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 2;
+}
+
+.timetable-back {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.timetable-back:hover {
+  color: var(--ink);
+  border-color: rgba(232, 165, 75, 0.45);
+}
+
+.timetable-header-text {
+  min-width: 0;
+}
+
+.timetable-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.timetable-subtitle {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+
+.timetable-now {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--subject-color, var(--accent));
+}
+
+.timetable-now--live {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--subject-color, var(--accent)) 12%, var(--bg-elevated)),
+    var(--bg-elevated)
+  );
+  border-color: color-mix(in srgb, var(--subject-color, var(--accent)) 35%, var(--line));
+}
+
+.timetable-now--weekend,
+.timetable-now--done {
+  border-left-color: var(--muted);
+}
+
+.timetable-now-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--subject-color, var(--accent));
+  margin-bottom: 0.35rem;
+  animation: pulse-live 2s ease-in-out infinite;
+}
+
+@keyframes pulse-live {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.timetable-now-label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.timetable-now-subject {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.timetable-now-meta,
+.timetable-now-text {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+  line-height: 1.45;
+}
+
+.timetable-section-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.55rem;
+}
+
+.timetable-groups {
+  margin-bottom: 1rem;
+}
+
+.timetable-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.55rem;
+}
+
+.timetable-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.timetable-group-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.timetable-group-btns {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.timetable-group-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-input);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  flex: 1;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.timetable-group-btn:hover {
+  color: var(--ink);
+}
+
+.timetable-group-btn--active {
+  color: var(--ink);
+  border-color: rgba(232, 165, 75, 0.5);
+  background: var(--accent-soft);
+}
+
+.timetable-days {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+}
+
+.timetable-day-tab {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  color: var(--muted);
+  font: inherit;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 3.5rem;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.timetable-day-tab:hover {
+  color: var(--ink);
+}
+
+.timetable-day-tab--active {
+  color: var(--ink);
+  border-color: rgba(232, 165, 75, 0.55);
+  background: var(--accent-soft);
+}
+
+.timetable-day-tab--today:not(.timetable-day-tab--active) {
+  border-color: rgba(232, 165, 75, 0.25);
+}
+
+.timetable-day-short {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.timetable-day-full {
+  font-size: 0.62rem;
+  display: none;
+}
+
+.timetable-lessons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.timetable-lesson {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  border-left: 3px solid var(--subject-color, transparent);
+}
+
+.timetable-lesson--today {
+  background: color-mix(in srgb, var(--bg-elevated) 90%, var(--accent) 10%);
+}
+
+.timetable-lesson--active {
+  border-color: color-mix(in srgb, var(--subject-color, var(--accent)) 40%, var(--line));
+  background: color-mix(in srgb, var(--subject-color, var(--accent)) 8%, var(--bg-elevated));
+}
+
+.timetable-lesson--empty {
+  opacity: 0.55;
+  border-left-color: transparent;
+}
+
+.timetable-lesson-time {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.timetable-lesson-slot {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.timetable-lesson-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.timetable-lesson-subject {
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+
+.timetable-lesson-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.timetable-lesson-empty-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.timetable-lesson-live {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--subject-color, var(--accent));
+  white-space: nowrap;
+}
+
+.timetable-week-overview {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  padding: 0.75rem;
+}
+
+.timetable-week-overview summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  user-select: none;
+}
+
+.timetable-week-overview summary:hover {
+  color: var(--ink);
+}
+
+.timetable-grid-wrap {
+  overflow-x: auto;
+  margin-top: 0.75rem;
+}
+
+.timetable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.timetable-grid th,
+.timetable-grid td {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.35rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.timetable-grid th {
+  color: var(--muted);
+  font-weight: 600;
+  background: var(--bg-input);
+}
+
+.timetable-grid-th--today {
+  color: var(--accent);
+}
+
+.timetable-grid-time {
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 0.65rem;
+}
+
+.timetable-grid-cell {
+  min-width: 3.5rem;
+  background: var(--bg);
+}
+
+.timetable-grid-cell--today {
+  background: color-mix(in srgb, var(--bg) 85%, var(--accent) 15%);
+}
+
+.timetable-grid-cell--active {
+  outline: 2px solid var(--subject-color, var(--accent));
+  outline-offset: -2px;
+}
+
+.timetable-grid-cell--empty {
+  color: var(--muted);
+  opacity: 0.4;
+}
+
+.timetable-grid-subject {
+  display: block;
+  font-weight: 600;
+  color: var(--subject-color, var(--ink));
+}
+
+.timetable-grid-room {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+@media (min-width: 640px) {
+  .timetable-day-full {
+    display: block;
+  }
+
+  .timetable-day-tab {
+    min-width: 5.5rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .timetable-lesson {
+    grid-template-columns: 4.5rem 1fr;
+  }
+
+  .timetable-lesson-live {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: -0.25rem;
   }
 }

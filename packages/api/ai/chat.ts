@@ -3,7 +3,8 @@ import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
 import { withMemoryContext } from "./providers.ts";
 import { executeActions, formatToolResults } from "./tools.ts";
-import type { ChatAttachment } from "@chatgpa/core";
+import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
+import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
 
 const MAX_TOOL_ROUNDS = 2;
@@ -42,14 +43,15 @@ function success(
 
 export async function runChat(
   messages: ChatMessage[],
-  options: { forceModel?: string; memory?: string[] } = {},
+  options: { forceModel?: string; memory?: string[]; groupPrefs?: GroupPrefs } = {},
 ): Promise<ChatRunOutcome> {
   const memory = [...(options.memory ?? [])];
+  const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
   await hydrateMessageFiles(messages);
   const attempts: AiAttempt[] = [];
   const toolResults: ToolResultPublic[] = [];
   const attachments: ChatAttachment[] = [];
-  let conversation = withMemoryContext(messages, memory);
+  let conversation = withMemoryContext(messages, memory, groupPrefs);
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const result = await runCascade(conversation, options.forceModel, { skipSystemWrap: true });
@@ -70,7 +72,7 @@ export async function runChat(
       );
     }
 
-    const { results } = await executeActions(actions, memory);
+    const { results } = await executeActions(actions, memory, groupPrefs);
     toolResults.push(...results);
     for (const r of results) {
       if (r.ok && r.attachment && !attachments.some((a) => a.id === r.attachment!.id)) {
@@ -105,6 +107,7 @@ export async function runChat(
         },
       ],
       memory,
+      groupPrefs,
     );
   }
 

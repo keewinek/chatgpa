@@ -1,4 +1,4 @@
-import type { ChatAttachment } from "@chatgpa/core";
+import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import type { StoredMessage } from "./chat-storage.ts";
 
 const API = "";
@@ -36,6 +36,7 @@ export async function uploadFile(file: File): Promise<ChatAttachment> {
 export async function streamChat(
   messages: StoredMessage[],
   memory: string[],
+  groupPrefs: GroupPrefs,
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> {
   const res = await fetch(`${API}/api/chat/stream`, {
@@ -48,6 +49,7 @@ export async function streamChat(
         attachments: m.attachments,
       })),
       memory,
+      groupPrefs,
     }),
   });
 

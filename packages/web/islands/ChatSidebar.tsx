@@ -6,11 +6,13 @@ interface ChatSidebarProps {
   loading: boolean;
   open: boolean;
   memory: string[];
+  view: "chat" | "timetable";
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
   onClearMemory: () => void;
+  onViewChange: (view: "chat" | "timetable") => void;
 }
 
 export default function ChatSidebar({
@@ -19,11 +21,13 @@ export default function ChatSidebar({
   loading,
   open,
   memory,
+  view,
   onSelect,
   onNew,
   onDelete,
   onClose,
   onClearMemory,
+  onViewChange,
 }: ChatSidebarProps) {
   return (
     <>
@@ -35,6 +39,22 @@ export default function ChatSidebar({
       <aside class={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Historia rozmów">
         <div class="sidebar-top">
           <span class="sidebar-logo">ChatGPA</span>
+          <nav class="sidebar-nav" aria-label="Nawigacja">
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "chat" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("chat")}
+            >
+              💬 Czat
+            </button>
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "timetable" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("timetable")}
+            >
+              📅 Plan lekcji
+            </button>
+          </nav>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
             + Nowa rozmowa
           </button>

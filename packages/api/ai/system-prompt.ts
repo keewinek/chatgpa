@@ -20,5 +20,10 @@ Dostępne narzędzia:
 - datetime.now — data i czas (Warszawa)
 - calc.eval — oblicz wyrażenie (args.expression)
 - file.send — wyślij plik (args.name, args.content, opcjonalnie args.mimeType)
+- timetable.today — dzisiejszy plan lekcji (domyślne grupy)
+- timetable.now — aktualna lub następna lekcja
+- timetable.day — plan na wybrany dzień (args.day: poniedziałek|wtorek|środa|czwartek|piątek)
+
+Masz też pełny plan lekcji w kontekście systemowym — używaj go bez wywoływania narzędzi, gdy wystarczy.
 
 Możesz zwrócić kilka bloków chatgpa-action w jednej odpowiedzi.`;

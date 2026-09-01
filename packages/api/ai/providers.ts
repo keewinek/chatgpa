@@ -9,6 +9,7 @@ import {
 import { MODEL_CASCADE } from "./cascade-config.ts";
 import { SYSTEM_PROMPT } from "./system-prompt.ts";
 import { buildMemoryBlock } from "./tools.ts";
+import { DEFAULT_GROUP_PREFS, formatTimetableForAi, type GroupPrefs } from "@chatgpa/core";
 import type { ChatMessage, ModelSlot } from "./types.ts";
 
 function apiKey(env: string): string | undefined {
@@ -176,8 +177,16 @@ export function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
   return [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 }
 
-export function withMemoryContext(messages: ChatMessage[], memory: string[]): ChatMessage[] {
-  const block = buildMemoryBlock(memory);
-  const system = block ? `${SYSTEM_PROMPT}\n\n${block}` : SYSTEM_PROMPT;
+export function withMemoryContext(
+  messages: ChatMessage[],
+  memory: string[],
+  groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
+): ChatMessage[] {
+  const memoryBlock = buildMemoryBlock(memory);
+  const timetableBlock = `Plan lekcji ucznia (zawsze aktualny — używaj przy planowaniu dnia i odpowiedziach o szkole):\n${
+    formatTimetableForAi(groupPrefs)
+  }`;
+  const parts = [SYSTEM_PROMPT, timetableBlock, memoryBlock].filter(Boolean);
+  const system = parts.join("\n\n");
   return [{ role: "system", content: system }, ...messages.filter((m) => m.role !== "system")];
 }
