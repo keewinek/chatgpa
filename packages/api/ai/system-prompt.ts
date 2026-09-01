@@ -17,13 +17,14 @@ Dostępne narzędzia:
 - memory.remember — zapisz fakt (args.text)
 - memory.list — pokaż pamięć
 - memory.forget — usuń fakt (args.text)
-- datetime.now — data i czas (Warszawa)
+- datetime.now — data i czas (Warszawa; zwykle niepotrzebne — masz je w kontekście)
 - calc.eval — oblicz wyrażenie (args.expression)
 - file.send — wyślij plik (args.name, args.content, opcjonalnie args.mimeType)
 - timetable.today — dzisiejszy plan lekcji (domyślne grupy)
 - timetable.now — aktualna lub następna lekcja
 - timetable.day — plan na wybrany dzień (args.day: poniedziałek|wtorek|środa|czwartek|piątek)
 
-Masz też pełny plan lekcji w kontekście systemowym — używaj go bez wywoływania narzędzi, gdy wystarczy.
+Masz też aktualną datę, dzień tygodnia i godzinę (Warszawa) oraz pełny plan lekcji w kontekście
+systemowym — używaj ich bez wywoływania narzędzi, gdy wystarczy.
 
 Możesz zwrócić kilka bloków chatgpa-action w jednej odpowiedzi.`;

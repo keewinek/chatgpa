@@ -4,6 +4,7 @@ import {
   DEFAULT_GROUP_PREFS,
   formatDaySchedule,
   formatTimetableForAi,
+  formatWarsawDateTime,
   getCurrentLesson,
   getWarsawNow,
   weekdayFromDate,
@@ -50,14 +51,6 @@ function safeCalc(expression: string): number {
     throw new Error("Wynik nie jest liczbą");
   }
   return value;
-}
-
-function warsawNow(): string {
-  return new Intl.DateTimeFormat("pl-PL", {
-    timeZone: "Europe/Warsaw",
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(new Date());
 }
 
 const DAY_ALIASES: Record<string, Weekday> = {
@@ -148,7 +141,7 @@ async function runOne(
       return { tool: action.tool, ok: true, output: `Usunięto: „${removed}”` };
     }
     case "datetime.now": {
-      return { tool: action.tool, ok: true, output: warsawNow() };
+      return { tool: action.tool, ok: true, output: formatWarsawDateTime() };
     }
     case "calc.eval": {
       const expression = typeof args.expression === "string" ? args.expression : "";

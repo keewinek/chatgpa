@@ -24,3 +24,4 @@ export {
   WEEKDAY_SHORT,
   weekdayFromDate,
 } from "./timetable.ts";
+export { formatWarsawDateTime, formatWarsawDateTimeForAi } from "./datetime.ts";
