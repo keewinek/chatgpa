@@ -10,6 +10,7 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 4. Po zmianach: `deno task test` (i sensowny check pakietu, którego dotyczy zmiana).
 5. Branch: pracuj na `main`; **nigdy nie pushuj na `prod`** bez wyraźnej prośby.
 6. Commit + push po zmianach (reguła użytkownika), message po angielsku, konkretny.
+7. **Po zakończeniu epiku z plan-implementacji:** `deno task epic:done` — **obowiązkowe**, przed końcem sesji. Nie edytuj ręcznie `aktualny-prompt.md`.
 
 ## Priorytety produktowe
 
@@ -39,6 +40,25 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 | Style            | `packages/web/assets/styles.css`        |
 | Typy shared      | `packages/core/types.ts`                |
 | Env przykładowy  | `.env.example`                          |
+
+## Plan wieloepikowy (Faza 2+)
+
+Przed większą funkcją przeczytaj [plan-implementacji.md](./plan-implementacji.md).
+**Aktualny prompt do wklejenia:** [aktualny-prompt.md](./aktualny-prompt.md) (auto po `deno task epic:done`).
+Jeden agent = jeden epik (np. tylko DB, tylko FS, tylko pamięć). Nie implementuj wszystkiego naraz.
+
+| Epik | Plik kontekstu |
+| ---- | -------------- |
+| Serwer + DB | [serwer-i-sync.md](./serwer-i-sync.md) |
+| System plików | [system-plikow.md](./system-plikow.md) |
+| Pamięć | [pamiec.md](./pamiec.md) |
+| TODO | [todo.md](./todo.md) |
+| Notatki | [notatki.md](./notatki.md) |
+| Kalendarz | [kalendarz.md](./kalendarz.md) |
+| Plan nauki | [plan-nauki.md](./plan-nauki.md) |
+| Powiadomienia | [powiadomienia.md](./powiadomienia.md) |
+| Komendy | [komendy.md](./komendy.md) |
+| Lazy prompty | [prompty.md](./prompty.md) |
 
 ## Jak aktualizować kontekst
 

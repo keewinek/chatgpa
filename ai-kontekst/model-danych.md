@@ -121,10 +121,58 @@ roiScore ≈ weight * (targetAverage - currentAverage) * urgency(dueDate) * (1 -
 
 Im wyższy score, tym wcześniej w planie dnia / TODO.
 
+## MemoryEntry (short / long)
+
+```ts
+{
+  id: string
+  content: string
+  kind: "short" | "long"
+  createdAt: string
+  expiresAt?: string        // tylko short
+  source: "ai" | "user" | "system"
+  tags?: string[]
+  chatId?: string
+}
+```
+
+Szczegóły: [pamiec.md](./pamiec.md). Long-term odbicie: `~/memory/long-term.memory`.
+
+## FileNode (wirtualny FS)
+
+```ts
+{
+  id: string
+  path: string              // np. ~/notes/chemia/kwasy.md
+  kind: "file" | "directory"
+  mimeType?: string
+  content?: string          // tekst lub ref do blob
+  updatedAt: string
+}
+```
+
+Szczegóły: [system-plikow.md](./system-plikow.md).
+
+## Notification
+
+```ts
+{
+  id: string
+  kind: "daily_plan" | "exam_alert" | "librus_update"
+  title: string
+  body: string
+  chatPrefill?: { role: "assistant"; content: string }
+  payload?: Record<string, unknown>  // todoToday, freeMinutes, ...
+  createdAt: string
+  readAt?: string
+}
+```
+
 ## Storage path
 
 | Faza | Storage                                  |
 | ---- | ---------------------------------------- |
-| 0    | brak (tylko ephemeral chat w pamięci UI) |
-| 1    | localStorage / SQLite / JSON na dysku    |
-| 2+   | PostgreSQL + pgvector (notatki / RAG)    |
+| 0    | localStorage (czat + memory string[])    |
+| 1    | localStorage (historia v2)               |
+| 2    | PostgreSQL + wirtualny FS ([serwer-i-sync.md](./serwer-i-sync.md)) |
+| 3+   | pgvector (RAG po książkach / notatkach)  |

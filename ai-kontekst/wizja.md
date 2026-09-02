@@ -39,7 +39,7 @@ zł**:
 | Cursor (kod)       | ChatGPA (szkoła)                        |
 | ------------------ | --------------------------------------- |
 | Workspace projektu | Profil ucznia + kontekst szkoły         |
-| Pliki / git        | Notatki, materiały, snapshot Librus     |
+| Pliki / git        | Wirtualny FS: `~/notes`, `~/books`, snapshot Librus ([system-plikow.md](./system-plikow.md)) |
 | Agent / chat       | Chat edukacyjny z narzędziami           |
 | Autocomplete       | Sugestie planu nauki                    |
 | Background agents  | Automatyzacje w tle (plan dnia, alerty) |

@@ -6,7 +6,11 @@
     "dev:api": "deno task -f @chatgpa/api dev",
     "build": "deno task -f @chatgpa/web build",
     "start": "deno task -f @chatgpa/web start",
-    "test": "deno test -A --unstable-kv packages/api",
+    "test": "deno test -A --unstable-kv packages/api scripts",
+    "epic:status": "deno run -A scripts/epic.ts status",
+    "epic:done": "deno run -A scripts/epic.ts done",
+    "epic:regen": "deno run -A scripts/epic.ts regen",
+    "epic:set": "deno run -A scripts/epic.ts set",
     "fmt": "deno fmt",
     "lint": "deno lint packages/core packages/api && deno task -f @chatgpa/web lint",
     "check": "deno check packages/core/**/*.ts packages/api/**/*.ts && deno task -f @chatgpa/web check"

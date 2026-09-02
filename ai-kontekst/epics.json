@@ -1,0 +1,82 @@
+{
+  "epics": [
+    {
+      "id": 1,
+      "title": "Serwer + PostgreSQL + Drizzle",
+      "phase": "2A",
+      "body": "Implementuj Fazę 2A ChatGPA: serwer i baza danych.\n\nPrzeczytaj:\n- ai-kontekst/serwer-i-sync.md\n- ai-kontekst/architektura.md\n- ai-kontekst/model-danych.md\n- ai-kontekst/dla-agenta.md\n\nZadanie:\n1. Dodaj PostgreSQL + Drizzle do packages/api (migracje, connection z env DATABASE_URL).\n2. Tabele na start: profile, chat_threads, chat_messages, memory_entries, tasks, file_nodes (wirtualny FS).\n3. Endpointy health sprawdzające DB.\n4. Szkielet sync: GET /api/sync/pull, POST /api/sync/push (minimalna implementacja).\n5. .env.example z DATABASE_URL.\n6. Testy integracyjne z mockiem lub testcontainers jeśli możliwe.\n\nNie rób jeszcze: Librus, powiadomień, pełnego UI sync — tylko backend + migracje."
+    },
+    {
+      "id": 2,
+      "title": "Wirtualny system plików",
+      "phase": "2B",
+      "body": "Implementuj Fazę 2B ChatGPA: wirtualny system plików (metafora OS).\n\nPrzeczytaj:\n- ai-kontekst/system-plikow.md\n- ai-kontekst/serwer-i-sync.md\n\nZadanie:\n1. API /api/fs/* — list, read, write, mkdir, delete (ścieżki sanityzowane pod ~/).\n2. Seed struktury katalogów przy pierwszym uruchomieniu: memory/, todo/, notes/, calendar/, books/, plans/, profile/, school/librus/.\n3. Tools dla agenta: fs.list, fs.read, fs.write (w packages/api/ai/tools.ts).\n4. Prosty panel UI „Pliki” w packages/web (drzewo + podgląd tekstu).\n5. Testy API fs.\n\nZależy od: Faza 2A (DB) — musi być gotowa."
+    },
+    {
+      "id": 3,
+      "title": "Pamięć short/long",
+      "phase": "2C",
+      "body": "Implementuj system pamięci ChatGPA (short + long term).\n\nPrzeczytaj:\n- ai-kontekst/pamiec.md\n- ai-kontekst/system-plikow.md\n- ai-kontekst/komendy.md (sekcja /clear short memory)\n\nZadanie:\n1. MemoryEntry z kind short|long, expiresAt dla short.\n2. Migracja obecnego string[] memory z localStorage → long-term.\n3. Zaktualizuj tools memory.remember|list|forget|clear.\n4. Plik ~/memory/long-term.memory zsynchronizowany z DB.\n5. Cleanup wygasłych wpisów short (lazy lub cron).\n6. Usuń wstrzykiwanie całej pamięci do system promptu — tylko przez tools.\n7. UI: zakładki krótka/długa w sidebarze."
+    },
+    {
+      "id": 4,
+      "title": "Globalna TODO",
+      "phase": "2D",
+      "body": "Implementuj globalny system TODO ChatGPA.\n\nPrzeczytaj:\n- ai-kontekst/todo.md\n- ai-kontekst/system-plikow.md\n\nZadanie:\n1. Plik ~/todo/global.todo + tabela tasks w DB (dual write lub DB jako source of truth).\n2. API CRUD /api/todos.\n3. Tools todo.list, todo.add, todo.update, todo.complete, todo.delete.\n4. Panel UI + komenda /todo (jeśli parser komend istnieje — jeśli nie, sam panel).\n5. Testy parsera .todo i API."
+    },
+    {
+      "id": 5,
+      "title": "Notatki Markdown",
+      "phase": "2E",
+      "body": "Implementuj system notatek Markdown ChatGPA.\n\nPrzeczytaj:\n- ai-kontekst/notatki.md\n- ai-kontekst/system-plikow.md\n\nZadanie:\n1. Notatki w ~/notes/ przez API fs lub dedykowane /api/notes.\n2. UI: lista katalogów + edytor Markdown (split preview).\n3. Tools notes.list, notes.read, notes.write (lub fs.* w notes/).\n4. Komenda /notes otwiera panel."
+    },
+    {
+      "id": 6,
+      "title": "Lazy context + tools",
+      "phase": "2H",
+      "body": "Przeprojektuj kontekst AI ChatGPA na model lazy (tool-based).\n\nPrzeczytaj:\n- ai-kontekst/prompty.md\n- ai-kontekst/pamiec.md\n- ai-kontekst/dla-agenta.md\n\nZadanie:\n1. System prompt: agent NIE dostaje ocen, TODO, kalendarza, pamięci na start — tylko instrukcję użycia tools.\n2. Usuń buildMemoryBlock z domyślnego promptu (memory tylko przez memory.list).\n3. Dodaj tools (stuby OK jeśli brak backendu): grades.get, calendar.list, calendar.freeSlots, todo.list, fs.read.\n4. Dokumentacja w prompcie: kiedy którego toola użyć.\n5. Test: pytanie o oceny bez wcześniejszego sync → agent woła tool, nie zmyśla."
+    },
+    {
+      "id": 7,
+      "title": "Kalendarz + profil czasu",
+      "phase": "2G",
+      "body": "Implementuj kalendarz i profil czasowy użytkownika.\n\nPrzeczytaj:\n- ai-kontekst/kalendarz.md\n- ai-kontekst/plan-nauki.md\n- ai-kontekst/system-plikow.md\n\nZadanie:\n1. Pliki ~/calendar/YYYY-MM.cal + API.\n2. Profil ~/profile/me.profile z: commute 60min, studyEnd 21:00/21:30, notification +30min po lekcjach.\n3. Tool calendar.freeSlots({ date }) — liczy okna nauki wg profilu i planu lekcji (schedule.json stub jeśli brak Librus).\n4. UI widok kalendarza (miesiąc/tydzień).\n5. Formularz edycji profilu czasu."
+    },
+    {
+      "id": 8,
+      "title": "Komendy slash",
+      "phase": "2I",
+      "body": "Implementuj system komend slash w ChatGPA.\n\nPrzeczytaj:\n- ai-kontekst/komendy.md\n\nZadanie:\n1. Parser w packages/web/lib/commands.ts.\n2. Komendy: /plan, /clear short memory, /pomodoro (UI), /todo, /notes, /files.\n3. Autocomplete przy wpisywaniu / w composerze.\n4. Seed prompty po polsku dla /plan i /plan tydzień.\n5. Testy jednostkowe parsera."
+    },
+    {
+      "id": 9,
+      "title": "Pomodoro",
+      "phase": "2J",
+      "body": "Dodaj Pomodoro do ChatGPA (komenda /pomodoro).\n\nPrzeczytaj:\n- ai-kontekst/komendy.md\n\nZadanie:\n1. Island PomodoroTimer: 25/5, start/pause/reset, dźwięk opcjonalny.\n2. Otwieranie z /pomodoro i przycisku w UI.\n3. Styl zgodny z packages/web/assets/styles.css.\n4. Bez integracji z planem dnia na razie."
+    },
+    {
+      "id": 10,
+      "title": "Wtyczka Librus",
+      "phase": "3A",
+      "body": "Zbuduj integrację Librus (wtyczka przeglądarki + endpoint sync).\n\nPrzeczytaj:\n- ai-kontekst/librus.md\n- ai-kontekst/kalendarz.md\n- ai-kontekst/system-plikow.md\n\nZadanie:\n1. packages/extension (lub osobny folder) — content script na librus.pl.\n2. Pobierz: oceny, plan lekcji, terminarz, zmiany planu.\n3. POST /api/librus/sync → zapis do ~/school/librus/*.json + merge calendar.\n4. Przycisk „Sync Librus” w UI + timestamp.\n5. AI-assisted merge: endpoint lub job który porównuje snapshoty (nie ślepe nadpisanie).\n\nBezpieczeństwo: hasło Librus nie idzie do ChatGPA."
+    },
+    {
+      "id": 11,
+      "title": "Plan nauki + cron",
+      "phase": "3B",
+      "body": "Implementuj automatyczny plan nauki i anty-prokrastynację.\n\nPrzeczytaj:\n- ai-kontekst/plan-nauki.md\n- ai-kontekst/kalendarz.md\n- ai-kontekst/todo.md\n- ai-kontekst/powiadomienia.md\n\nZadanie:\n1. Deno.cron: generuj plan dzienny (plik ~/plans/YYYY-MM-DD.plan).\n2. Rozkładaj naukę przed sprawdzianami od T-7 (małe porcje).\n3. Aktualizuj todo.scheduledFor i study_block w kalendarzu.\n4. Endpoint POST /api/plan/generate?date=...\n5. Jedno wywołanie AI z wąskim promptem (dane z tools/DB, nie pełny chat)."
+    },
+    {
+      "id": 12,
+      "title": "Powiadomienia",
+      "phase": "3C",
+      "body": "Implementuj powiadomienia ChatGPA.\n\nPrzeczytaj:\n- ai-kontekst/powiadomienia.md\n- ai-kontekst/plan-nauki.md\n\nZadanie:\n1. Cron: 30 min po ostatniej lekcji (z schedule.json) → utwórz notification + wiadomość czatu.\n2. Kliknięcie powiadomienia → nowy czat z prefill wiadomością agenta + lista TODO na dziś + budżet minut.\n3. In-app lista powiadomień (banner).\n4. Service worker + Web Push (VAPID) — opcjonalnie w tym samym PR jeśli czas.\n5. Negocjacja: odpowiedź użytkownika w czacie → przesunięcie planu (hook do istniejących tools)."
+    },
+    {
+      "id": 13,
+      "title": "Sync czatów multi-device",
+      "phase": "2F",
+      "body": "Przenieś historię czatów z localStorage na serwer z sync.\n\nPrzeczytaj:\n- ai-kontekst/serwer-i-sync.md\n- packages/web/lib/chat-storage.ts\n\nZadanie:\n1. CRUD /api/threads i messages.\n2. Migracja jednorazowa z localStorage.\n3. Klient: pull on start, push po wysłaniu wiadomości.\n4. IndexedDB jako cache offline.\n5. Zachowaj kompatybilność wsteczną do czasu migracji."
+    }
+  ]
+}

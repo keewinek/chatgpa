@@ -9,40 +9,60 @@ mieli wspólne źródło prawdy.
 ## Jak czytać (dla agenta)
 
 1. Ten plik + [dla-agenta.md](./dla-agenta.md).
-2. [wizja.md](./wizja.md) i [zasady.md](./zasady.md).
-3. Przed kodem AI: [AI-dostawcy.md](./AI-dostawcy.md).
-4. Przed UI: [ui-ux.md](./ui-ux.md).
-5. Przed danymi / sync: [model-danych.md](./model-danych.md), [librus.md](./librus.md).
+2. **Plan pracy:** [plan-implementacji.md](./plan-implementacji.md) — fazy + prompty do wklejenia.
+3. [wizja.md](./wizja.md) i [zasady.md](./zasady.md).
+4. Przed kodem AI: [AI-dostawcy.md](./AI-dostawcy.md), [prompty.md](./prompty.md).
+5. Przed danymi / sync: [serwer-i-sync.md](./serwer-i-sync.md), [system-plikow.md](./system-plikow.md).
+6. Przed Librus: [librus.md](./librus.md).
 
-## Pliki
+## Pliki — rdzeń
 
 | Plik                                     | O czym                                    |
 | ---------------------------------------- | ----------------------------------------- |
 | [dla-agenta.md](./dla-agenta.md)         | Jak agent ma pracować z tym repo          |
+| [plan-implementacji.md](./plan-implementacji.md) | Fazy, zależności — sekcja na górze auto z `epic:done` |
+| [aktualny-prompt.md](./aktualny-prompt.md) | **👉 Skopiuj ten plik do nowego agenta** |
 | [wizja.md](./wizja.md)                   | Czym jest ChatGPA — „Cursor do szkoły”    |
 | [zasady.md](./zasady.md)                 | Twarde reguły produktu i techniczne       |
-| [tryby-agenta.md](./tryby-agenta.md)     | Ask / Plan / Agent / Focus jak w Cursorze |
 | [architektura.md](./architektura.md)     | Stack Deno, monorepo, przepływy           |
-| [model-danych.md](./model-danych.md)     | Encje: profil, oceny, TODO, wiedza        |
-| [AI-dostawcy.md](./AI-dostawcy.md)       | Kaskada darmowych modeli (mądry → głupi)  |
-| [prompty.md](./prompty.md)               | System prompt, packing kontekstu          |
-| [ui-ux.md](./ui-ux.md)                   | Chat-first UI, panele, PWA                |
-| [librus.md](./librus.md)                 | Integracja z Librusem (wtyczka / sync)    |
-| [powiadomienia.md](./powiadomienia.md)   | Plan dnia, alerty, Web Push               |
-| [bezpieczenstwo.md](./bezpieczenstwo.md) | Klucze, dane szkolne, prywatność          |
+| [roadmap.md](./roadmap.md)               | Checklist faz                             |
 | [decyzje.md](./decyzje.md)               | Log decyzji (ADR-lite)                    |
-| [roadmap.md](./roadmap.md)               | Co robimy teraz / potem                   |
+
+## Pliki — funkcje (Faza 2+)
+
+| Plik                                     | O czym                                    |
+| ---------------------------------------- | ----------------------------------------- |
+| [pamiec.md](./pamiec.md)                 | Short-term + long-term memory             |
+| [komendy.md](./komendy.md)               | Slash commands (`/plan`, `/pomodoro`, …)  |
+| [system-plikow.md](./system-plikow.md)   | Metafora OS — pliki, rozszerzenia, `fs.*` |
+| [todo.md](./todo.md)                     | Globalna lista zadań                      |
+| [notatki.md](./notatki.md)               | Notatki Markdown na serwerze              |
+| [serwer-i-sync.md](./serwer-i-sync.md)   | PostgreSQL, sync telefon ↔ komputer       |
+| [kalendarz.md](./kalendarz.md)           | Kalendarz, czas wolny, profil czasu       |
+| [plan-nauki.md](./plan-nauki.md)         | Plan dnia, anty-prokrastynacja, T-7       |
+| [powiadomienia.md](./powiadomienia.md)   | Push po szkole, klik → czat               |
+| [librus.md](./librus.md)                 | Wtyczka + sync ocen / planu lekcji       |
+
+## Pliki — AI i UI
+
+| Plik                                     | O czym                                    |
+| ---------------------------------------- | ----------------------------------------- |
+| [model-danych.md](./model-danych.md)     | Encje: profil, oceny, TODO, pamięć, FS    |
+| [prompty.md](./prompty.md)               | Lazy context — tools zamiast pełnego pakietu |
+| [tryby-agenta.md](./tryby-agenta.md)     | Ask / Plan / Agent / Focus                |
+| [AI-dostawcy.md](./AI-dostawcy.md)       | Kaskada darmowych modeli                  |
+| [ui-ux.md](./ui-ux.md)                   | Chat-first UI, panele, PWA                |
+| [bezpieczenstwo.md](./bezpieczenstwo.md) | Klucze, dane szkolne, prywatność          |
 
 ## Szybka esencja
 
-ChatGPA to osobisty system edukacyjny: chat jak ChatGPT + planer dnia + tracker nauki + kontekst ze
-szkoły (Librus) + kalendarz + TODO. Backend i frontend w Deno. AI router próbuje wiele darmowych
-dostawców, zawsze od najmądrzejszego modelu do najgłupszego, aż coś odpowie. Pod odpowiedzią widać,
-który model został użyty.
+ChatGPA to osobisty **OS do szkoły**: chat + system plików (`~/todo`, `~/notes`, `~/calendar`, …) +
+pamięć (krótka/długa) + plan nauki + Librus + powiadomienia po szkole. Wszystko na serwerze z sync
+między urządzeniami. AI pobiera kontekst przez **tools**, nie dostaje wszystkiego w prompcie.
 
-## Stan Fazy 0 (zrobione)
+## Stan (wrzesień 2026)
 
-- Chat UI (Fresh island) + badge modelu
-- `POST /api/chat` + `GET /api/ai/models`
-- Kaskada Gemini / Groq / OpenRouter
-- Ten folder kontekstu
+**Zrobione:** chat, streaming, kaskada AI, pamięć v1 (localStorage), załączniki, narzędzia `memory.*`.
+
+**Następne (wg [plan-implementacji.md](./plan-implementacji.md)):** serwer + DB → system plików →
+pamięć short/long → lazy context → TODO/notatki → kalendarz → Librus → powiadomienia.

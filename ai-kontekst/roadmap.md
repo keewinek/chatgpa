@@ -3,54 +3,69 @@
 ## Faza 0 — Chat + darmowe AI ✅
 
 - [x] Folder `ai-kontekst/`
-- [x] Backend AI cascade (Gemini → Groq → OpenRouter → …)
+- [x] Backend AI cascade (Gemini → Groq → …)
 - [x] Endpoint `POST /api/chat` + `GET /api/ai/models`
 - [x] UI chatu + badge modelu
 - [x] `.env.example` z darmowymi kluczami
 - [x] Rozszerzony kontekst (zasady, model danych, prompty, UI, …)
 
-## Faza 1 — Rdzeń osobisty
+## Faza 1 — Rdzeń osobisty (częściowo ✅)
 
 - [x] Historia rozmów (localStorage)
-- [x] Pamięć ucznia (localStorage + narzędzia memory.*)
+- [x] Pamięć ucznia v1 (localStorage + narzędzia memory.*)
 - [x] Markdown w odpowiedziach asystenta
-- [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator)
+- [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator, pliki)
 - [x] Streaming odpowiedzi (SSE via `/api/chat/stream`)
-- [ ] Profil ucznia + ContextPacket w system prompcie
-- [ ] TODO CRUD (API + panel UI)
-- [ ] Kalendarz stub (API + panel)
-- [ ] Komendy `/plan`, `/quiz` (seed prompty)
-- [ ] Plan dnia (generuj + zapisz)
+- [ ] **Kontekst AI v2** — lazy context przez tools ([prompty.md](./prompty.md))
+- [ ] Komendy slash ([komendy.md](./komendy.md))
+- [ ] Pomodoro (`/pomodoro`)
 
-## Faza 2 — Szkoła
+## Faza 2 — Serwer, pliki, sync (NOWA — priorytet)
 
-- [ ] Wtyczka Librus + `POST /api/librus/sync`
+Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
+
+- [ ] PostgreSQL + Drizzle ([serwer-i-sync.md](./serwer-i-sync.md))
+- [ ] Wirtualny system plików `~/` ([system-plikow.md](./system-plikow.md))
+- [ ] Pamięć short-term + long-term ([pamiec.md](./pamiec.md))
+- [ ] Globalna TODO ([todo.md](./todo.md))
+- [ ] Notatki Markdown ([notatki.md](./notatki.md))
+- [ ] Sync czatów multi-device
+- [ ] Kalendarz + profil czasu ([kalendarz.md](./kalendarz.md))
+- [ ] Profil ucznia w `~/profile/me.profile`
+
+## Faza 3 — Szkoła i planowanie
+
+- [ ] Wtyczka Librus + `POST /api/librus/sync` ([librus.md](./librus.md))
+- [ ] Plan dnia / tygodnia + anty-prokrastynacja T-7 ([plan-nauki.md](./plan-nauki.md))
+- [ ] Powiadomienia po szkole (30 min po lekcjach) ([powiadomienia.md](./powiadomienia.md))
+- [ ] Klik powiadomienia → czat z agentem + TODO dziś
+- [ ] Negocjacja planu („dziś lekarz” → przesunięcie)
 - [ ] ROI ranking po syncu
-- [ ] Alerty T-3 / T-1 (in-app → Web Push)
 - [ ] Diff wiedzy / średniej (`/diff`)
 - [ ] Weekly review
 
-## Faza 3 — Nauka głęboka
+## Faza 4 — Nauka głęboka
 
 - [ ] Tracker wiedzy + spaced repetition
 - [ ] Focus mode (timer + quiz)
-- [ ] Tool-calling / `chatgpa-action`
-- [ ] Notatki / RAG (opcjonalnie)
+- [ ] RAG po książkach w `~/books/`
 - [ ] Ollama jako offline slot
 
 ## Nice-to-have
 
 - [ ] Discord webhook
 - [ ] Wykresy średniej
-- [ ] Multi-device sync (gdy DB)
+- [ ] Eksport backup `~/` jako zip
 - [ ] Privacy mode (tylko lokalne modele)
 
-## Definition of Done — Faza 0
+## Definition of Done — osobisty produkt (cel)
 
-Możesz otworzyć web UI, napisać wiadomość, dostać odpowiedź z darmowego AI i zobaczyć pod spodem
-który model odpowiedział. Jeśli jeden dostawca padnie, kolejny przejmuje bez Twojej interwencji.
+- Telefon i laptop: te same czaty, TODO, notatki, pamięć
+- Agent używa tools zamiast pełnego kontekstu w prompcie
+- Powiadomienie po szkole z planem na dziś
+- Librus: oceny + plan lekcji
+- `/clear short memory`, `/plan`, `/pomodoro` działają
 
-## Definition of Done — Faza 1
+## Kontekst (wrzesień 2026)
 
-Profil + TODO + kalendarz wpływają na odpowiedzi AI; plan dnia da się wygenerować i zapisać;
-historia czatów przeżywa odświeżenie strony.
+Pełna specyfikacja nowych feature'ów: [plan-implementacji.md](./plan-implementacji.md) + pliki w sekcji „Funkcje” w [README.md](./README.md).

@@ -32,8 +32,44 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** projekt ma rosnąć; chat historii nie wystarczy.
 - **Konsekwencje:** trzeba aktualizować kontekst przy decyzjach.
 
+## 2026-09-02 — Automatyczna kolejka epików (`epic:done`)
+
+- **Decyzja:** `deno task epic:done` po każdym agencie regeneruje `aktualny-prompt.md` i sekcję w `plan-implementacji.md`.
+- **Kontekst:** użytkownik nie chce ręcznie podmieniać promptów; stan w `epic-state.json`, treści w `epics.json`.
+- **Konsekwencje:** agent **musi** uruchomić `epic:done` przed końcem sesji; `dla-agenta.md` punkt 7.
+
 ## Oczekujące
 
-- Storage Fazy 1: localStorage vs SQLite vs Postgres od razu?
-- Extension w monorepo vs osobne repo?
-- Streaming SSE od razu po historii chatów, czy później?
+- Storage Fazy 2: **PostgreSQL** (rekomendacja) — patrz [serwer-i-sync.md](./serwer-i-sync.md)
+- Extension w monorepo `packages/extension` vs osobne repo — przy starcie Librus
+- Streaming SSE — ✅ zrobione
+
+## 2026-09-02 — Architektura „OS + pliki”
+
+- **Decyzja:** dane użytkownika jako wirtualny FS (`~/todo`, `~/notes`, `~/calendar`, …) + DB jako source of truth.
+- **Kontekst:** sync multi-device, agent i user widzą te same pliki, rozszerzenia `.todo`, `.cal`, `.plan`, `.memory`.
+- **Konsekwencje:** epik system-plików przed TODO/notatki/pamięć; tools `fs.*`.
+
+## 2026-09-02 — Pamięć short vs long
+
+- **Decyzja:** short-term z `expiresAt`; long-term w pliku + DB; nie wstrzykiwać całości do promptu.
+- **Kontekst:** `/clear short memory`, kontekst między czatami bez przepełniania tokenów.
+- **Konsekwencje:** migracja z `string[]` memory; nowe tools `memory.clear`.
+
+## 2026-09-02 — Lazy context (tools-first)
+
+- **Decyzja:** agent pobiera oceny, TODO, kalendarz przez tools; deprecated duży ContextPacket w prompcie.
+- **Kontekst:** mniej halucynacji, świeższe dane, skalowalność.
+- **Konsekwencje:** przebudowa system-prompt.ts; nowe tools `grades.*`, `calendar.*`, `todo.*`.
+
+## 2026-09-02 — Powiadomienie po szkole
+
+- **Decyzja:** 30 min po ostatniej lekcji; klik → nowy czat z wiadomością agenta + TODO dziś + budżet minut.
+- **Kontekst:** anty-prokrastynacja, negocjacja planu w czacie.
+- **Konsekwencje:** zależy od planu lekcji (Librus) i profilu czasu ([kalendarz.md](./kalendarz.md)).
+
+## 2026-09-02 — Profil czasu (domyślne)
+
+- **Decyzja:** powrót do domu +60 min po lekcjach; koniec nauki 21:00 (max 21:30); +30 min bufor obiadu opcjonalnie.
+- **Kontekst:** wymagania użytkownika dla `calendar.freeSlots`.
+- **Konsekwencje:** pola w `me.profile`.

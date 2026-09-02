@@ -1,80 +1,89 @@
 # Prompty i packing kontekstu
 
-## System prompt (Faza 0 — aktualny)
+## Zasada główna (NOWA)
 
-Zaimplementowany w `packages/api/ai/providers.ts` jako `DEFAULT_SYSTEM_PROMPT`:
+**Agent NIE dostaje pełnego kontekstu ucznia na start.**
+
+Zamiast wielkiego `ContextPacket` w system prompcie:
+- Krótki system prompt z **instrukcją użycia tools**
+- Agent **sam pobiera** dane gdy potrzebuje: oceny, TODO, kalendarz, pamięć, pliki
+
+Powód: mniej tokenów, mniej halucynacji, świeższe dane, skalowalność.
+
+## System prompt (Faza 0 — aktualny, do zmiany)
+
+Zaimplementowany w `packages/api/ai/system-prompt.ts`:
 
 - Tożsamość: ChatGPA, Cursor-do-szkoły.
 - Język: polski.
-- Styl: konkret, bez lania wody.
-- Guardrail: nie wymyślaj ocen/terminów; mów gdy brak kontekstu.
+- Pamięć: **wciąż wstrzykiwana** jako `buildMemoryBlock()` — **do usunięcia** w Fazie 2H.
 
-## Docelowy system prompt (szkic)
+## Docelowy system prompt (lazy context)
 
 ```
 Jesteś ChatGPA — osobisty asystent edukacyjny (jak Cursor, ale do szkoły).
 
 Zasady:
 - Odpowiadaj po polsku, krótko i konkretnie.
-- Nie zmyślaj ocen, terminów ani frekwencji. Jeśli nie ma ich w KONTEKŚCIE — powiedz wprost.
-- Preferuj działania: TODO, bloki nauki, quizy, plan dnia.
-- Gdy użytkownik prosi o plan, podaj checklistę z czasem w minutach.
-- Ton: wspierający korepetytor, nie wykładowca.
-- Na końcu długiej odpowiedzi możesz dodać 1–3 „następne kroki”.
+- NIE zgaduj ocen, terminów ani planu lekcji. Użyj narzędzi:
+  - memory.list — fakty o uczniu
+  - todo.list — zadania
+  - calendar.list / calendar.freeSlots — terminy i wolny czas
+  - fs.read — notatki, plany, snapshot Librus (~/school/librus/grades.json)
+  - grades.summary — średnie i oceny per przedmiot (gdy dostępne)
+- Przed planowaniem dnia: zawsze calendar.freeSlots + todo.list.
+- Nie wymyślaj — jeśli tool zwróci pusty wynik, powiedz wprost i zaproponuj sync Librus.
+- Ton: wspierający korepetytor.
 
-Tryb: {{mode}}  # ask | plan | agent | focus
+Masz dostęp do wirtualnego systemu plików ~ (notatki, todo, kalendarz, książki).
 ```
 
-## ContextPacket
+## ContextPacket → deprecated
 
-Pakiet doklejany do system / pierwszej wiadomości systemowej:
+Stary model (XML w prompcie) zastępujemy **on-demand tools**:
 
-```xml
-<kontekst_ucznia>
-  <profil>...</profil>
-  <cel_sredniej>...</cel_sredniej>
-  <przedmioty>...</przedmioty>
-  <najblizsze_terminy>...</najblizsze_terminy>
-  <todo_otwarte>...</todo_otwarte>
-  <luki_wiedzy>...</luki_wiedzy>
-  <budzet_minut_dzis>...</budzet_minut_dzis>
-</kontekst_ucznia>
-```
+| Stare (w prompcie) | Nowe (tool) |
+| ------------------ | ----------- |
+| `<profil>` | `fs.read("~/profile/me.profile")` |
+| `<todo_otwarte>` | `todo.list({ status: "open" })` |
+| `<najblizsze_terminy>` | `calendar.list({ from, to })` |
+| `<przedmioty>` / oceny | `fs.read("~/school/librus/grades.json")` lub `grades.summary` |
+| Pamięć | `memory.list({ kind })` |
+| Plan lekcji | `fs.read("~/school/librus/schedule.json")` |
 
-### Zasady packingu
+### Wyjątki (mały stały kontekst OK)
 
-1. **Budget tokenów** — najpierw terminy ≤7 dni, TODO open, słabe przedmioty; reszta skrócona.
-2. **Świeżość** — `syncedAt` Librus w pakiecie; jeśli >24h, dodaj ostrzeżenie.
-3. **Prawda** — tylko dane z DB/snapshotu, zero hallucinated grades.
-4. **Prywatność** — nie loguj raw packetów z PII do zewnętrznych serwisów poza AI API.
+- Dzisiejsza data (`datetime.now` lub jedna linia w prompcie)
+- Tryb agenta (`ask` | `plan` | `agent`) jeśli wprowadzimy tryby
+- **Nie** wklejaj listy ocen, całego TODO ani pamięci
 
-## Akcje strukturalne (bez native tools)
+## Zasady packingu (zaktualizowane)
 
-Model może zwrócić:
+1. **Lazy first** — dane tylko przez tools w momencie potrzeby.
+2. **Budget tokenów** — dotyczy wyników tools (truncate długich plików, np. 8k znaków).
+3. **Świeżość** — przy ocenach sprawdź `syncedAt` w snapshot; jeśli >24h, ostrzeż użytkownika.
+4. **Prawda** — tylko dane z tools/DB.
+5. **Background jobs** (plan dnia, powiadomienia) — osobny wąski prompt z **pre-zebranymi** danymi z DB, nie pełna historia czatu.
+
+## Akcje strukturalne
+
+Model zwraca bloki `chatgpa-action` (obecny mechanizm):
 
 ````
 ```chatgpa-action
-{ "type": "todo.add", "title": "Powtórka: kwasy", "subjectId": "chem", "estimatedMinutes": 25 }
+{ "type": "todo.add", "title": "Powtórka: kwasy", "estimatedMinutes": 25 }
 ```
 ````
 
-API parsuje → wykonuje → w odpowiedzi UI: „Dodano TODO”.
+Rozszerzyć o: `memory.remember`, `fs.write`, `calendar.add`, `notes.write`, itd.
 
-## Szablony użytkownika (slash / przyciski)
+## Szablony użytkownika (slash)
 
-| Komenda         | Prompt seed                                               |
-| --------------- | --------------------------------------------------------- |
-| `/plan`         | „Ułóż plan dnia na dziś w ramach budżetu minut…”          |
-| `/roi`          | „Na podstawie ocen i luk wskaż 3 tematy o najwyższym ROI” |
-| `/quiz [temat]` | „Zrób 8 pytań zamkniętych + 2 otwarte z tematu…”          |
-| `/diff`         | „Podsumuj zmiany ocen i wiedzy od ostatniego tygodnia”    |
-| `/focus`        | „Przygotuj sesję Focus 25 min z tematu…”                  |
+Patrz [komendy.md](./komendy.md) — `/plan`, `/quiz`, `/clear short memory`, itd.
 
-## Ewaluacja jakości (manual)
+## Ewaluacja jakości
 
-Przed większą zmianą promptu sprawdź:
-
-1. Pytanie bez kontekstu ocen → model mówi „nie wiem”, nie zmyśla.
-2. Prośba o plan → checklista z minutami.
-3. Ton PL, bez angielskiego boilerplate.
-4. Fallback słabszego modelu nadal użyteczny (nie psuje UX).
+1. „Jaka mam średnia z chemii?” bez sync → agent woła tool, nie zmyśla.
+2. „Ułóż plan na dziś” → agent woła `calendar.freeSlots` + `todo.list` przed odpowiedzią.
+3. Pytanie ogólne (np. „co to jest mitoza”) → **nie** woła tools niepotrzebnie.
+4. Ton PL, fallback modeli nadal użyteczny.
