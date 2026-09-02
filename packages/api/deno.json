@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "exports": "./mod.ts",
   "tasks": {
-    "dev": "deno run --watch -A main.ts"
+    "dev": "deno run --watch -A main.ts",
+    "db:migrate": "deno run -A db/migrate.ts",
+    "db:generate": "deno run -A npm:drizzle-kit generate --config drizzle.config.ts"
   },
   "imports": {
-    "hono": "jsr:@hono/hono@^4"
+    "@electric-sql/pglite": "npm:@electric-sql/pglite@^0.3.16",
+    "drizzle-orm": "npm:drizzle-orm@^0.44.7",
+    "hono": "jsr:@hono/hono@^4",
+    "postgres": "npm:postgres@^3.4.9"
   }
 }

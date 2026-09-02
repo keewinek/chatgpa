@@ -1,4 +1,4 @@
-import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
+import type { MemoryEntry } from "@chatgpa/core";
 import type { StoredMessage } from "./chat-storage.ts";
 
 const API = "";
@@ -13,18 +13,18 @@ export type ChatStreamEvent =
     model: string;
     provider: string;
     attempts: unknown[];
-    memory: string[];
+    memory: MemoryEntry[];
     toolResults: Array<{ tool: string; ok: boolean; output?: string; error?: string }>;
-    attachments?: ChatAttachment[];
+    attachments?: import("@chatgpa/core").ChatAttachment[];
   }
-  | { type: "error"; error: string; attempts: unknown[]; memory: string[] };
+  | { type: "error"; error: string; attempts: unknown[]; memory: MemoryEntry[] };
 
 export async function fetchModels() {
   const res = await fetch(`${API}/api/ai/models`);
   return res.json() as Promise<{ models: Array<{ configured: boolean; label: string }> }>;
 }
 
-export async function uploadFile(file: File): Promise<ChatAttachment> {
+export async function uploadFile(file: File): Promise<import("@chatgpa/core").ChatAttachment> {
   const form = new FormData();
   form.append("file", file);
   const res = await fetch(`${API}/api/upload`, { method: "POST", body: form });
@@ -35,8 +35,8 @@ export async function uploadFile(file: File): Promise<ChatAttachment> {
 
 export async function streamChat(
   messages: StoredMessage[],
-  memory: string[],
-  groupPrefs: GroupPrefs,
+  legacyFacts: string[],
+  groupPrefs: import("@chatgpa/core").GroupPrefs,
   onEvent: (event: ChatStreamEvent) => void,
 ): Promise<void> {
   const res = await fetch(`${API}/api/chat/stream`, {
@@ -48,7 +48,7 @@ export async function streamChat(
         content: m.content,
         attachments: m.attachments,
       })),
-      memory,
+      memory: legacyFacts,
       groupPrefs,
     }),
   });
@@ -59,7 +59,7 @@ export async function streamChat(
       type: "error",
       error: typeof data.error === "string" ? data.error : "Streaming nieudany",
       attempts: data.attempts ?? [],
-      memory: Array.isArray(data.memory) ? data.memory : memory,
+      memory: Array.isArray(data.memory) ? data.memory : [],
     });
     return;
   }

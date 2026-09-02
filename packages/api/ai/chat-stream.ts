@@ -1,8 +1,9 @@
+import type { MemoryEntry } from "@chatgpa/core";
 import { hydrateMessageFiles } from "../files/store.ts";
 import { parseActions, stripActions } from "./actions.ts";
 import { runCascadeStream } from "./cascade.ts";
-import { withMemoryContext } from "./providers.ts";
-import { executeActions, formatToolResults } from "./tools.ts";
+import { withChatContext } from "./providers.ts";
+import { createMemoryStore, executeActions, formatToolResults } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
@@ -19,23 +20,23 @@ export type ChatStreamEvent =
     model: string;
     provider: string;
     attempts: AiAttempt[];
-    memory: string[];
+    memory: MemoryEntry[];
     toolResults: ToolResultPublic[];
     attachments?: ChatAttachment[];
   }
-  | { type: "error"; error: string; attempts: AiAttempt[]; memory: string[] };
+  | { type: "error"; error: string; attempts: AiAttempt[]; memory: MemoryEntry[] };
 
 export async function* runChatStream(
   messages: ChatMessage[],
   options: { forceModel?: string; memory?: string[]; groupPrefs?: GroupPrefs } = {},
 ): AsyncGenerator<ChatStreamEvent> {
-  const memory = [...(options.memory ?? [])];
+  const store = await createMemoryStore(options.memory);
   const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
   await hydrateMessageFiles(messages);
   const allAttempts: AiAttempt[] = [];
   const allToolResults: ToolResultPublic[] = [];
   const allAttachments: ChatAttachment[] = [];
-  let conversation = withMemoryContext(messages, memory, groupPrefs);
+  let conversation = withChatContext(messages, groupPrefs);
   let provider = "";
   let model = "";
 
@@ -54,7 +55,7 @@ export async function* runChatStream(
     allAttempts.push(...cascade.attempts);
 
     if (!cascade.ok) {
-      yield { type: "error", error: cascade.error, attempts: allAttempts, memory };
+      yield { type: "error", error: cascade.error, attempts: allAttempts, memory: store.list() };
       return;
     }
 
@@ -73,14 +74,14 @@ export async function* runChatStream(
         model,
         provider,
         attempts: allAttempts,
-        memory,
+        memory: store.list(),
         toolResults: allToolResults,
         attachments: allAttachments.length ? allAttachments : undefined,
       };
       return;
     }
 
-    const { results } = await executeActions(actions, memory, groupPrefs);
+    const { results } = await executeActions(actions, store, groupPrefs);
     allToolResults.push(...results);
     for (const r of results) {
       if (r.ok && r.attachment && !allAttachments.some((a) => a.id === r.attachment!.id)) {
@@ -101,7 +102,7 @@ export async function* runChatStream(
         model,
         provider,
         attempts: allAttempts,
-        memory,
+        memory: store.list(),
         toolResults: allToolResults,
         attachments: allAttachments.length ? allAttachments : undefined,
       };
@@ -109,7 +110,7 @@ export async function* runChatStream(
     }
 
     yield { type: "replace", text: stripped || "(wywołano narzędzia)" };
-    conversation = withMemoryContext(
+    conversation = withChatContext(
       [
         ...messages,
         { role: "assistant", content: stripped || "(wywołano narzędzia)" },
@@ -120,10 +121,9 @@ export async function* runChatStream(
           }\n\nKontynuuj odpowiedź dla ucznia.`,
         },
       ],
-      memory,
       groupPrefs,
     );
   }
 
-  yield { type: "error", error: "Zbyt wiele rund narzędzi", attempts: allAttempts, memory };
+  yield { type: "error", error: "Zbyt wiele rund narzędzi", attempts: allAttempts, memory: store.list() };
 }

@@ -142,8 +142,8 @@ Dla PDF/książek: `fs.read` zwraca wyciągnięty tekst (jak obecny pipeline za�
 
 ## Definition of Done
 
-- [ ] Wirtualny FS w API + DB
-- [ ] Min. katalogi: `memory/`, `todo/`, `notes/`, `calendar/`, `books/`
-- [ ] Tools `fs.list`, `fs.read`, `fs.write`
-- [ ] UI drzewa plików
-- [ ] Globalna TODO jako `~/todo/global.todo`
+- [x] Wirtualny FS w API + DB
+- [x] Min. katalogi: `memory/`, `todo/`, `notes/`, `calendar/`, `books/`
+- [x] Tools `fs.list`, `fs.read`, `fs.write`
+- [x] UI drzewa plików
+- [x] Globalna TODO jako `~/todo/global.todo`

@@ -21,10 +21,12 @@ export interface ChatSession {
 }
 
 export interface ChatStore {
-  version: 2;
+  version: 3;
   activeSessionId: string;
   sessions: ChatSession[];
-  memory: string[];
+  /** Legacy v2 facts — migrated to server long-term memory on first load. */
+  memory?: string[];
+  memoryMigrated?: boolean;
 }
 
 const STORE_KEY = "chatgpa:v2:store";
@@ -74,12 +76,30 @@ function migrateLegacy(): ChatStore | null {
   localStorage.removeItem(LEGACY_MEMORY_KEY);
 
   return {
-    version: 2,
+    version: 3,
     activeSessionId: id,
     sessions: [session],
     memory: Array.isArray(memory)
       ? memory.filter((s) => typeof s === "string" && s.trim().length > 0)
       : [],
+    memoryMigrated: false,
+  };
+}
+
+function upgradeV2Store(stored: {
+  version?: number;
+  activeSessionId: string;
+  sessions: ChatSession[];
+  memory?: string[];
+}): ChatStore {
+  return {
+    version: 3,
+    activeSessionId: stored.activeSessionId,
+    sessions: stored.sessions,
+    memory: Array.isArray(stored.memory)
+      ? stored.memory.filter((s) => typeof s === "string" && s.trim().length > 0)
+      : [],
+    memoryMigrated: false,
   };
 }
 
@@ -95,11 +115,17 @@ export function createEmptySession(): ChatSession {
 }
 
 export function loadStore(): ChatStore {
-  const stored = readJson<ChatStore>(STORE_KEY);
-  if (stored?.version === 2 && stored.sessions.length > 0) {
+  const stored = readJson<ChatStore & { version?: number }>(STORE_KEY);
+  if (stored?.version === 3 && stored.sessions.length > 0) {
     const activeExists = stored.sessions.some((s) => s.id === stored.activeSessionId);
     if (!activeExists) stored.activeSessionId = stored.sessions[0].id;
     return stored;
+  }
+
+  if (stored?.version === 2 && stored.sessions.length > 0) {
+    const upgraded = upgradeV2Store(stored);
+    saveStore(upgraded);
+    return upgraded;
   }
 
   const migrated = migrateLegacy();
@@ -110,10 +136,10 @@ export function loadStore(): ChatStore {
 
   const session = createEmptySession();
   const fresh: ChatStore = {
-    version: 2,
+    version: 3,
     activeSessionId: session.id,
     sessions: [session],
-    memory: [],
+    memoryMigrated: true,
   };
   saveStore(fresh);
   return fresh;
@@ -128,8 +154,8 @@ export function getActiveSession(store: ChatStore): ChatSession {
   return session ?? store.sessions[0];
 }
 
-export function clearMemory(store: ChatStore): ChatStore {
-  return { ...store, memory: [] };
+export function markMemoryMigrated(store: ChatStore): ChatStore {
+  return { ...store, memory: [], memoryMigrated: true };
 }
 
 export function upsertSession(store: ChatStore, session: ChatSession): ChatStore {
@@ -138,4 +164,9 @@ export function upsertSession(store: ChatStore, session: ChatSession): ChatStore
   if (idx === -1) sessions.unshift(session);
   else sessions[idx] = session;
   return { ...store, sessions: sessions.sort((a, b) => b.updatedAt - a.updatedAt) };
+}
+
+export function getLegacyMemoryFacts(store: ChatStore): string[] {
+  if (store.memoryMigrated) return [];
+  return store.memory ?? [];
 }

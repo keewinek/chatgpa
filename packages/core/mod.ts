@@ -1,4 +1,15 @@
-export type { ChatAttachment, ChatMessage, ChatRole } from "./types.ts";
+export type {
+  ChatAttachment,
+  ChatMessage,
+  ChatRole,
+  MemoryEntry,
+  MemoryKind,
+  MemorySource,
+  Task,
+  TaskPriority,
+  TaskSource,
+  TaskStatus,
+} from "./types.ts";
 export type {
   CurrentLessonInfo,
   GroupPrefs,

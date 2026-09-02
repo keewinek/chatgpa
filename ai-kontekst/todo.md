@@ -69,8 +69,8 @@ Alternatywa: operacje przez `fs.read` / `fs.write` na `global.todo` — **prefer
 
 ## Definition of Done
 
-- [ ] `~/todo/global.todo` + API CRUD
-- [ ] Tools `todo.*` dla agenta
-- [ ] Panel UI + `/todo`
+- [x] `~/todo/global.todo` + API CRUD
+- [x] Tools `todo.*` dla agenta
+- [x] Panel UI + `/todo`
 - [ ] Sync między urządzeniami
 - [ ] Integracja z planem dnia

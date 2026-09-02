@@ -8,10 +8,10 @@
 
 | | |
 | --- | --- |
-| **Epik** | Prompt 1 — Serwer + PostgreSQL + Drizzle |
-| **Faza** | 2A |
+| **Epik** | Prompt 5 — Notatki Markdown |
+| **Faza** | 2E |
 | **Status** | ⏳ **DO ZROBIENIA** |
-| **Następny po tym** | Prompt 2 — Wirtualny system plików |
+| **Następny po tym** | Prompt 6 — Lazy context + tools |
 
 > Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
 
@@ -25,11 +25,11 @@
 
 | # | Epik | Status |
 | --- | --- | --- |
-| 1 | Serwer + PostgreSQL + Drizzle | ⏳ **TERAZ** |
-| 2 | Wirtualny system plików | ⬜ |
-| 3 | Pamięć short/long | ⬜ |
-| 4 | Globalna TODO | ⬜ |
-| 5 | Notatki Markdown | ⬜ |
+| 1 | Serwer + PostgreSQL + Drizzle | ✅ |
+| 2 | Wirtualny system plików | ✅ |
+| 3 | Pamięć short/long | ✅ |
+| 4 | Globalna TODO | ✅ |
+| 5 | Notatki Markdown | ⏳ **TERAZ** |
 | 6 | Lazy context + tools | ⬜ |
 | 7 | Kalendarz + profil czasu | ⬜ |
 | 8 | Komendy slash | ⬜ |

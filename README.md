@@ -86,8 +86,8 @@ Create **one** project from this repo:
 | Build command | `deno task build`                             |
 | Entry / start | `deno task start` (serves `_fresh/server.js`) |
 
-Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_API_KEY`, or
-`OPENROUTER_API_KEY`).
+Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_API_KEY`,
+`ZAI_API_KEY`, `MISTRAL_API_KEY`, or `OPENROUTER_API_KEY` — at least one).
 
 ## API endpoints
 
@@ -108,6 +108,8 @@ Copy `.env.example` to `.env` and fill in **at least one** free AI key.
 | -------------------- | ---------------------------- |
 | `GEMINI_API_KEY`     | Google AI Studio (free)      |
 | `GROQ_API_KEY`       | Groq (free)                  |
+| `ZAI_API_KEY`        | Z.AI GLM Flash (free)        |
+| `MISTRAL_API_KEY`    | Mistral La Plateforme (free) |
 | `OPENROUTER_API_KEY` | OpenRouter `:free` models    |
 | `PORT`               | Only for `deno task dev:api` |
 | Web dev port         | `5173` (Fresh/Vite)          |

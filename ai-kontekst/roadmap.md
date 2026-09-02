@@ -25,10 +25,10 @@
 
 Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
 
-- [ ] PostgreSQL + Drizzle ([serwer-i-sync.md](./serwer-i-sync.md))
-- [ ] Wirtualny system plików `~/` ([system-plikow.md](./system-plikow.md))
-- [ ] Pamięć short-term + long-term ([pamiec.md](./pamiec.md))
-- [ ] Globalna TODO ([todo.md](./todo.md))
+- [x] PostgreSQL + Drizzle ([serwer-i-sync.md](./serwer-i-sync.md))
+- [x] Wirtualny system plików `~/` ([system-plikow.md](./system-plikow.md))
+- [x] Pamięć short-term + long-term ([pamiec.md](./pamiec.md))
+- [x] Globalna TODO ([todo.md](./todo.md))
 - [ ] Notatki Markdown ([notatki.md](./notatki.md))
 - [ ] Sync czatów multi-device
 - [ ] Kalendarz + profil czasu ([kalendarz.md](./kalendarz.md))

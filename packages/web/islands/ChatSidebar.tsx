@@ -1,18 +1,21 @@
+import { useSignal } from "@preact/signals";
+import type { MemoryEntry } from "@chatgpa/core";
 import type { ChatSession } from "../lib/chat-storage.ts";
+import { formatExpiry } from "../lib/memory-api.ts";
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
   activeId: string;
   loading: boolean;
   open: boolean;
-  memory: string[];
-  view: "chat" | "timetable";
+  memory: MemoryEntry[];
+  view: "chat" | "timetable" | "files" | "todo";
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
-  onClearMemory: () => void;
-  onViewChange: (view: "chat" | "timetable") => void;
+  onClearShortMemory: () => void;
+  onViewChange: (view: "chat" | "timetable" | "files" | "todo") => void;
 }
 
 export default function ChatSidebar({
@@ -26,9 +29,15 @@ export default function ChatSidebar({
   onNew,
   onDelete,
   onClose,
-  onClearMemory,
+  onClearShortMemory,
   onViewChange,
 }: ChatSidebarProps) {
+  const memoryTab = useSignal<"short" | "long">("long");
+
+  const shortEntries = memory.filter((e) => e.kind === "short");
+  const longEntries = memory.filter((e) => e.kind === "long");
+  const visible = memoryTab.value === "short" ? shortEntries : longEntries;
+
   return (
     <>
       <div
@@ -53,6 +62,20 @@ export default function ChatSidebar({
               onClick={() => onViewChange("timetable")}
             >
               📅 Plan lekcji
+            </button>
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "todo" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("todo")}
+            >
+              ✅ TODO
+            </button>
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "files" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("files")}
+            >
+              📁 Pliki
             </button>
           </nav>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
@@ -93,26 +116,65 @@ export default function ChatSidebar({
           ))}
         </nav>
 
-        {memory.length > 0 && (
-          <div class="sidebar-memory">
-            <div class="sidebar-memory-head">
-              <span class="sidebar-memory-title">Pamięć</span>
+        <div class="sidebar-memory">
+          <div class="sidebar-memory-head">
+            <span class="sidebar-memory-title">Pamięć</span>
+            {memoryTab.value === "short" && shortEntries.length > 0 && (
               <button
                 type="button"
                 class="sidebar-memory-clear"
                 disabled={loading}
-                onClick={onClearMemory}
+                onClick={onClearShortMemory}
               >
-                Wyczyść
+                Wyczyść krótką
               </button>
-            </div>
-            <ul class="sidebar-memory-list">
-              {memory.map((fact, i) => (
-                <li key={`${i}-${fact}`} class="sidebar-memory-item">{fact}</li>
-              ))}
-            </ul>
+            )}
           </div>
-        )}
+          <div class="sidebar-memory-tabs" role="tablist" aria-label="Rodzaj pamięci">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={memoryTab.value === "short"}
+              class={`sidebar-memory-tab${memoryTab.value === "short" ? " sidebar-memory-tab--active" : ""}`}
+              onClick={() => {
+                memoryTab.value = "short";
+              }}
+            >
+              Krótka ({shortEntries.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={memoryTab.value === "long"}
+              class={`sidebar-memory-tab${memoryTab.value === "long" ? " sidebar-memory-tab--active" : ""}`}
+              onClick={() => {
+                memoryTab.value = "long";
+              }}
+            >
+              Długa ({longEntries.length})
+            </button>
+          </div>
+          {visible.length === 0
+            ? (
+              <p class="sidebar-memory-empty">
+                {memoryTab.value === "short" ? "Brak krótkiej pamięci" : "Brak długiej pamięci"}
+              </p>
+            )
+            : (
+              <ul class="sidebar-memory-list">
+                {visible.map((entry) => (
+                  <li key={entry.id} class="sidebar-memory-item">
+                    <span class="sidebar-memory-content">{entry.content}</span>
+                    {entry.expiresAt && (
+                      <span class="sidebar-memory-expiry">
+                        wygasa: {formatExpiry(entry.expiresAt)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+        </div>
 
         <p class="sidebar-foot">Cursor do szkoły · darmowe AI</p>
       </aside>

@@ -45,10 +45,38 @@ export const MODEL_CASCADE: ModelSlot[] = [
     label: "GPT-OSS 120B (Groq)",
   },
   {
+    provider: "zai",
+    model: "glm-4.7-flash",
+    apiKeyEnv: "ZAI_API_KEY",
+    priority: 68,
+    label: "GLM 4.7 Flash (Z.AI)",
+  },
+  {
+    provider: "zai",
+    model: "glm-4.5-flash",
+    apiKeyEnv: "ZAI_API_KEY",
+    priority: 65,
+    label: "GLM 4.5 Flash (Z.AI)",
+  },
+  {
     provider: "groq",
     model: "openai/gpt-oss-20b",
     apiKeyEnv: "GROQ_API_KEY",
     priority: 60,
     label: "GPT-OSS 20B (Groq)",
+  },
+  {
+    provider: "mistral",
+    model: "mistral-small-latest",
+    apiKeyEnv: "MISTRAL_API_KEY",
+    priority: 58,
+    label: "Mistral Small",
+  },
+  {
+    provider: "mistral",
+    model: "open-mistral-nemo",
+    apiKeyEnv: "MISTRAL_API_KEY",
+    priority: 55,
+    label: "Mistral Nemo 12B",
   },
 ];

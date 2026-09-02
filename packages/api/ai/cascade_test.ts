@@ -16,7 +16,13 @@ Deno.test("listPublicModels mirrors cascade length", () => {
 });
 
 Deno.test("availableSlots empty without keys", () => {
-  const keys = ["GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY"] as const;
+  const keys = [
+    "GEMINI_API_KEY",
+    "GROQ_API_KEY",
+    "OPENROUTER_API_KEY",
+    "ZAI_API_KEY",
+    "MISTRAL_API_KEY",
+  ] as const;
   const backup = Object.fromEntries(keys.map((k) => [k, Deno.env.get(k)]));
   for (const k of keys) Deno.env.delete(k);
   try {

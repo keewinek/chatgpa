@@ -1,8 +1,9 @@
+import type { MemoryEntry } from "@chatgpa/core";
 import { hydrateMessageFiles } from "../files/store.ts";
 import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
-import { withMemoryContext } from "./providers.ts";
-import { executeActions, formatToolResults } from "./tools.ts";
+import { withChatContext } from "./providers.ts";
+import { createMemoryStore, executeActions, formatToolResults } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
@@ -15,7 +16,7 @@ export interface ChatRunResult {
   provider: string;
   model: string;
   attempts: AiAttempt[];
-  memory: string[];
+  memory: MemoryEntry[];
   toolResults: ToolResultPublic[];
   attachments: ChatAttachment[];
 }
@@ -24,7 +25,7 @@ export interface ChatRunFailure {
   ok: false;
   error: string;
   attempts: AiAttempt[];
-  memory: string[];
+  memory: MemoryEntry[];
 }
 
 export type ChatRunOutcome = ChatRunResult | ChatRunFailure;
@@ -34,7 +35,7 @@ function success(
   provider: string,
   model: string,
   attempts: AiAttempt[],
-  memory: string[],
+  memory: MemoryEntry[],
   toolResults: ToolResultPublic[],
   attachments: ChatAttachment[],
 ): ChatRunResult {
@@ -45,18 +46,20 @@ export async function runChat(
   messages: ChatMessage[],
   options: { forceModel?: string; memory?: string[]; groupPrefs?: GroupPrefs } = {},
 ): Promise<ChatRunOutcome> {
-  const memory = [...(options.memory ?? [])];
+  const store = await createMemoryStore(options.memory);
   const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
   await hydrateMessageFiles(messages);
   const attempts: AiAttempt[] = [];
   const toolResults: ToolResultPublic[] = [];
   const attachments: ChatAttachment[] = [];
-  let conversation = withMemoryContext(messages, memory, groupPrefs);
+  let conversation = withChatContext(messages, groupPrefs);
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const result = await runCascade(conversation, options.forceModel, { skipSystemWrap: true });
     attempts.push(...result.attempts);
-    if (!result.ok) return { ok: false, error: result.error, attempts, memory };
+    if (!result.ok) {
+      return { ok: false, error: result.error, attempts, memory: store.list() };
+    }
 
     const actions = parseActions(result.content);
     const stripped = stripActions(result.content);
@@ -66,13 +69,13 @@ export async function runChat(
         result.provider,
         result.model,
         attempts,
-        memory,
+        store.list(),
         toolResults,
         attachments,
       );
     }
 
-    const { results } = await executeActions(actions, memory, groupPrefs);
+    const { results } = await executeActions(actions, store, groupPrefs);
     toolResults.push(...results);
     for (const r of results) {
       if (r.ok && r.attachment && !attachments.some((a) => a.id === r.attachment!.id)) {
@@ -89,13 +92,13 @@ export async function runChat(
         result.provider,
         result.model,
         attempts,
-        memory,
+        store.list(),
         toolResults,
         attachments,
       );
     }
 
-    conversation = withMemoryContext(
+    conversation = withChatContext(
       [
         ...messages,
         { role: "assistant", content: stripped || "(wywołano narzędzia)" },
@@ -106,10 +109,9 @@ export async function runChat(
           }\n\nKontynuuj odpowiedź dla ucznia.`,
         },
       ],
-      memory,
       groupPrefs,
     );
   }
 
-  return { ok: false, error: "Zbyt wiele rund narzędzi", attempts, memory };
+  return { ok: false, error: "Zbyt wiele rund narzędzi", attempts, memory: store.list() };
 }

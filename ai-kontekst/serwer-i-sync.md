@@ -93,7 +93,7 @@ Zobacz [decyzje.md](./decyzje.md) — wpis o storage Fazy 2.
 
 ## Definition of Done
 
-- [ ] PostgreSQL + Drizzle w `packages/api`
+- [x] PostgreSQL + Drizzle w `packages/api`
 - [ ] Czaty na serwerze (nie tylko localStorage)
 - [ ] Sync pull/push między 2 urządzeniami
 - [ ] Pamięć, TODO, notatki na serwerze

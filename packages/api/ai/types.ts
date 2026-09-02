@@ -1,4 +1,4 @@
-import type { ChatAttachment, ChatMessage, ChatRole, GroupPrefs } from "@chatgpa/core";
+import type { ChatAttachment, ChatMessage, ChatRole, GroupPrefs, MemoryEntry } from "@chatgpa/core";
 
 export type { ChatAttachment, ChatMessage, ChatRole };
 
@@ -45,7 +45,7 @@ export interface ToolResultPublic {
 export interface ChatRequestBody {
   messages: ChatMessage[];
   model?: string;
-  /** Facts the client remembers about the student (localStorage). */
+  /** Legacy facts from localStorage — migrated to long-term on server when DB is available. */
   memory?: string[];
   /** Student's lesson group preferences for timetable filtering. */
   groupPrefs?: GroupPrefs;
@@ -56,7 +56,7 @@ export interface ChatResponseBody {
   model: string;
   provider: string;
   attempts: AiAttempt[];
-  memory: string[];
+  memory: MemoryEntry[];
   toolResults: ToolResultPublic[];
   attachments?: ChatAttachment[];
 }

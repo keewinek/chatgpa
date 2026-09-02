@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { listPublicModels, runChat, runChatStream } from "./ai/mod.ts";
 import type { ChatRequestBody } from "./ai/mod.ts";
+import { checkDatabaseHealth, getDb } from "./db/client.ts";
 import {
   ALLOWED_MIME_TYPES,
   MAX_FILE_BYTES,
@@ -8,13 +9,26 @@ import {
   sanitizeFilename,
 } from "./files/mime.ts";
 import { getFile, putFile, toAttachment } from "./files/store.ts";
+import { createFsRoutes } from "./fs/routes.ts";
+import { createMemoryRoutes } from "./memory/routes.ts";
+import { createSyncRoutes } from "./sync/routes.ts";
+import { createTodoRoutes } from "./todo/routes.ts";
 import { isChatMessage, sanitizeGroupPrefs, sanitizeMemory } from "./validate.ts";
 
 export function createApp() {
   const app = new Hono();
 
-  app.get("/api/health", (c) => c.json({ status: "ok" }));
+  app.get("/api/health", async (c) => {
+    const db = await checkDatabaseHealth();
+    const status = db === "error" ? "degraded" : "ok";
+    return c.json({ status, db }, db === "error" ? 503 : 200);
+  });
   app.get("/api/ai/models", (c) => c.json({ models: listPublicModels() }));
+
+  app.route("/api/sync", createSyncRoutes(getDb));
+  app.route("/api/fs", createFsRoutes(getDb));
+  app.route("/api/memory", createMemoryRoutes(getDb));
+  app.route("/api/todos", createTodoRoutes(getDb));
 
   app.post("/api/upload", async (c) => {
     const body = await c.req.parseBody({ all: true }).catch(() => null);

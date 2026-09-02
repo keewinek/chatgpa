@@ -32,6 +32,12 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** projekt ma rosnąć; chat historii nie wystarczy.
 - **Konsekwencje:** trzeba aktualizować kontekst przy decyzjach.
 
+## 2026-09-02 — Z.AI + Mistral w kaskadzie
+
+- **Decyzja:** dodać sloty `zai` (glm-4.7-flash, glm-4.5-flash) i `mistral` (small, nemo) jako OpenAI-compatible fallback.
+- **Kontekst:** więcej darmowych dostawców = mniej 503 przy limitach Gemini/Groq.
+- **Konsekwencje:** `ZAI_API_KEY`, `MISTRAL_API_KEY` w `.env.example`; sync `AI-dostawcy.md`.
+
 ## 2026-09-02 — Statyczny plan lekcji 3A w core
 
 - **Decyzja:** plan tygodnia klasy 3A w `packages/core/timetable.ts` + UI + kontekst AI; `groupPrefs` w localStorage i API.
@@ -44,9 +50,14 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** użytkownik nie chce ręcznie podmieniać promptów; stan w `epic-state.json`, treści w `epics.json`.
 - **Konsekwencje:** agent **musi** uruchomić `epic:done` przed końcem sesji; `dla-agenta.md` punkt 7.
 
+## 2026-09-02 — PostgreSQL + Drizzle (Faza 2A)
+
+- **Decyzja:** PostgreSQL jako source of truth; Drizzle ORM + migracje SQL; sync pull/push po `updatedAt`.
+- **Kontekst:** multi-device sync, tabele: profile, chat_threads, chat_messages, memory_entries, tasks, file_nodes.
+- **Konsekwencje:** `DATABASE_URL` w `.env`; `deno task -f @chatgpa/api db:migrate`; testy integracyjne przez PGLite.
+
 ## Oczekujące
 
-- Storage Fazy 2: **PostgreSQL** (rekomendacja) — patrz [serwer-i-sync.md](./serwer-i-sync.md)
 - Extension w monorepo `packages/extension` vs osobne repo — przy starcie Librus
 - Streaming SSE — ✅ zrobione
 
@@ -67,6 +78,12 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Decyzja:** agent pobiera oceny, TODO, kalendarz przez tools; deprecated duży ContextPacket w prompcie.
 - **Kontekst:** mniej halucynacji, świeższe dane, skalowalność.
 - **Konsekwencje:** przebudowa system-prompt.ts; nowe tools `grades.*`, `calendar.*`, `todo.*`.
+
+## 2026-09-02 — Globalna TODO (DB + plik)
+
+- **Decyzja:** tabela `tasks` jako source of truth; dual-write do `~/todo/global.todo` po każdej mutacji; dedykowane tools `todo.*` zamiast ręcznego parsowania przez `fs.write`.
+- **Kontekst:** agent, API i UI operują na tym samym modelu `Task`; plik `.todo` służy do podglądu w panelu Pliki i syncu.
+- **Konsekwencje:** `/api/todos` CRUD, panel TODO w UI, komenda `/todo` otwiera panel (bez pełnego parsera slash).
 
 ## 2026-09-02 — Powiadomienie po szkole
 

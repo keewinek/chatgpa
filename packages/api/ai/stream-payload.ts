@@ -7,6 +7,8 @@ const OPENAI_BASE: Record<string, { url: string; headers?: Record<string, string
     url: "https://openrouter.ai/api/v1",
     headers: { "HTTP-Referer": "https://github.com/chatgpa", "X-Title": "ChatGPA" },
   },
+  zai: { url: "https://api.z.ai/api/paas/v4" },
+  mistral: { url: "https://api.mistral.ai/v1" },
 };
 
 export interface GeminiPayload {

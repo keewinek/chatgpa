@@ -1,17 +1,21 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import type { MemoryEntry } from "@chatgpa/core";
 import ChatBubble from "./ChatBubble.tsx";
 import ChatComposer from "./ChatComposer.tsx";
 import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import TimetablePanel from "./TimetablePanel.tsx";
+import FilesPanel from "./FilesPanel.tsx";
+import TodoPanel from "./TodoPanel.tsx";
 import {
   type ChatSession,
   type ChatStore,
-  clearMemory,
   createEmptySession,
   getActiveSession,
+  getLegacyMemoryFacts,
   loadStore,
+  markMemoryMigrated,
   saveStore,
   sessionId,
   type StoredMessage,
@@ -27,6 +31,11 @@ import {
   streamChat,
   uploadFile,
 } from "../lib/chat-api.ts";
+import {
+  clearShortMemory,
+  fetchMemory,
+  migrateLegacyMemory,
+} from "../lib/memory-api.ts";
 import { loadGroupPrefs } from "../lib/timetable-storage.ts";
 import type { ChatAttachment } from "@chatgpa/core";
 
@@ -34,31 +43,54 @@ function msgId() {
   return sessionId();
 }
 
-function updateStore(store: ChatStore, session: ChatSession, memory: string[]) {
-  const next = upsertSession({ ...store, memory }, session);
+function updateStore(store: ChatStore, session: ChatSession): ChatStore {
+  const next = upsertSession(store, session);
   saveStore(next);
   return next;
 }
 
+function memorySummary(entries: MemoryEntry[]): string {
+  if (!entries.length) return "";
+  const short = entries.filter((e) => e.kind === "short").length;
+  const long = entries.filter((e) => e.kind === "long").length;
+  const parts: string[] = [];
+  if (long) parts.push(`${long} długich`);
+  if (short) parts.push(`${short} krótkich`);
+  return ` · ${parts.join(", ")}`;
+}
+
 export default function ChatApp() {
   const store = useSignal<ChatStore>(loadStore());
+  const memoryEntries = useSignal<MemoryEntry[]>([]);
   const input = useSignal("");
   const loading = useSignal(false);
   const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
-  const view = useSignal<"chat" | "timetable">("chat");
+  const view = useSignal<"chat" | "timetable" | "files" | "todo">("chat");
   const pending = useSignal<PendingFile[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const session = () => getActiveSession(store.value);
-  const memory = () => store.value.memory;
   const messages = session().messages;
 
+  async function refreshMemory() {
+    const legacy = getLegacyMemoryFacts(store.value);
+    if (legacy.length) {
+      memoryEntries.value = await migrateLegacyMemory(legacy);
+      const next = markMemoryMigrated(store.value);
+      setStore(next);
+      saveStore(next);
+      return;
+    }
+    memoryEntries.value = await fetchMemory();
+  }
+
   useEffect(() => {
+    void refreshMemory();
     fetchModels()
       .then(({ models }) => {
         const ready = models.filter((m) => m.configured);
-        const mem = memory().length ? ` · ${memory().length} faktów` : "";
+        const mem = memorySummary(memoryEntries.value);
         status.value = ready.length
           ? `Online · ${ready.length} modele AI${mem}`
           : "Brak kluczy AI — ustaw GEMINI_API_KEY w Deno Deploy.";
@@ -122,15 +154,21 @@ export default function ChatApp() {
     sidebarOpen.value = false;
   }
 
-  function clearStudentMemory() {
-    const next = clearMemory(store.value);
-    setStore(next);
-    saveStore(next);
+  async function handleClearShortMemory() {
+    if (loading.value) return;
+    memoryEntries.value = await clearShortMemory();
   }
 
   async function send(overrideText?: string) {
     const text = (overrideText ?? input.value).trim();
     if ((!text && !pending.value.length) || loading.value) return;
+
+    if (text === "/todo" || text.startsWith("/todo ")) {
+      view.value = "todo";
+      input.value = "";
+      sidebarOpen.value = false;
+      return;
+    }
 
     let attachments: ChatAttachment[] = [];
     if (pending.value.length) {
@@ -156,24 +194,23 @@ export default function ChatApp() {
     ];
     current.updatedAt = Date.now();
     if (current.title === "Nowa rozmowa" && text) current.title = titleFromText(text);
-    setStore(updateStore(store.value, current, memory()));
+    setStore(updateStore(store.value, current));
     if (!overrideText) input.value = "";
     loading.value = true;
 
-    await completeChat(current.messages.filter((m) => !m.error), memory());
+    const legacyFacts = getLegacyMemoryFacts(store.value);
+    await completeChat(current.messages.filter((m) => !m.error), legacyFacts);
     loading.value = false;
   }
 
   function patchMessage(id: string, patch: Partial<StoredMessage>) {
     const s = session();
     const messages = s.messages.map((m) => (m.id === id ? { ...m, ...patch } : m));
-    setStore(
-      updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, store.value.memory),
-    );
+    setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }));
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
-  async function completeChat(history: StoredMessage[], memBefore: string[]) {
+  async function completeChat(history: StoredMessage[], legacyFacts: string[]) {
     const assistantId = msgId();
     const s = session();
     setStore(updateStore(store.value, {
@@ -185,9 +222,9 @@ export default function ChatApp() {
         streaming: true,
       }],
       updatedAt: Date.now(),
-    }, memBefore));
+    }));
 
-    await streamChat(history, memBefore, loadGroupPrefs(), (event: ChatStreamEvent) => {
+    await streamChat(history, legacyFacts, loadGroupPrefs(), (event: ChatStreamEvent) => {
       if (event.type === "delta") {
         const current = getActiveSession(store.value).messages.find((m) => m.id === assistantId);
         patchMessage(assistantId, { content: (current?.content ?? "") + event.text });
@@ -216,7 +253,8 @@ export default function ChatApp() {
             }
             : m
         );
-        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, event.memory));
+        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }));
+        memoryEntries.value = event.memory;
         return;
       }
       if (event.type === "done") {
@@ -234,10 +272,9 @@ export default function ChatApp() {
             }
             : m
         );
-        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }, event.memory));
-        status.value = `Online · odpowiedź: ${event.model}${
-          event.memory.length ? ` · ${event.memory.length} faktów` : ""
-        }`;
+        setStore(updateStore(store.value, { ...s, messages, updatedAt: Date.now() }));
+        memoryEntries.value = event.memory;
+        status.value = `Online · odpowiedź: ${event.model}${memorySummary(event.memory)}`;
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
       }
     });
@@ -250,9 +287,9 @@ export default function ChatApp() {
     if (!msgs.length || !msgs[msgs.length - 1].error) return;
     msgs.pop();
     const updated = { ...s, messages: msgs, updatedAt: Date.now() };
-    setStore(updateStore(store.value, updated, memory()));
+    setStore(updateStore(store.value, updated));
     loading.value = true;
-    await completeChat(msgs.filter((m) => !m.error), memory());
+    await completeChat(msgs.filter((m) => !m.error), getLegacyMemoryFacts(store.value));
     loading.value = false;
   }
 
@@ -263,7 +300,7 @@ export default function ChatApp() {
         activeId={store.value.activeSessionId}
         loading={loading.value}
         open={sidebarOpen.value}
-        memory={memory()}
+        memory={memoryEntries.value}
         view={view.value}
         onSelect={switchSession}
         onNew={newChat}
@@ -271,7 +308,7 @@ export default function ChatApp() {
         onClose={() => {
           sidebarOpen.value = false;
         }}
-        onClearMemory={clearStudentMemory}
+        onClearShortMemory={() => void handleClearShortMemory()}
         onViewChange={(v) => {
           view.value = v;
           sidebarOpen.value = false;
@@ -282,6 +319,26 @@ export default function ChatApp() {
         ? (
           <div class="chat-main">
             <TimetablePanel
+              onBack={() => {
+                view.value = "chat";
+              }}
+            />
+          </div>
+        )
+        : view.value === "files"
+        ? (
+          <div class="chat-main">
+            <FilesPanel
+              onBack={() => {
+                view.value = "chat";
+              }}
+            />
+          </div>
+        )
+        : view.value === "todo"
+        ? (
+          <div class="chat-main">
+            <TodoPanel
               onBack={() => {
                 view.value = "chat";
               }}
@@ -305,6 +362,29 @@ export default function ChatApp() {
                 <h1 class="chat-title">{session().title}</h1>
                 <p class="chat-status">{status.value}</p>
               </div>
+              <div class="chat-header-actions">
+              <button
+                type="button"
+                class="chat-timetable-btn"
+                aria-label="TODO"
+                title="TODO"
+                onClick={() => {
+                  view.value = "todo";
+                }}
+              >
+                ✅
+              </button>
+              <button
+                type="button"
+                class="chat-timetable-btn"
+                aria-label="Pliki"
+                title="Pliki"
+                onClick={() => {
+                  view.value = "files";
+                }}
+              >
+                📁
+              </button>
               <button
                 type="button"
                 class="chat-timetable-btn"
@@ -316,6 +396,7 @@ export default function ChatApp() {
               >
                 📅
               </button>
+              </div>
             </header>
 
             <div class="chat-messages" role="log" aria-live="polite">

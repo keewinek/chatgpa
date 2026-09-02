@@ -15,7 +15,7 @@ Deno.test("epic regen creates aktualny-prompt.md", async () => {
   assertEquals(code, 0, err);
 
   const prompt = await Deno.readTextFile(join(ROOT, "ai-kontekst/aktualny-prompt.md"));
-  assertEquals(prompt.includes("Prompt 1"), true);
+  assertEquals(prompt.includes("Prompt "), true);
   assertEquals(prompt.includes("deno task epic:done"), true);
 
   const plan = await Deno.readTextFile(join(ROOT, "ai-kontekst/plan-implementacji.md"));

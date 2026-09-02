@@ -5,7 +5,9 @@ Deno.test("GET /api/health returns ok", async () => {
   const app = createApp();
   const res = await app.request("/api/health");
   assertEquals(res.status, 200);
-  assertEquals(await res.json(), { status: "ok" });
+  const body = await res.json() as { status: string; db: string };
+  assertEquals(body.status, "ok");
+  assertEquals(["ok", "unconfigured", "error"].includes(body.db), true);
 });
 
 Deno.test("GET /api/ai/models returns cascade list", async () => {
@@ -29,7 +31,13 @@ Deno.test("POST /api/chat validates body", async () => {
 
 Deno.test("POST /api/chat without keys returns 503", async () => {
   // Ensure no keys leak from the developer env into this unit test.
-  const keys = ["GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY"] as const;
+  const keys = [
+    "GEMINI_API_KEY",
+    "GROQ_API_KEY",
+    "OPENROUTER_API_KEY",
+    "ZAI_API_KEY",
+    "MISTRAL_API_KEY",
+  ] as const;
   const backup = Object.fromEntries(keys.map((k) => [k, Deno.env.get(k)]));
   for (const k of keys) Deno.env.delete(k);
 

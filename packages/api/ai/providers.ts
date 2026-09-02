@@ -8,7 +8,6 @@ import {
 } from "./stream-payload.ts";
 import { MODEL_CASCADE } from "./cascade-config.ts";
 import { SYSTEM_PROMPT } from "./system-prompt.ts";
-import { buildMemoryBlock } from "./tools.ts";
 import {
   DEFAULT_GROUP_PREFS,
   formatTimetableForAi,
@@ -182,17 +181,18 @@ export function withSystemPrompt(messages: ChatMessage[]): ChatMessage[] {
   return [{ role: "system", content: SYSTEM_PROMPT }, ...messages];
 }
 
-export function withMemoryContext(
+export function withChatContext(
   messages: ChatMessage[],
-  memory: string[],
   groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
 ): ChatMessage[] {
-  const memoryBlock = buildMemoryBlock(memory);
   const datetimeBlock = formatWarsawDateTimeForAi();
   const timetableBlock = `Plan lekcji ucznia (zawsze aktualny — używaj przy planowaniu dnia i odpowiedziach o szkole):\n${
     formatTimetableForAi(groupPrefs)
   }`;
-  const parts = [SYSTEM_PROMPT, datetimeBlock, timetableBlock, memoryBlock].filter(Boolean);
+  const parts = [SYSTEM_PROMPT, datetimeBlock, timetableBlock].filter(Boolean);
   const system = parts.join("\n\n");
   return [{ role: "system", content: system }, ...messages.filter((m) => m.role !== "system")];
 }
+
+/** @deprecated Use withChatContext — memory is no longer injected into the prompt. */
+export const withMemoryContext = withChatContext;

@@ -93,9 +93,9 @@ Szczegóły komend: [komendy.md](./komendy.md).
 
 ## Definition of Done
 
-- [ ] Short-term z `expiresAt` i automatycznym cleanup
-- [ ] Long-term w pliku + DB, widoczny w systemie plików
-- [ ] Tools zaktualizowane (`kind`, TTL)
-- [ ] `/clear short memory` działa
-- [ ] Sync między telefonem a komputerem
-- [ ] Agent **nie** dostaje całej pamięci w system prompcie — tylko przez tool
+- [x] Short-term z `expiresAt` i automatycznym cleanup
+- [x] Long-term w pliku + DB, widoczny w systemie plików
+- [x] Tools zaktualizowane (`kind`, TTL)
+- [x] `/clear short memory` działa (API `DELETE /api/memory?kind=short`)
+- [x] Sync między telefonem a komputerem (tabela `memory_entries` + sync)
+- [x] Agent **nie** dostaje całej pamięci w system prompcie — tylko przez tool

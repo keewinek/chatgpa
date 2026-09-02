@@ -3,7 +3,8 @@ import { availableSlots, invokeSlot, streamSlot, withSystemPrompt } from "./prov
 import type { AiAttempt, AiResult, ChatMessage } from "./types.ts";
 
 const TIMEOUT_MS = 45_000;
-const NO_KEYS = "Brak kluczy AI. Ustaw GEMINI_API_KEY, GROQ_API_KEY lub OPENROUTER_API_KEY w .env.";
+const NO_KEYS =
+  "Brak kluczy AI. Ustaw co najmniej jeden: GEMINI_API_KEY, GROQ_API_KEY, ZAI_API_KEY, MISTRAL_API_KEY lub OPENROUTER_API_KEY w .env.";
 const NO_VISION_KEYS = "Pliki wymagają GEMINI_API_KEY (obrazy i PDF).";
 
 export interface StreamCascadeResult {
