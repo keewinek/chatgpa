@@ -2,8 +2,8 @@
 
 ## Cel
 
-Użytkownik wpisuje `/komenda` w composerze czatu → aplikacja wykonuje akcję UI lub wysyła seed prompt do AI.
-Komendy to skróty do częstych akcji — jak w Slacku / Discordzie / Cursorze.
+Użytkownik wpisuje `/komenda` w composerze czatu → aplikacja wykonuje akcję UI lub wysyła seed
+prompt do AI. Komendy to skróty do częstych akcji — jak w Slacku / Discordzie / Cursorze.
 
 ## Parsowanie
 
@@ -25,33 +25,33 @@ Komendy to skróty do częstych akcji — jak w Slacku / Discordzie / Cursorze.
 
 ### A — Akcje UI (bez AI)
 
-| Komenda | Działanie |
-| ------- | --------- |
+| Komenda     | Działanie                                  |
+| ----------- | ------------------------------------------ |
 | `/pomodoro` | Otwiera okno / panel Pomodoro (timer 25/5) |
-| `/focus` | Focus mode — pełny ekran nauki (później) |
-| `/todo` | Otwiera panel globalnej listy TODO |
-| `/notes` | Otwiera przeglądarkę notatek |
-| `/files` | Otwiera system plików (drzewo katalogów) |
-| `/calendar` | Otwiera widok kalendarza |
+| `/focus`    | Focus mode — pełny ekran nauki (później)   |
+| `/todo`     | Otwiera panel globalnej listy TODO         |
+| `/notes`    | Otwiera przeglądarkę notatek               |
+| `/files`    | Otwiera system plików (drzewo katalogów)   |
+| `/calendar` | Otwiera widok kalendarza                   |
 
 ### B — Akcje danych (API, opcjonalnie krótka odpowiedź AI)
 
-| Komenda | Działanie |
-| ------- | --------- |
+| Komenda               | Działanie                                                 |
+| --------------------- | --------------------------------------------------------- |
 | `/clear short memory` | `DELETE` short-term memory → „Wyczyszczono krótką pamięć” |
-| `/clear memory` | Dialog potwierdzenia → czyści short + long |
-| `/sync librus` | Trigger sync z wtyczki / przypomnienie o instalacji |
+| `/clear memory`       | Dialog potwierdzenia → czyści short + long                |
+| `/sync librus`        | Trigger sync z wtyczki / przypomnienie o instalacji       |
 
 ### C — Seed prompty (wysyłane do AI)
 
-| Komenda | Seed (skrót) |
-| ------- | ------------ |
-| `/plan` | „Ułóż plan na dziś z uwzględnieniem wolnego czasu, TODO i terminów…” |
-| `/plan tydzień` | Plan tygodnia z rozłożeniem nauki przed sprawdzianami |
-| `/roi` | 3 tematy o najwyższym ROI na podstawie ocen i terminów |
-| `/quiz [temat]` | 8 pytań zamkniętych + 2 otwarte |
-| `/diff` | Podsumuj zmiany ocen / wiedzy od ostatniego tygodnia |
-| `/review` | Wieczorna retrospektywa dnia |
+| Komenda         | Seed (skrót)                                                         |
+| --------------- | -------------------------------------------------------------------- |
+| `/plan`         | „Ułóż plan na dziś z uwzględnieniem wolnego czasu, TODO i terminów…” |
+| `/plan tydzień` | Plan tygodnia z rozłożeniem nauki przed sprawdzianami                |
+| `/roi`          | 3 tematy o najwyższym ROI na podstawie ocen i terminów               |
+| `/quiz [temat]` | 8 pytań zamkniętych + 2 otwarte                                      |
+| `/diff`         | Podsumuj zmiany ocen / wiedzy od ostatniego tygodnia                 |
+| `/review`       | Wieczorna retrospektywa dnia                                         |
 
 ## Implementacja (techniczna)
 
@@ -73,7 +73,9 @@ Pliki:
 
 ## Powiadomienia a komendy
 
-Kliknięcie powiadomienia „Plan na dziś” ≠ komenda, ale otwiera **nowy czat** z pre-wypełnioną wiadomością asystenta (jakby agent napisał pierwszy). Użytkownik odpowiada normalnie („dziś mam lekarza”).
+Kliknięcie powiadomienia „Plan na dziś” ≠ komenda, ale otwiera **nowy czat** z pre-wypełnioną
+wiadomością asystenta (jakby agent napisał pierwszy). Użytkownik odpowiada normalnie („dziś mam
+lekarza”).
 
 ## Priorytet implementacji
 
@@ -85,7 +87,7 @@ Kliknięcie powiadomienia „Plan na dziś” ≠ komenda, ale otwiera **nowy cz
 
 ## Definition of Done
 
-- [ ] Parser slash commands w composerze
-- [ ] Min. 3 komendy UI + 3 seed + 1 akcja API
-- [ ] Autocomplete przy `/`
+- [x] Parser slash commands w composerze
+- [x] Min. 3 komendy UI + 3 seed + 1 akcja API
+- [x] Autocomplete przy `/`
 - [ ] Dokumentacja komend w UI (help `/?` lub panel)

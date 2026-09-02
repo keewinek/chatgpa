@@ -95,7 +95,12 @@ export default function TodoPanel({ onBack }: TodoPanelProps) {
           <h2 class="todo-title">Globalna TODO</h2>
           <p class="todo-subtitle">~/todo/global.todo · sync z serwerem</p>
         </div>
-        <button type="button" class="todo-refresh" onClick={() => void load()} disabled={loading.value}>
+        <button
+          type="button"
+          class="todo-refresh"
+          onClick={() => void load()}
+          disabled={loading.value}
+        >
           Odśwież
         </button>
       </header>
@@ -130,7 +135,11 @@ export default function TodoPanel({ onBack }: TodoPanelProps) {
             newTitle.value = (e.target as HTMLInputElement).value;
           }}
         />
-        <button type="submit" class="todo-add-btn" disabled={adding.value || !newTitle.value.trim()}>
+        <button
+          type="submit"
+          class="todo-add-btn"
+          disabled={adding.value || !newTitle.value.trim()}
+        >
           Dodaj
         </button>
       </form>
@@ -149,7 +158,8 @@ export default function TodoPanel({ onBack }: TodoPanelProps) {
                       type="checkbox"
                       checked={task.status === "done"}
                       disabled={task.status === "done"}
-                      onChange={() => void handleComplete(task.id)}
+                      onChange={() =>
+                        void handleComplete(task.id)}
                     />
                     <span class="todo-item-title">{task.title}</span>
                   </label>
@@ -165,9 +175,7 @@ export default function TodoPanel({ onBack }: TodoPanelProps) {
                         {priorityLabel(task.priority)}
                       </span>
                     )}
-                    {task.subjectId && (
-                      <span class="todo-item-subject">{task.subjectId}</span>
-                    )}
+                    {task.subjectId && <span class="todo-item-subject">{task.subjectId}</span>}
                   </div>
                   <button
                     type="button"

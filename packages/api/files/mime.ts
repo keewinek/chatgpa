@@ -39,6 +39,7 @@ export function normalizeMimeType(mimeType: string, name: string): string {
 }
 
 export function sanitizeFilename(name: string): string {
+  // deno-lint-ignore no-control-regex
   const base = name.replace(/[/\\<>:"|?*\x00-\x1f]/g, "_").trim();
   return base.length > 0 ? base.slice(0, 180) : "plik";
 }

@@ -186,9 +186,10 @@ export function withChatContext(
   groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
 ): ChatMessage[] {
   const datetimeBlock = formatWarsawDateTimeForAi();
-  const timetableBlock = `Plan lekcji ucznia (zawsze aktualny — używaj przy planowaniu dnia i odpowiedziach o szkole):\n${
-    formatTimetableForAi(groupPrefs)
-  }`;
+  const timetableBlock =
+    `Plan lekcji ucznia (zawsze aktualny — używaj przy planowaniu dnia i odpowiedziach o szkole):\n${
+      formatTimetableForAi(groupPrefs)
+    }`;
   const parts = [SYSTEM_PROMPT, datetimeBlock, timetableBlock].filter(Boolean);
   const system = parts.join("\n\n");
   return [{ role: "system", content: system }, ...messages.filter((m) => m.role !== "system")];

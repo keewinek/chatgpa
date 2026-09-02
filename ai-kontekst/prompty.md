@@ -5,18 +5,20 @@
 **Agent NIE dostaje pełnego kontekstu ucznia na start.**
 
 Zamiast wielkiego `ContextPacket` w system prompcie:
+
 - Krótki system prompt z **instrukcją użycia tools**
 - Agent **sam pobiera** dane gdy potrzebuje: oceny, TODO, kalendarz, pamięć, pliki
 
 Powód: mniej tokenów, mniej halucynacji, świeższe dane, skalowalność.
 
-## System prompt (Faza 0 — aktualny, do zmiany)
+## System prompt (lazy context — aktualny)
 
 Zaimplementowany w `packages/api/ai/system-prompt.ts`:
 
 - Tożsamość: ChatGPA, Cursor-do-szkoły.
 - Język: polski.
-- Pamięć: **wciąż wstrzykiwana** jako `buildMemoryBlock()` — **do usunięcia** w Fazie 2H.
+- **Lazy context:** oceny, TODO, kalendarz, pamięć — tylko przez tools (nie w prompcie na start).
+- Wyjątki wstrzykiwane w `withChatContext`: data/czas + plan lekcji 3A.
 
 ## Docelowy system prompt (lazy context)
 
@@ -42,19 +44,20 @@ Masz dostęp do wirtualnego systemu plików ~ (notatki, todo, kalendarz, książ
 
 Stary model (XML w prompcie) zastępujemy **on-demand tools**:
 
-| Stare (w prompcie) | Nowe (tool) |
-| ------------------ | ----------- |
-| `<profil>` | `fs.read("~/profile/me.profile")` |
-| `<todo_otwarte>` | `todo.list({ status: "open" })` |
-| `<najblizsze_terminy>` | `calendar.list({ from, to })` |
+| Stare (w prompcie)     | Nowe (tool)                                                   |
+| ---------------------- | ------------------------------------------------------------- |
+| `<profil>`             | `fs.read("~/profile/me.profile")`                             |
+| `<todo_otwarte>`       | `todo.list({ status: "open" })`                               |
+| `<najblizsze_terminy>` | `calendar.list({ from, to })`                                 |
 | `<przedmioty>` / oceny | `fs.read("~/school/librus/grades.json")` lub `grades.summary` |
-| Pamięć | `memory.list({ kind })` |
-| Plan lekcji | `fs.read("~/school/librus/schedule.json")` |
+| Pamięć                 | `memory.list({ kind })`                                       |
+| Plan lekcji            | `fs.read("~/school/librus/schedule.json")`                    |
 
 ### Wyjątki (mały stały kontekst OK)
 
 - Dzisiejsza data (`datetime.now` lub blok w prompcie — **już wstrzykiwane**)
-- **Plan lekcji klasy 3A** — wstrzykiwany w `withMemoryContext` + tools `timetable.*` ([plan-lekcji.md](./plan-lekcji.md))
+- **Plan lekcji klasy 3A** — wstrzykiwany w `withMemoryContext` + tools `timetable.*`
+  ([plan-lekcji.md](./plan-lekcji.md))
 - Tryb agenta (`ask` | `plan` | `agent`) jeśli wprowadzimy tryby
 - **Nie** wklejaj listy ocen, całego TODO ani pamięci (pamięć docelowo tylko przez tools)
 
@@ -64,7 +67,8 @@ Stary model (XML w prompcie) zastępujemy **on-demand tools**:
 2. **Budget tokenów** — dotyczy wyników tools (truncate długich plików, np. 8k znaków).
 3. **Świeżość** — przy ocenach sprawdź `syncedAt` w snapshot; jeśli >24h, ostrzeż użytkownika.
 4. **Prawda** — tylko dane z tools/DB.
-5. **Background jobs** (plan dnia, powiadomienia) — osobny wąski prompt z **pre-zebranymi** danymi z DB, nie pełna historia czatu.
+5. **Background jobs** (plan dnia, powiadomienia) — osobny wąski prompt z **pre-zebranymi** danymi z
+   DB, nie pełna historia czatu.
 
 ## Akcje strukturalne
 

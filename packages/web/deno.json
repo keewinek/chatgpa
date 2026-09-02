@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "exports": "./main.ts",
   "tasks": {
+    "lint": "deno lint .",
     "check": "deno fmt --check . && deno lint . && deno check",
     "dev": "vite",
     "build": "vite build",

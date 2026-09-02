@@ -3,6 +3,7 @@
 ## Problem użytkownika
 
 Sprawdzian w piątek → cały tydzień nic → czwartek panika. **ChatGPA ma to łamać:**
+
 - Tydzień wcześniej: „Za tydzień sprawdzian z X — zacznij dziś 20 min”
 - Codziennie: małe zadania zamiast jednego wielkiego bloku
 - Po szkole: powiadomienie z planem na dziś + możliwość negocjacji („mam lekarza”)
@@ -11,7 +12,8 @@ Sprawdzian w piątek → cały tydzień nic → czwartek panika. **ChatGPA ma to
 
 ### Kiedy
 
-**30 minut po zakończeniu ostatniej lekcji** danego dnia — wg planu lekcji z Librus (`schedule.json`).
+**30 minut po zakończeniu ostatniej lekcji** danego dnia — wg planu lekcji z Librus
+(`schedule.json`).
 
 Jeśli brak planu → fallback: stała godzina z profilu lub brak push (tylko wieczorny plan).
 
@@ -30,6 +32,7 @@ Użytkownik odpowiada naturalnie:
 > „Dziś mam korepetycje muzyki, nie dam rady matmy”
 
 Agent:
+
 1. `calendar.add` — muzyka dziś
 2. `todo.update` — przenieś matmę na jutro / pojutrze
 3. `memory.remember` (short) — „wtorki muzyka” jeśli powtarzalne
@@ -37,13 +40,13 @@ Agent:
 
 ## Plan tygodniowy (proaktywny)
 
-| Moment | Akcja |
-| ------ | ----- |
-| T-7 do sprawdzianu | Powiadomienie + małe zadanie (15–20 min) |
-| T-3 | Alert + większy blok w planie |
-| T-1 | Przypomnienie + checklista |
-| Każdy dzień szkolny | Plan po szkole (30 min po lekcjach) |
-| Niedziela wieczór | `/plan tydzień` — przegląd nadchodzącego tygodnia |
+| Moment              | Akcja                                             |
+| ------------------- | ------------------------------------------------- |
+| T-7 do sprawdzianu  | Powiadomienie + małe zadanie (15–20 min)          |
+| T-3                 | Alert + większy blok w planie                     |
+| T-1                 | Przypomnienie + checklista                        |
+| Każdy dzień szkolny | Plan po szkole (30 min po lekcjach)               |
+| Niedziela wieczór   | `/plan tydzień` — przegląd nadchodzącego tygodnia |
 
 ## Generowanie planu dziennego
 
@@ -71,11 +74,13 @@ Wyjścia:
 Budżet: 85 / 90 min nauki
 
 ## Bloki
+
 1. 17:15–17:40 (25 min) — Chemia: kwasy (ROI: sprawdzian za 5 dni)
 2. 18:00–18:20 (20 min) — Matma: zadania domowe
 3. 19:30–19:50 (20 min) — Powtórka fiszek historii
 
 ## Uwagi
+
 - Po 21:00 tylko lekka powtórka jeśli zostanie energia.
 ```
 
@@ -94,6 +99,7 @@ Algorytm (wysokopoziomowo):
 Szczegóły techniczne: [powiadomienia.md](./powiadomienia.md).
 
 Kolejność:
+
 1. In-app (banner + nowy czat)
 2. Web Push (PWA, telefon)
 3. Discord webhook (opcjonalnie)
@@ -102,14 +108,15 @@ Kolejność:
 
 Na serwerze (`Deno.cron`):
 
-| Cron | Job |
-| ---- | --- |
-| Codziennie rano | Przelicz plan jeśli brak; alert T-1 |
-| Po sync Librus | Merge kalendarza + odśwież ROI |
-| Co godzinę | Wyślij zaplanowane powiadomienia (30 min po ostatniej lekcji) |
-| Codziennie 3:00 | Cleanup wygasłej short memory |
+| Cron            | Job                                                           |
+| --------------- | ------------------------------------------------------------- |
+| Codziennie rano | Przelicz plan jeśli brak; alert T-1                           |
+| Po sync Librus  | Merge kalendarza + odśwież ROI                                |
+| Co godzinę      | Wyślij zaplanowane powiadomienia (30 min po ostatniej lekcji) |
+| Codziennie 3:00 | Cleanup wygasłej short memory                                 |
 
-**AI w pętli:** job przygotowuje dane → **jeden** call do cascade z wąskim promptem „wygeneruj plan/wiadomość” → zapis wyniku. Nie pełny chat context.
+**AI w pętli:** job przygotowuje dane → **jeden** call do cascade z wąskim promptem „wygeneruj
+plan/wiadomość” → zapis wyniku. Nie pełny chat context.
 
 ## Definition of Done
 

@@ -2,8 +2,9 @@
 
 ## Cel
 
-Jedna **globalna lista rzeczy do zrobienia** — widoczna dla użytkownika i w pełni zarządzana przez agenta.
-Źródło prawdy: plik `~/todo/global.todo` + sync na serwerze ([system-plikow.md](./system-plikow.md)).
+Jedna **globalna lista rzeczy do zrobienia** — widoczna dla użytkownika i w pełni zarządzana przez
+agenta. Źródło prawdy: plik `~/todo/global.todo` + sync na serwerze
+([system-plikow.md](./system-plikow.md)).
 
 ## Wymagania użytkownika
 
@@ -34,24 +35,25 @@ Zgodnie z [model-danych.md](./model-danych.md):
 
 ## Źródła zadań
 
-| Źródło | Przykład |
-| ------ | -------- |
-| `manual` | Użytkownik lub `/todo add ...` |
-| `librus` | Praca domowa ze syncu |
-| `ai` | Agent po rozmowie („dodaj powtórkę na środę”) |
-| `plan` | Automatyczny plan dzienny / tygodniowy |
+| Źródło   | Przykład                                      |
+| -------- | --------------------------------------------- |
+| `manual` | Użytkownik lub `/todo add ...`                |
+| `librus` | Praca domowa ze syncu                         |
+| `ai`     | Agent po rozmowie („dodaj powtórkę na środę”) |
+| `plan`   | Automatyczny plan dzienny / tygodniowy        |
 
 ## Tools dla agenta
 
-| Tool | Opis |
-| ---- | ---- |
-| `todo.list` | `{ status?, dueBefore?, scheduledFor? }` |
-| `todo.add` | `{ title, ... }` |
-| `todo.update` | `{ id, ... }` |
-| `todo.complete` | `{ id }` |
-| `todo.delete` | `{ id }` |
+| Tool            | Opis                                     |
+| --------------- | ---------------------------------------- |
+| `todo.list`     | `{ status?, dueBefore?, scheduledFor? }` |
+| `todo.add`      | `{ title, ... }`                         |
+| `todo.update`   | `{ id, ... }`                            |
+| `todo.complete` | `{ id }`                                 |
+| `todo.delete`   | `{ id }`                                 |
 
-Alternatywa: operacje przez `fs.read` / `fs.write` na `global.todo` — **preferuj dedykowane tools** (mniej błędów parsowania).
+Alternatywa: operacje przez `fs.read` / `fs.write` na `global.todo` — **preferuj dedykowane tools**
+(mniej błędów parsowania).
 
 ## UI
 
@@ -65,7 +67,8 @@ Alternatywa: operacje przez `fs.read` / `fs.write` na `global.todo` — **prefer
 
 1. Agent generuje plan → tworzy `Task` z `scheduledFor: dziś` i `source: plan`
 2. Powiadomienie: lista „Na dziś” + wiadomość agenta
-3. Użytkownik: „dziś nie mogę” → agent `todo.update` (przeniesienie) + wpis w kalendarzu + short memory
+3. Użytkownik: „dziś nie mogę” → agent `todo.update` (przeniesienie) + wpis w kalendarzu + short
+   memory
 
 ## Definition of Done
 

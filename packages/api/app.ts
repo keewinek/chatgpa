@@ -12,7 +12,15 @@ import { getFile, putFile, toAttachment } from "./files/store.ts";
 import { createFsRoutes } from "./fs/routes.ts";
 import { createMemoryRoutes } from "./memory/routes.ts";
 import { createSyncRoutes } from "./sync/routes.ts";
+import { createNotesRoutes } from "./notes/routes.ts";
 import { createTodoRoutes } from "./todo/routes.ts";
+import { createCalendarRoutes } from "./calendar/routes.ts";
+import { createProfileRoutes } from "./profile/routes.ts";
+import { createLibrusRoutes } from "./librus/routes.ts";
+import { createPlanRoutes } from "./plan/routes.ts";
+import { createNotificationRoutes } from "./notifications/routes.ts";
+import { createThreadRoutes } from "./threads/routes.ts";
+import { createMigrateRoutes } from "./migrate/routes.ts";
 import { isChatMessage, sanitizeGroupPrefs, sanitizeMemory } from "./validate.ts";
 
 export function createApp() {
@@ -29,6 +37,14 @@ export function createApp() {
   app.route("/api/fs", createFsRoutes(getDb));
   app.route("/api/memory", createMemoryRoutes(getDb));
   app.route("/api/todos", createTodoRoutes(getDb));
+  app.route("/api/notes", createNotesRoutes(getDb));
+  app.route("/api/calendar", createCalendarRoutes(getDb));
+  app.route("/api/profile", createProfileRoutes(getDb));
+  app.route("/api/librus", createLibrusRoutes(getDb));
+  app.route("/api/plan", createPlanRoutes(getDb));
+  app.route("/api/notifications", createNotificationRoutes(getDb));
+  app.route("/api/threads", createThreadRoutes(getDb));
+  app.route("/api/migrate", createMigrateRoutes(getDb));
 
   app.post("/api/upload", async (c) => {
     const body = await c.req.parseBody({ all: true }).catch(() => null);

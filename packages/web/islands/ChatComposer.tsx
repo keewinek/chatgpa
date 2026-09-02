@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { ACCEPTED_FILES, type PendingFile, releasePending } from "../lib/chat-api.ts";
+import { type CommandEntry, filterCommands } from "../lib/commands.ts";
 
 interface ChatComposerProps {
   text: string;
@@ -27,10 +28,31 @@ export default function ChatComposer({
 }: ChatComposerProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const [suggestions, setSuggestions] = useState<CommandEntry[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const showSuggestions = suggestions.length > 0 && text.startsWith("/") && !text.includes("\n");
 
   useEffect(() => {
     if (textRef.current) resizeTextarea(textRef.current);
   }, [text]);
+
+  useEffect(() => {
+    if (!text.startsWith("/") || text.includes("\n")) {
+      setSuggestions([]);
+      setSelectedIdx(0);
+      return;
+    }
+    const matches = filterCommands(text);
+    setSuggestions(matches);
+    setSelectedIdx(0);
+  }, [text]);
+
+  function applySuggestion(entry: CommandEntry) {
+    onText(entry.trigger);
+    setSuggestions([]);
+    setSelectedIdx(0);
+    textRef.current?.focus();
+  }
 
   function onDrop(e: DragEvent) {
     e.preventDefault();
@@ -44,6 +66,10 @@ export default function ChatComposer({
       class="chat-composer"
       onSubmit={(e) => {
         e.preventDefault();
+        if (showSuggestions && suggestions[selectedIdx]) {
+          applySuggestion(suggestions[selectedIdx]);
+          return;
+        }
         onSend();
       }}
       onDragOver={(e) => {
@@ -74,67 +100,116 @@ export default function ChatComposer({
           ))}
         </div>
       )}
-      <div class="composer-row">
-        <input
-          ref={fileRef}
-          type="file"
-          class="composer-file-input"
-          accept={ACCEPTED_FILES}
-          multiple
-          onChange={(e) => onFiles((e.target as HTMLInputElement).files)}
-        />
-        <button
-          type="button"
-          class="composer-file-btn"
-          aria-label="Dodaj plik"
-          disabled={loading}
-          onClick={() => fileRef.current?.click()}
-        >
-          📎
-        </button>
-        <textarea
-          ref={textRef}
-          class="chat-input"
-          rows={1}
-          placeholder="Wyślij wiadomość… (Enter wyślij, Shift+Enter nowa linia)"
-          value={text}
-          onInput={(e) => {
-            const el = e.target as HTMLTextAreaElement;
-            onText(el.value);
-            resizeTextarea(el);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              onSend();
-            }
-          }}
-          onPaste={(e) => {
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            const files: File[] = [];
-            for (const item of items) {
-              if (item.kind === "file") {
-                const f = item.getAsFile();
-                if (f) files.push(f);
+      <div class="composer-input-wrap">
+        {showSuggestions && (
+          <ul class="command-autocomplete" role="listbox" aria-label="Komendy slash">
+            {suggestions.map((entry, i) => (
+              <li key={entry.id} role="option" aria-selected={i === selectedIdx}>
+                <button
+                  type="button"
+                  class={`command-autocomplete-item${
+                    i === selectedIdx ? " command-autocomplete-item--active" : ""
+                  }`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    applySuggestion(entry);
+                  }}
+                >
+                  <span class="command-autocomplete-trigger">{entry.trigger}</span>
+                  <span class="command-autocomplete-desc">{entry.description}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div class="composer-row">
+          <input
+            ref={fileRef}
+            type="file"
+            class="composer-file-input"
+            accept={ACCEPTED_FILES}
+            multiple
+            onChange={(e) => onFiles((e.target as HTMLInputElement).files)}
+          />
+          <button
+            type="button"
+            class="composer-file-btn"
+            aria-label="Dodaj plik"
+            disabled={loading}
+            onClick={() => fileRef.current?.click()}
+          >
+            📎
+          </button>
+          <textarea
+            ref={textRef}
+            class="chat-input"
+            rows={1}
+            placeholder="Wyślij wiadomość… (/ komendy, Enter wyślij)"
+            value={text}
+            onInput={(e) => {
+              const el = e.target as HTMLTextAreaElement;
+              onText(el.value);
+              resizeTextarea(el);
+            }}
+            onKeyDown={(e) => {
+              if (showSuggestions) {
+                if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  setSelectedIdx((i) => Math.min(i + 1, suggestions.length - 1));
+                  return;
+                }
+                if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  setSelectedIdx((i) => Math.max(i - 1, 0));
+                  return;
+                }
+                if (e.key === "Tab" && suggestions[selectedIdx]) {
+                  e.preventDefault();
+                  applySuggestion(suggestions[selectedIdx]);
+                  return;
+                }
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setSuggestions([]);
+                  return;
+                }
               }
-            }
-            if (files.length) {
-              e.preventDefault();
-              const dt = new DataTransfer();
-              for (const f of files) dt.items.add(f);
-              onFiles(dt.files);
-            }
-          }}
-          disabled={loading}
-        />
-        <button
-          class="chat-send"
-          type="submit"
-          disabled={loading || (!text.trim() && !pending.length)}
-        >
-          {loading ? "…" : "Wyślij"}
-        </button>
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (showSuggestions && suggestions[selectedIdx]) {
+                  applySuggestion(suggestions[selectedIdx]);
+                  return;
+                }
+                onSend();
+              }
+            }}
+            onPaste={(e) => {
+              const items = e.clipboardData?.items;
+              if (!items) return;
+              const files: File[] = [];
+              for (const item of items) {
+                if (item.kind === "file") {
+                  const f = item.getAsFile();
+                  if (f) files.push(f);
+                }
+              }
+              if (files.length) {
+                e.preventDefault();
+                const dt = new DataTransfer();
+                for (const f of files) dt.items.add(f);
+                onFiles(dt.files);
+              }
+            }}
+            disabled={loading}
+          />
+          <button
+            class="chat-send"
+            type="submit"
+            disabled={loading || (!text.trim() && !pending.length)}
+          >
+            {loading ? "…" : "Wyślij"}
+          </button>
+        </div>
       </div>
     </form>
   );

@@ -9,13 +9,15 @@ interface ChatSidebarProps {
   loading: boolean;
   open: boolean;
   memory: MemoryEntry[];
-  view: "chat" | "timetable" | "files" | "todo";
+  view: "chat" | "timetable" | "files" | "todo" | "notes" | "calendar" | "profile";
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
   onClearShortMemory: () => void;
-  onViewChange: (view: "chat" | "timetable" | "files" | "todo") => void;
+  onViewChange: (
+    view: "chat" | "timetable" | "files" | "todo" | "notes" | "calendar" | "profile",
+  ) => void;
 }
 
 export default function ChatSidebar({
@@ -65,10 +67,31 @@ export default function ChatSidebar({
             </button>
             <button
               type="button"
+              class={`sidebar-nav-btn${view === "calendar" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("calendar")}
+            >
+              🗓 Kalendarz
+            </button>
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "profile" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("profile")}
+            >
+              ⏱ Profil czasu
+            </button>
+            <button
+              type="button"
               class={`sidebar-nav-btn${view === "todo" ? " sidebar-nav-btn--active" : ""}`}
               onClick={() => onViewChange("todo")}
             >
               ✅ TODO
+            </button>
+            <button
+              type="button"
+              class={`sidebar-nav-btn${view === "notes" ? " sidebar-nav-btn--active" : ""}`}
+              onClick={() => onViewChange("notes")}
+            >
+              📝 Notatki
             </button>
             <button
               type="button"
@@ -135,7 +158,9 @@ export default function ChatSidebar({
               type="button"
               role="tab"
               aria-selected={memoryTab.value === "short"}
-              class={`sidebar-memory-tab${memoryTab.value === "short" ? " sidebar-memory-tab--active" : ""}`}
+              class={`sidebar-memory-tab${
+                memoryTab.value === "short" ? " sidebar-memory-tab--active" : ""
+              }`}
               onClick={() => {
                 memoryTab.value = "short";
               }}
@@ -146,7 +171,9 @@ export default function ChatSidebar({
               type="button"
               role="tab"
               aria-selected={memoryTab.value === "long"}
-              class={`sidebar-memory-tab${memoryTab.value === "long" ? " sidebar-memory-tab--active" : ""}`}
+              class={`sidebar-memory-tab${
+                memoryTab.value === "long" ? " sidebar-memory-tab--active" : ""
+              }`}
               onClick={() => {
                 memoryTab.value = "long";
               }}

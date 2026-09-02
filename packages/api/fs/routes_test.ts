@@ -15,7 +15,16 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
   assertEquals(body.entries.length, SEED_DIRECTORIES.length);
   assertEquals(body.entries.every((e) => e.kind === "directory"), true);
   const names = body.entries.map((e) => e.name).sort();
-  assertEquals(names, ["books", "calendar", "memory", "notes", "plans", "profile", "school", "todo"]);
+  assertEquals(names, [
+    "books",
+    "calendar",
+    "memory",
+    "notes",
+    "plans",
+    "profile",
+    "school",
+    "todo",
+  ]);
 });
 
 withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {

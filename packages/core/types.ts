@@ -41,6 +41,8 @@ export interface Task {
   estimatedMinutes?: number;
   source: TaskSource;
   roiScore?: number;
+  scheduledFor?: string;
+  notes?: string;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,6 +1,6 @@
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { entryIcon, fsList, fsRead, type FsEntry } from "../lib/fs-api.ts";
+import { entryIcon, type FsEntry, fsList, fsRead } from "../lib/fs-api.ts";
 
 interface FilesPanelProps {
   onBack: () => void;
@@ -119,7 +119,9 @@ export default function FilesPanel({ onBack }: FilesPanelProps) {
               <li>
                 <button
                   type="button"
-                  class={`files-tree-item${selectedPath.value === "~" ? " files-tree-item--active" : ""}`}
+                  class={`files-tree-item${
+                    selectedPath.value === "~" ? " files-tree-item--active" : ""
+                  }`}
                   onClick={() => {
                     selectedPath.value = "~";
                     preview.value = "Wybierz plik z drzewa po lewej.";
@@ -149,9 +151,7 @@ export default function FilesPanel({ onBack }: FilesPanelProps) {
           {selectedPath.value && (
             <div class="files-preview-head">
               <span class="files-preview-path">{selectedPath.value}</span>
-              {previewMeta.value && (
-                <span class="files-preview-meta">{previewMeta.value}</span>
-              )}
+              {previewMeta.value && <span class="files-preview-meta">{previewMeta.value}</span>}
             </div>
           )}
           {previewLoading.value

@@ -4,40 +4,30 @@
 
 ## ▶ AKTUALNY PROMPT
 
-👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez `deno task epic:done` po każdym agencie.
+👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez
+`deno task epic:done` po każdym agencie.
 
-| | |
-| --- | --- |
-| **Epik** | Prompt 5 — Notatki Markdown |
-| **Faza** | 2E |
-| **Status** | ⏳ **DO ZROBIENIA** |
-| **Następny po tym** | Prompt 6 — Lazy context + tools |
+### ✅ Wszystkie epiki ukończone
 
-> Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
-
-### Po zakończeniu epiku (agent — obowiązkowo)
-
-1. `deno task test`
-2. `roadmap.md` — odhacz punkt
-3. **`deno task epic:done`** — przesuwa prompt (nie rób ręcznie!)
+Ukończone: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
 
 ## Kolejka promptów (auto)
 
-| # | Epik | Status |
-| --- | --- | --- |
-| 1 | Serwer + PostgreSQL + Drizzle | ✅ |
-| 2 | Wirtualny system plików | ✅ |
-| 3 | Pamięć short/long | ✅ |
-| 4 | Globalna TODO | ✅ |
-| 5 | Notatki Markdown | ⏳ **TERAZ** |
-| 6 | Lazy context + tools | ⬜ |
-| 7 | Kalendarz + profil czasu | ⬜ |
-| 8 | Komendy slash | ⬜ |
-| 9 | Pomodoro | ⬜ |
-| 10 | Wtyczka Librus | ⬜ |
-| 11 | Plan nauki + cron | ⬜ |
-| 12 | Powiadomienia | ⬜ |
-| 13 | Sync czatów multi-device | ⬜ |
+| #  | Epik                          | Status |
+| -- | ----------------------------- | ------ |
+| 1  | Serwer + PostgreSQL + Drizzle | ✅     |
+| 2  | Wirtualny system plików       | ✅     |
+| 3  | Pamięć short/long             | ✅     |
+| 4  | Globalna TODO                 | ✅     |
+| 5  | Notatki Markdown              | ✅     |
+| 6  | Lazy context + tools          | ✅     |
+| 7  | Kalendarz + profil czasu      | ✅     |
+| 8  | Komendy slash                 | ✅     |
+| 9  | Pomodoro                      | ✅     |
+| 10 | Wtyczka Librus                | ✅     |
+| 11 | Plan nauki + cron             | ✅     |
+| 12 | Powiadomienia                 | ✅     |
+| 13 | Sync czatów multi-device      | ✅     |
 
 <!-- EPIC_AUTO_END -->
 
@@ -51,7 +41,8 @@
 - [ ] **`deno task epic:done`** — przesuwa prompt na następny epik (obowiązkowe!)
 - [ ] (opcjonalnie) wpis w `decyzje.md` jeśli była decyzja architektoniczna
 
-> **Nie edytuj ręcznie** sekcji AKTUALNY PROMPT ani `aktualny-prompt.md` — użyj `deno task epic:done`.
+> **Nie edytuj ręcznie** sekcji AKTUALNY PROMPT ani `aktualny-prompt.md` — użyj
+> `deno task epic:done`.
 
 ---
 
@@ -79,21 +70,21 @@ flowchart TD
 
 ## Fazy (skrót)
 
-| Faza | Epik | Priorytet | Szacunek |
-| ---- | ---- | --------- | -------- |
-| 2A | [serwer-i-sync.md](./serwer-i-sync.md) — Postgres + Drizzle | **P0** | duży |
-| 2B | [system-plikow.md](./system-plikow.md) — wirtualny FS | **P0** | duży |
-| 2C | [pamiec.md](./pamiec.md) — short/long memory | P1 | średni |
-| 2D | [todo.md](./todo.md) | P1 | średni |
-| 2E | [notatki.md](./notatki.md) | P1 | średni |
-| 2F | Migracja czatów na serwer | P1 | średni |
-| 2G | [kalendarz.md](./kalendarz.md) + profil czasu | P1 | średni |
-| 2H | [prompty.md](./prompty.md) — lazy context, nowe tools | P1 | średni |
-| 2I | [komendy.md](./komendy.md) | P2 | mały |
-| 2J | Pomodoro (`/pomodoro`) | P2 | mały |
-| 3A | [librus.md](./librus.md) — wtyczka | P2 | duży |
-| 3B | [plan-nauki.md](./plan-nauki.md) — cron + generowanie planu | P2 | duży |
-| 3C | [powiadomienia.md](./powiadomienia.md) — Web Push | P3 | średni |
+| Faza | Epik                                                        | Priorytet | Szacunek |
+| ---- | ----------------------------------------------------------- | --------- | -------- |
+| 2A   | [serwer-i-sync.md](./serwer-i-sync.md) — Postgres + Drizzle | **P0**    | duży     |
+| 2B   | [system-plikow.md](./system-plikow.md) — wirtualny FS       | **P0**    | duży     |
+| 2C   | [pamiec.md](./pamiec.md) — short/long memory                | P1        | średni   |
+| 2D   | [todo.md](./todo.md)                                        | P1        | średni   |
+| 2E   | [notatki.md](./notatki.md)                                  | P1        | średni   |
+| 2F   | Migracja czatów na serwer                                   | P1        | średni   |
+| 2G   | [kalendarz.md](./kalendarz.md) + profil czasu               | P1        | średni   |
+| 2H   | [prompty.md](./prompty.md) — lazy context, nowe tools       | P1        | średni   |
+| 2I   | [komendy.md](./komendy.md)                                  | P2        | mały     |
+| 2J   | Pomodoro (`/pomodoro`)                                      | P2        | mały     |
+| 3A   | [librus.md](./librus.md) — wtyczka                          | P2        | duży     |
+| 3B   | [plan-nauki.md](./plan-nauki.md) — cron + generowanie planu | P2        | duży     |
+| 3C   | [powiadomienia.md](./powiadomienia.md) — Web Push           | P3        | średni   |
 
 ## Kolejność rekomendowana
 
@@ -112,9 +103,10 @@ flowchart TD
 
 ## Prompty dla agentów (archiwum / następne kroki)
 
-Każdy prompt zakłada: przeczytaj `ai-kontekst/` (wskazane pliki), Deno monorepo, koszt 0 zł, testy po zmianach.
-**Źródło prawdy promptów:** `ai-kontekst/epics.json` → generuje [aktualny-prompt.md](./aktualny-prompt.md).
-Poniżej archiwum treści; po `epic:done` kopiuj z `aktualny-prompt.md`.
+Każdy prompt zakłada: przeczytaj `ai-kontekst/` (wskazane pliki), Deno monorepo, koszt 0 zł, testy
+po zmianach. **Źródło prawdy promptów:** `ai-kontekst/epics.json` → generuje
+[aktualny-prompt.md](./aktualny-prompt.md). Poniżej archiwum treści; po `epic:done` kopiuj z
+`aktualny-prompt.md`.
 
 ---
 
@@ -424,12 +416,12 @@ Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO
 
 ## Równoległa praca (subagenci)
 
-| Równolegle | Warunek |
-| ---------- | ------- |
-| Prompt 1 (DB) sam | start |
-| Po Prompt 2: Prompt 4 + 5 + 3 | FS gotowy |
-| Prompt 8 + 9 | niezależne od DB (UI) |
-| Prompt 6 | po podstawowych tools |
+| Równolegle                    | Warunek               |
+| ----------------------------- | --------------------- |
+| Prompt 1 (DB) sam             | start                 |
+| Po Prompt 2: Prompt 4 + 5 + 3 | FS gotowy             |
+| Prompt 8 + 9                  | niezależne od DB (UI) |
+| Prompt 6                      | po podstawowych tools |
 
 **Nie równolegle:** 10, 11, 12 przed 1, 2, 7.
 
@@ -451,8 +443,10 @@ deno task epic:done
 ```
 
 To automatycznie:
+
 - oznacza bieżący epik jako ukończony (`ai-kontekst/epic-state.json`)
 - regeneruje `ai-kontekst/aktualny-prompt.md` (skopiuj stąd do nowego agenta)
 - aktualizuje sekcję na górze tego pliku i tabelę kolejki
 
-Pomocnicze komendy: `deno task epic:status`, `deno task epic:regen`, `deno task epic:set -- 3` (awaryjnie).
+Pomocnicze komendy: `deno task epic:status`, `deno task epic:regen`, `deno task epic:set -- 3`
+(awaryjnie).

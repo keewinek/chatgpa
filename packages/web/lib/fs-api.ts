@@ -40,7 +40,10 @@ export async function fsRead(path: string): Promise<FsReadResponse> {
   return parseJson<FsReadResponse>(res);
 }
 
-export async function fsWrite(path: string, content: string): Promise<{ path: string; created: boolean }> {
+export async function fsWrite(
+  path: string,
+  content: string,
+): Promise<{ path: string; created: boolean }> {
   const res = await fetch("/api/fs/file", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

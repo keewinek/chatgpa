@@ -2,17 +2,17 @@
 
 ## Stack
 
-| Warstwa | Tech                                | Status  |
-| ------- | ----------------------------------- | ------- |
-| Runtime | Deno 2.9+                           | ✅      |
-| API     | Hono (`packages/api`)               | ✅      |
-| Web     | Fresh 2 + Preact (`packages/web`)   | ✅      |
-| Shared  | `@chatgpa/core` (chat types)        | ✅      |
-| AI      | Multi-provider cascade              | ✅      |
-| DB      | PostgreSQL + pgvector + Drizzle     | ✅ (schema + sync skeleton) |
-| PWA     | manifest + (później) service worker | partial |
-| Timetable | Plan lekcji 3A (core + UI)        | ✅      |
-| Ext     | Browser extension (Librus)          | planned |
+| Warstwa   | Tech                                | Status                      |
+| --------- | ----------------------------------- | --------------------------- |
+| Runtime   | Deno 2.9+                           | ✅                          |
+| API       | Hono (`packages/api`)               | ✅                          |
+| Web       | Fresh 2 + Preact (`packages/web`)   | ✅                          |
+| Shared    | `@chatgpa/core` (chat types)        | ✅                          |
+| AI        | Multi-provider cascade              | ✅                          |
+| DB        | PostgreSQL + pgvector + Drizzle     | ✅ (schema + sync skeleton) |
+| PWA       | manifest + (później) service worker | partial                     |
+| Timetable | Plan lekcji 3A (core + UI)          | ✅                          |
+| Ext       | Browser extension (Librus)          | planned                     |
 
 ## Monorepo
 
@@ -68,14 +68,14 @@ User message
 
 ## Endpointy API
 
-| Method  | Path               | Opis                       | Status  |
-| ------- | ------------------ | -------------------------- | ------- |
-| GET     | `/api/health`      | Health (+ DB status)       | ✅      |
-| GET     | `/api/ai/models`   | Lista kaskady + configured | ✅      |
-| POST    | `/api/chat`        | Chat + cascade             | ✅      |
-| POST    | `/api/librus/sync` | Snapshot z wtyczki         | planned |
-| CRUD    | `/api/todos`       | TODO                       | planned |
-| CRUD    | `/api/calendar`    | Wydarzenia                 | planned |
+| Method   | Path                               | Opis                         | Status  |
+| -------- | ---------------------------------- | ---------------------------- | ------- |
+| GET      | `/api/health`                      | Health (+ DB status)         | ✅      |
+| GET      | `/api/ai/models`                   | Lista kaskady + configured   | ✅      |
+| POST     | `/api/chat`                        | Chat + cascade               | ✅      |
+| POST     | `/api/librus/sync`                 | Snapshot z wtyczki           | planned |
+| CRUD     | `/api/todos`                       | TODO                         | planned |
+| CRUD     | `/api/calendar`                    | Wydarzenia                   | planned |
 | GET/POST | `/api/sync/pull`, `/api/sync/push` | Sync multi-device (skeleton) | ✅      |
 
 ## Dev / deploy

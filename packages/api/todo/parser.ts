@@ -57,6 +57,8 @@ function parseLine(line: string): Task | null {
   let subjectId: string | undefined;
   let source: TaskSource = "manual";
   let roiScore: number | undefined;
+  let scheduledFor: string | undefined;
+  let notes: string | undefined;
 
   for (const segment of parts.slice(1)) {
     const parsed = parseMetaSegment(segment);
@@ -95,6 +97,13 @@ function parseLine(line: string): Task | null {
       case "roiscore":
         roiScore = Number(value);
         break;
+      case "scheduled":
+      case "scheduledfor":
+        scheduledFor = value;
+        break;
+      case "notes":
+        notes = value;
+        break;
       default: {
         const mins = parseMinutes(key === "min" ? value : segment);
         if (mins !== undefined) estimatedMinutes = mins;
@@ -122,6 +131,8 @@ function parseLine(line: string): Task | null {
     estimatedMinutes,
     source,
     roiScore: Number.isFinite(roiScore) ? roiScore : undefined,
+    scheduledFor,
+    notes,
   };
 }
 
@@ -171,6 +182,8 @@ function formatLine(task: Task): string {
     meta.push(formatMeta("status", task.status));
   }
   if (task.roiScore !== undefined) meta.push(formatMeta("roi", task.roiScore));
+  if (task.scheduledFor) meta.push(formatMeta("scheduled", task.scheduledFor));
+  if (task.notes) meta.push(formatMeta("notes", task.notes));
   if (task.status === "done" && task.updatedAt) {
     meta.push(formatMeta("done", task.updatedAt.slice(0, 10)));
   }

@@ -125,5 +125,10 @@ export async function* runChatStream(
     );
   }
 
-  yield { type: "error", error: "Zbyt wiele rund narzędzi", attempts: allAttempts, memory: store.list() };
+  yield {
+    type: "error",
+    error: "Zbyt wiele rund narzędzi",
+    attempts: allAttempts,
+    memory: store.list(),
+  };
 }

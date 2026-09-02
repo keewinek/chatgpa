@@ -8,14 +8,16 @@ import {
   formatWarsawDateTime,
   getCurrentLesson,
   getWarsawNow,
-  weekdayFromDate,
   type GroupPrefs,
   type Weekday,
   WEEKDAY_LABELS,
+  weekdayFromDate,
 } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
 import { getDb } from "../db/client.ts";
-import { fsList, fsRead, fsWrite } from "../fs/service.ts";
+import { formatWarsawIsoDate } from "../plan/distribute.ts";
+import { FsError, fsList, fsRead, fsWrite } from "../fs/service.ts";
+import { notesAppend, notesList, notesRead, notesWrite } from "../notes/service.ts";
 import {
   clearMemory,
   DEFAULT_SHORT_TTL_DAYS,
@@ -32,6 +34,14 @@ import {
   listTasks,
   updateTask,
 } from "../todo/service.ts";
+import {
+  addEvent,
+  computeFreeSlots,
+  formatEventsForAi,
+  formatFreeSlotsForAi,
+  listEvents,
+  updateEvent,
+} from "../calendar/service.ts";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
 
@@ -215,7 +225,11 @@ async function runMemoryAction(
 
       if (!removed) return { tool: action.tool, ok: false, error: "Nie znalazłem tego wpisu" };
       if (db) await store.loadFromDb(db);
-      return { tool: action.tool, ok: true, output: `Usunięto: „${removed.content}” [${removed.id}]` };
+      return {
+        tool: action.tool,
+        ok: true,
+        output: `Usunięto: „${removed.content}” [${removed.id}]`,
+      };
     }
     case "memory.clear": {
       const kind = typeof args.kind === "string" && args.kind === "long"
@@ -227,7 +241,11 @@ async function runMemoryAction(
       const cleared = db ? await clearMemory(db, kind) : store.clear(kind);
       if (db) await store.loadFromDb(db);
 
-      const label = kind === "all" ? "całą pamięć" : kind === "long" ? "długą pamięć" : "krótką pamięć";
+      const label = kind === "all"
+        ? "całą pamięć"
+        : kind === "long"
+        ? "długą pamięć"
+        : "krótką pamięć";
       return {
         tool: action.tool,
         ok: true,
@@ -255,7 +273,8 @@ async function runTodoAction(
         ? args.status
         : undefined;
       const dueBefore = typeof args.dueBefore === "string" ? args.dueBefore : undefined;
-      const items = await listTasks(db, { status, dueBefore });
+      const scheduledFor = typeof args.scheduledFor === "string" ? args.scheduledFor : undefined;
+      const items = await listTasks(db, { status, dueBefore, scheduledFor });
       if (!items.length) {
         return { tool: action.tool, ok: true, output: "Lista TODO jest pusta." };
       }
@@ -281,6 +300,8 @@ async function runTodoAction(
             ? args.source
             : undefined,
           roiScore: typeof args.roiScore === "number" ? args.roiScore : undefined,
+          scheduledFor: typeof args.scheduledFor === "string" ? args.scheduledFor : undefined,
+          notes: typeof args.notes === "string" ? args.notes : undefined,
         });
         return {
           tool: action.tool,
@@ -316,12 +337,20 @@ async function runTodoAction(
         status: args.status === "open" || args.status === "done" || args.status === "cancelled"
           ? args.status
           : undefined,
-        estimatedMinutes: typeof args.estimatedMinutes === "number" ? args.estimatedMinutes : undefined,
+        estimatedMinutes: typeof args.estimatedMinutes === "number"
+          ? args.estimatedMinutes
+          : undefined,
         source: args.source === "manual" || args.source === "librus" || args.source === "ai" ||
             args.source === "plan"
           ? args.source
           : undefined,
         roiScore: typeof args.roiScore === "number" ? args.roiScore : undefined,
+        scheduledFor: args.scheduledFor === null
+          ? null
+          : typeof args.scheduledFor === "string"
+          ? args.scheduledFor
+          : undefined,
+        notes: args.notes === null ? null : typeof args.notes === "string" ? args.notes : undefined,
       });
       if (!task) return { tool: action.tool, ok: false, error: "Nie znaleziono zadania" };
       return {
@@ -357,6 +386,310 @@ async function runTodoAction(
   }
 }
 
+async function runNotesAction(
+  action: ChatAction,
+  db: AppDatabase | null,
+): Promise<ToolResult> {
+  if (!db) {
+    return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+  }
+
+  const args = action.args ?? {};
+
+  switch (action.tool) {
+    case "notes.list": {
+      const path = typeof args.path === "string" ? args.path : undefined;
+      try {
+        const result = await notesList(db, path);
+        if (result.entries.length === 0) {
+          return { tool: action.tool, ok: true, output: `${result.path}: (pusty katalog)` };
+        }
+        const lines = result.entries.map((e) =>
+          `${e.kind === "directory" ? "[dir]" : "[note]"} ${e.name} (${e.path})`
+        );
+        return { tool: action.tool, ok: true, output: `${result.path}:\n${lines.join("\n")}` };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "notes.read": {
+      const path = typeof args.path === "string" ? args.path : "";
+      if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
+      const offset = typeof args.offset === "number" ? args.offset : 0;
+      const limit = typeof args.limit === "number" ? args.limit : 5000;
+      try {
+        const result = await notesRead(db, path, offset, limit);
+        const header = result.totalLines > offset + limit
+          ? `(linie ${offset + 1}–${
+            Math.min(offset + limit, result.totalLines)
+          } z ${result.totalLines})\n`
+          : "";
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `${result.path}:\n${header}${result.content}`,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "notes.write": {
+      const path = typeof args.path === "string" ? args.path : "";
+      const content = typeof args.content === "string" ? args.content : "";
+      if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
+      if (!content) return { tool: action.tool, ok: false, error: "Brak pola content" };
+      const createOnly = args.createOnly === true;
+      try {
+        const result = await notesWrite(db, path, content, createOnly);
+        return {
+          tool: action.tool,
+          ok: true,
+          output: result.created
+            ? `Utworzono notatkę ${result.path}`
+            : `Zaktualizowano ${result.path}`,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "notes.append": {
+      const path = typeof args.path === "string" ? args.path : "";
+      const content = typeof args.content === "string" ? args.content : "";
+      if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
+      if (!content) return { tool: action.tool, ok: false, error: "Brak pola content" };
+      try {
+        const result = await notesAppend(db, path, content);
+        return { tool: action.tool, ok: true, output: `Dopisano do ${result.path}` };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    default:
+      return { tool: action.tool, ok: false, error: `Nieznane narzędzie notatek: ${action.tool}` };
+  }
+}
+
+const GRADES_SNAPSHOT_PATH = "~/school/librus/grades.json";
+
+interface GradesSnapshot {
+  syncedAt?: string;
+  subjects?: Array<{
+    name?: string;
+    average?: number;
+    grades?: Array<{ value?: string | number; weight?: number; category?: string; date?: string }>;
+  }>;
+}
+
+function formatGradesSnapshot(data: GradesSnapshot, subjectFilter?: string): string {
+  const lines: string[] = [];
+  if (data.syncedAt) {
+    lines.push(`Ostatni sync: ${new Date(data.syncedAt).toLocaleString("pl-PL")}`);
+    const ageMs = Date.now() - new Date(data.syncedAt).getTime();
+    if (ageMs > 24 * 60 * 60 * 1000) {
+      lines.push("⚠ Dane starsze niż 24h — zalecany ponowny sync Librus.");
+    }
+  }
+
+  let subjects = data.subjects ?? [];
+  if (subjectFilter) {
+    const q = subjectFilter.toLowerCase();
+    subjects = subjects.filter((s) => s.name?.toLowerCase().includes(q));
+    if (!subjects.length) {
+      return `${lines.join("\n")}\nBrak przedmiotu pasującego do „${subjectFilter}".`.trim();
+    }
+  }
+
+  for (const subject of subjects) {
+    const avg = subject.average != null ? ` (średnia: ${subject.average})` : "";
+    lines.push(`\n${subject.name ?? "?"}${avg}:`);
+    for (const grade of subject.grades ?? []) {
+      const category = grade.category ? ` (${grade.category})` : "";
+      const date = grade.date ? `, ${grade.date}` : "";
+      lines.push(`  - ${grade.value ?? "?"}${category}${date}`);
+    }
+  }
+
+  return lines.join("\n").trim() || "Snapshot ocen jest pusty.";
+}
+
+async function runGradesAction(
+  action: ChatAction,
+  db: AppDatabase | null,
+): Promise<ToolResult> {
+  if (!db) {
+    return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+  }
+
+  const args = action.args ?? {};
+  const subject = typeof args.subject === "string" ? args.subject : undefined;
+
+  switch (action.tool) {
+    case "grades.get": {
+      try {
+        const result = await fsRead(db, GRADES_SNAPSHOT_PATH, 0, 500);
+        const data = JSON.parse(result.content) as GradesSnapshot;
+        return { tool: action.tool, ok: true, output: formatGradesSnapshot(data, subject) };
+      } catch (err) {
+        if (err instanceof FsError && err.status === 404) {
+          return {
+            tool: action.tool,
+            ok: true,
+            output:
+              "Brak synchronizacji Librus — plik ~/school/librus/grades.json nie istnieje. Nie zgaduj ocen; zaproponuj użytkownikowi sync Librus.",
+          };
+        }
+        if (err instanceof SyntaxError) {
+          return { tool: action.tool, ok: false, error: "Plik ocen ma nieprawidłowy format JSON" };
+        }
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    default:
+      return { tool: action.tool, ok: false, error: `Nieznane narzędzie ocen: ${action.tool}` };
+  }
+}
+
+async function runCalendarAction(
+  action: ChatAction,
+  db: AppDatabase | null,
+  groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
+): Promise<ToolResult> {
+  if (!db) {
+    return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+  }
+
+  const args = action.args ?? {};
+
+  switch (action.tool) {
+    case "calendar.list": {
+      try {
+        const from = typeof args.from === "string" ? args.from : undefined;
+        const to = typeof args.to === "string" ? args.to : undefined;
+        const events = await listEvents(db, from, to);
+        if (!events.length) {
+          return {
+            tool: action.tool,
+            ok: true,
+            output: from || to
+              ? `Brak wydarzeń w zakresie ${from ?? "…"} – ${to ?? "…"}.`
+              : "Kalendarz pusty — brak wydarzeń. Dodaj ręcznie (calendar.add) lub zsynchronizuj Librus.",
+          };
+        }
+        return {
+          tool: action.tool,
+          ok: true,
+          output: formatEventsForAi(events),
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "calendar.freeSlots": {
+      try {
+        const date = typeof args.date === "string" && args.date.trim()
+          ? args.date.trim()
+          : formatWarsawIsoDate(getWarsawNow());
+        const result = await computeFreeSlots(db, date, groupPrefs);
+        return {
+          tool: action.tool,
+          ok: true,
+          output: formatFreeSlotsForAi(result),
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "calendar.add": {
+      const title = typeof args.title === "string" ? args.title.trim() : "";
+      const start = typeof args.start === "string" ? args.start.trim() : "";
+      const kind = typeof args.kind === "string" ? args.kind : "personal";
+      const source = typeof args.source === "string" ? args.source : "manual";
+      const end = typeof args.end === "string" ? args.end.trim() : undefined;
+      if (!title || !start) {
+        return { tool: action.tool, ok: false, error: "Wymagane pola: title, start" };
+      }
+      try {
+        const event = await addEvent(db, {
+          title,
+          kind: kind as "exam" | "homework" | "study_block" | "personal",
+          start,
+          end,
+          source: source as "librus" | "ai" | "manual",
+        });
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `Dodano wydarzenie: ${event.title} (${event.start}) [${event.kind}]`,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "calendar.update": {
+      const id = typeof args.id === "string" ? args.id.trim() : "";
+      if (!id) return { tool: action.tool, ok: false, error: "Wymagane pole: id" };
+      const patch: Record<string, string> = {};
+      if (typeof args.title === "string") patch.title = args.title;
+      if (typeof args.start === "string") patch.start = args.start;
+      if (typeof args.end === "string") patch.end = args.end;
+      if (typeof args.kind === "string") patch.kind = args.kind;
+      try {
+        const updated = await updateEvent(db, id, patch);
+        if (!updated) return { tool: action.tool, ok: false, error: "Wydarzenie nie znalezione" };
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `Zaktualizowano: ${updated.title} (${updated.start})`,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    default:
+      return {
+        tool: action.tool,
+        ok: false,
+        error: `Nieznane narzędzie kalendarza: ${action.tool}`,
+      };
+  }
+}
+
 async function runOne(
   action: ChatAction,
   store: MemoryStore,
@@ -371,6 +704,18 @@ async function runOne(
 
   if (action.tool.startsWith("todo.")) {
     return await runTodoAction(action, db);
+  }
+
+  if (action.tool.startsWith("notes.")) {
+    return await runNotesAction(action, db);
+  }
+
+  if (action.tool.startsWith("grades.")) {
+    return await runGradesAction(action, db);
+  }
+
+  if (action.tool.startsWith("calendar.")) {
+    return await runCalendarAction(action, db, groupPrefs);
   }
 
   switch (action.tool) {
@@ -477,7 +822,9 @@ async function runOne(
       try {
         const result = await fsRead(db, path, offset, limit);
         const header = result.totalLines > offset + limit
-          ? `(linie ${offset + 1}–${Math.min(offset + limit, result.totalLines)} z ${result.totalLines})\n`
+          ? `(linie ${offset + 1}–${
+            Math.min(offset + limit, result.totalLines)
+          } z ${result.totalLines})\n`
           : "";
         return {
           tool: action.tool,

@@ -18,6 +18,8 @@ function rowToTask(row: typeof tasks.$inferSelect): Task {
     estimatedMinutes: row.estimatedMinutes ?? undefined,
     source: row.source as TaskSource,
     roiScore: row.roiScore ?? undefined,
+    scheduledFor: row.scheduledFor ?? undefined,
+    notes: row.notes ?? undefined,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -26,6 +28,7 @@ function rowToTask(row: typeof tasks.$inferSelect): Task {
 export interface ListTasksOptions {
   status?: TaskStatus;
   dueBefore?: string;
+  scheduledFor?: string;
 }
 
 export async function listTasks(
@@ -35,6 +38,7 @@ export async function listTasks(
   const conditions = [isNull(tasks.deletedAt)];
   if (options.status) conditions.push(eq(tasks.status, options.status));
   if (options.dueBefore) conditions.push(lte(tasks.dueDate, options.dueBefore));
+  if (options.scheduledFor) conditions.push(eq(tasks.scheduledFor, options.scheduledFor));
 
   const rows = await db
     .select()
@@ -62,6 +66,8 @@ export interface AddTaskInput {
   estimatedMinutes?: number;
   source?: TaskSource;
   roiScore?: number;
+  scheduledFor?: string;
+  notes?: string;
 }
 
 export async function addTask(db: AppDatabase, input: AddTaskInput): Promise<Task> {
@@ -79,6 +85,8 @@ export async function addTask(db: AppDatabase, input: AddTaskInput): Promise<Tas
     estimatedMinutes: input.estimatedMinutes,
     source: input.source ?? "manual",
     roiScore: input.roiScore,
+    scheduledFor: input.scheduledFor,
+    notes: input.notes,
     createdAt: now,
     updatedAt: now,
   };
@@ -93,6 +101,8 @@ export async function addTask(db: AppDatabase, input: AddTaskInput): Promise<Tas
     estimatedMinutes: task.estimatedMinutes ?? null,
     source: task.source,
     roiScore: task.roiScore ?? null,
+    scheduledFor: task.scheduledFor ?? null,
+    notes: task.notes ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -110,6 +120,8 @@ export interface UpdateTaskInput {
   estimatedMinutes?: number | null;
   source?: TaskSource;
   roiScore?: number | null;
+  scheduledFor?: string | null;
+  notes?: string | null;
 }
 
 export async function updateTask(
@@ -135,6 +147,10 @@ export async function updateTask(
         : current.estimatedMinutes ?? null,
       source: patch.source ?? current.source,
       roiScore: patch.roiScore !== undefined ? patch.roiScore : current.roiScore ?? null,
+      scheduledFor: patch.scheduledFor !== undefined
+        ? patch.scheduledFor
+        : current.scheduledFor ?? null,
+      notes: patch.notes !== undefined ? patch.notes : current.notes ?? null,
       updatedAt: now,
     })
     .where(eq(tasks.id, id));
@@ -190,6 +206,8 @@ export async function importFromTodoFile(db: AppDatabase, content: string): Prom
       estimatedMinutes: task.estimatedMinutes ?? null,
       source: task.source,
       roiScore: task.roiScore ?? null,
+      scheduledFor: task.scheduledFor ?? null,
+      notes: task.notes ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -203,7 +221,8 @@ export async function importFromTodoFile(db: AppDatabase, content: string): Prom
 export function formatTaskLine(task: Task, index: number): string {
   const statusLabel = task.status === "done" ? "✓" : task.status === "cancelled" ? "✗" : "○";
   const due = task.dueDate ? `, termin: ${task.dueDate}` : "";
+  const scheduled = task.scheduledFor ? `, zaplanowane: ${task.scheduledFor}` : "";
   const mins = task.estimatedMinutes ? `, ${task.estimatedMinutes} min` : "";
   const pri = task.priority !== "medium" ? `, priorytet: ${task.priority}` : "";
-  return `${index + 1}. [${statusLabel}] ${task.title} [${task.id}]${due}${mins}${pri}`;
+  return `${index + 1}. [${statusLabel}] ${task.title} [${task.id}]${due}${scheduled}${mins}${pri}`;
 }

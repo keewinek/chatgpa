@@ -5,8 +5,9 @@ zadań.
 
 ## Status
 
-`partial` — **plan lekcji 3A jest już w aplikacji** ([plan-lekcji.md](./plan-lekcji.md)).
-Sync ocen, terminów i dynamicznych zmian planu — `planned` (wtyczka + `/api/librus/sync`).
+`done` — wtyczka w `packages/extension`, endpoint `/api/librus/sync`, merge snapshotów + kalendarz.
+Statyczny plan 3A nadal w `@chatgpa/core` ([plan-lekcji.md](./plan-lekcji.md)); sync Librus zapisuje
+`~/school/librus/schedule.json`.
 
 ## Preferowana architektura: wtyczka przeglądarki
 

@@ -8,6 +8,27 @@
       "when": 1756824000000,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756910400000,
+      "tag": "0001_scheduled_for",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756996800000,
+      "tag": "0002_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1757083200000,
+      "tag": "0003_chat_metadata",
+      "breakpoints": true
     }
   ]
 }

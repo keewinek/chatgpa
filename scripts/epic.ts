@@ -90,9 +90,7 @@ Ostatnia aktualizacja: ${state.updatedAt}
   }
 
   const next = epicById(epics, state.current + 1);
-  const nextLine = next
-    ? `Prompt ${next.id} — ${next.title}`
-    : "✅ koniec kolejki";
+  const nextLine = next ? `Prompt ${next.id} — ${next.title}` : "✅ koniec kolejki";
 
   return `# Aktualny prompt — skopiuj do nowego agenta
 
@@ -167,8 +165,7 @@ async function patchPlanSection(section: string): Promise<void> {
     );
   }
 
-  const updated =
-    plan.slice(0, start + AUTO_START.length) +
+  const updated = plan.slice(0, start + AUTO_START.length) +
     "\n\n" +
     section.trim() +
     "\n\n" +

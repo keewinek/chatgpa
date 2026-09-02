@@ -7,7 +7,7 @@ import { USER_ROOT } from "../fs/path.ts";
 
 export const DEFAULT_SHORT_TTL_DAYS = 7;
 export const LONG_TERM_VIRTUAL_PATH = "~/memory/long-term.memory";
-const LONG_TERM_INTERNAL_PATH = `${USER_ROOT}/memory/long-term.memory`;
+const _LONG_TERM_INTERNAL_PATH = `${USER_ROOT}/memory/long-term.memory`;
 
 export function newMemoryId(): string {
   return `mem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;

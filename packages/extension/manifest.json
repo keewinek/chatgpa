@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPA — Librus Sync",
+  "version": "0.1.0",
+  "description": "Synchronizuje oceny, plan lekcji i terminarz z Librus do ChatGPA (hasło zostaje w przeglądarce).",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://*.librus.pl/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Sync Librus → ChatGPA",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.librus.pl/*", "https://synergia.librus.pl/*"],
+      "js": ["content-librus.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["content-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": ["http://localhost/*", "http://127.0.0.1/*"]
+  }
+}

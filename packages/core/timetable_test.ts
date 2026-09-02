@@ -1,10 +1,5 @@
 import { assertEquals } from "@std/assert";
-import {
-  formatDaySchedule,
-  getDayLessons,
-  TIMETABLE_META,
-  weekdayFromDate,
-} from "@chatgpa/core";
+import { formatDaySchedule, getDayLessons, TIMETABLE_META, weekdayFromDate } from "@chatgpa/core";
 
 Deno.test("timetable meta matches class 3A", () => {
   assertEquals(TIMETABLE_META.className, "3A");

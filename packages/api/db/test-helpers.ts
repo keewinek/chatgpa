@@ -12,17 +12,25 @@ export type TestDb = {
 /** In-memory PostgreSQL (PGLite) for integration tests. */
 export async function createTestDb(): Promise<TestDb> {
   const client = new PGlite();
-  const migrationPath = fromFileUrl(
-    new URL("../migrations/0000_initial.sql", import.meta.url),
-  );
-  const sql = await Deno.readTextFile(migrationPath);
-  const statements = sql
-    .split("--> statement-breakpoint")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const migrationsDir = fromFileUrl(new URL("../migrations", import.meta.url));
+  const migrationFiles = [];
+  for await (const entry of Deno.readDir(migrationsDir)) {
+    if (entry.isFile && entry.name.endsWith(".sql")) {
+      migrationFiles.push(entry.name);
+    }
+  }
+  migrationFiles.sort();
 
-  for (const statement of statements) {
-    await client.exec(statement);
+  for (const file of migrationFiles) {
+    const sql = await Deno.readTextFile(`${migrationsDir}/${file}`);
+    const statements = sql
+      .split("--> statement-breakpoint")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    for (const statement of statements) {
+      await client.exec(statement);
+    }
   }
 
   const db = drizzle(client, { schema });

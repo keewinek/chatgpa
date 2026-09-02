@@ -1,11 +1,7 @@
 import { Hono } from "hono";
 import type { MemoryKind } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
-import {
-  clearMemory,
-  listMemory,
-  migrateLegacyStrings,
-} from "./service.ts";
+import { clearMemory, listMemory, migrateLegacyStrings } from "./service.ts";
 
 function parseKind(value: string | undefined): MemoryKind | "all" | null {
   if (!value) return null;

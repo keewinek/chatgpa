@@ -3,6 +3,7 @@
 ## Cel
 
 Aplikacja **tylko dla Ciebie**, ale na **telefonie i komputerze** z tym samym:
+
 - historią czatów
 - pamięcią (short + long)
 - TODO
@@ -12,45 +13,48 @@ Aplikacja **tylko dla Ciebie**, ale na **telefonie i komputerze** z tym samym:
 
 ## Stan obecny
 
-| Dane | Gdzie | Problem |
-| ---- | ----- | ------- |
-| Czaty + pamięć | `localStorage` | Brak sync, tylko jedna przeglądarka |
-| Pliki upload | Deno KV, TTL 24h | Nie trwałe |
-| TODO, kalendarz, profil | — | Nie istnieje |
+| Dane                    | Gdzie            | Problem                             |
+| ----------------------- | ---------------- | ----------------------------------- |
+| Czaty + pamięć          | `localStorage`   | Brak sync, tylko jedna przeglądarka |
+| Pliki upload            | Deno KV, TTL 24h | Nie trwałe                          |
+| TODO, kalendarz, profil | —                | Nie istnieje                        |
 
 ## Kierunek architektoniczny
 
-**Jeden backend (Hono API) + jedna baza PostgreSQL** — hostowane tanio / darmowo (np. Neon free tier, Supabase free, lub VPS z Postgres).
+**Jeden backend (Hono API) + jedna baza PostgreSQL** — hostowane tanio / darmowo (np. Neon free
+tier, Supabase free, lub VPS z Postgres).
 
 Single-user: **bez pełnego auth SaaS** na start:
+
 - Prosty token API w `.env` / ustawieniach klienta, lub
 - Magic link / jeden login (później)
 
 ## Co trafia do DB
 
-| Tabela / store | Zawartość |
-| -------------- | --------- |
-| `chat_threads` | Sesje czatu |
-| `chat_messages` | Wiadomości |
-| `memory_entries` | Short + long memory |
-| `files` | Metadane + blob (lub S3-compatible) |
-| `file_contents` | Treść plików wirtualnego FS |
-| `tasks` | TODO (odzwierciedlenie `global.todo`) |
-| `calendar_events` | Wydarzenia (odzwierciedlenie `.cal`) |
-| `librus_snapshots` | Historia synców |
-| `notifications` | Kolejka / historia powiadomień |
-| `profile` | Profil ucznia |
+| Tabela / store     | Zawartość                             |
+| ------------------ | ------------------------------------- |
+| `chat_threads`     | Sesje czatu                           |
+| `chat_messages`    | Wiadomości                            |
+| `memory_entries`   | Short + long memory                   |
+| `files`            | Metadane + blob (lub S3-compatible)   |
+| `file_contents`    | Treść plików wirtualnego FS           |
+| `tasks`            | TODO (odzwierciedlenie `global.todo`) |
+| `calendar_events`  | Wydarzenia (odzwierciedlenie `.cal`)  |
+| `librus_snapshots` | Historia synców                       |
+| `notifications`    | Kolejka / historia powiadomień        |
+| `profile`          | Profil ucznia                         |
 
-Opcjonalnie: **pliki jako source of truth** — DB przechowuje blob path + sync; logika odczytu przez warstwę `fs`.
+Opcjonalnie: **pliki jako source of truth** — DB przechowuje blob path + sync; logika odczytu przez
+warstwę `fs`.
 
 ## Stack (propozycja)
 
-| Warstwa | Tech |
-| ------- | ---- |
-| ORM | Drizzle |
-| DB | PostgreSQL (pgvector później pod RAG) |
-| Migracje | `drizzle-kit` |
-| Deploy API | Deno Deploy / VPS |
+| Warstwa    | Tech                                  |
+| ---------- | ------------------------------------- |
+| ORM        | Drizzle                               |
+| DB         | PostgreSQL (pgvector później pod RAG) |
+| Migracje   | `drizzle-kit`                         |
+| Deploy API | Deno Deploy / VPS                     |
 | Deploy web | Ten sam host (Fresh) lub static + API |
 
 ## Sync model (klient)
@@ -72,15 +76,15 @@ App start / co N minut / po akcji użytkownika:
 
 ## Endpointy (szkic)
 
-| Method | Path | Opis |
-| ------ | ---- | ---- |
-| GET/POST | `/api/sync/pull` | Pobierz zmiany |
-| POST | `/api/sync/push` | Wyślij zmiany |
-| CRUD | `/api/threads`, `/api/threads/:id/messages` | Czaty |
-| CRUD | `/api/memory` | Pamięć |
-| CRUD | `/api/todos` | TODO |
-| CRUD | `/api/fs/*` | System plików |
-| GET/PUT | `/api/profile` | Profil |
+| Method   | Path                                        | Opis           |
+| -------- | ------------------------------------------- | -------------- |
+| GET/POST | `/api/sync/pull`                            | Pobierz zmiany |
+| POST     | `/api/sync/push`                            | Wyślij zmiany  |
+| CRUD     | `/api/threads`, `/api/threads/:id/messages` | Czaty          |
+| CRUD     | `/api/memory`                               | Pamięć         |
+| CRUD     | `/api/todos`                                | TODO           |
+| CRUD     | `/api/fs/*`                                 | System plików  |
+| GET/PUT  | `/api/profile`                              | Profil         |
 
 ## Koszt
 
@@ -94,7 +98,7 @@ Zobacz [decyzje.md](./decyzje.md) — wpis o storage Fazy 2.
 ## Definition of Done
 
 - [x] PostgreSQL + Drizzle w `packages/api`
-- [ ] Czaty na serwerze (nie tylko localStorage)
+- [x] Czaty na serwerze (nie tylko localStorage)
 - [ ] Sync pull/push między 2 urządzeniami
 - [ ] Pamięć, TODO, notatki na serwerze
-- [ ] Migracja z localStorage
+- [x] Migracja z localStorage

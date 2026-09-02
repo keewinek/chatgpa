@@ -2,7 +2,8 @@
 
 ## Cele (zaktualizowane)
 
-1. **Po szkole** — 30 min po ostatniej lekcji: plan na dziś + wiadomość agenta + TODO dziś + budżet wolnego czasu.
+1. **Po szkole** — 30 min po ostatniej lekcji: plan na dziś + wiadomość agenta + TODO dziś + budżet
+   wolnego czasu.
 2. **Anty-prokrastynacja** — T-7 / T-3 / T-1 przed sprawdzianem (małe kroki, nie panika w czwartek).
 3. **Kliknięcie** — otwiera czat jakby agent napisał pierwszy; możliwość negocjacji („dziś lekarz”).
 4. Rano (opcjonalnie): krótki plan dnia jeśli nie wysłano po szkole.
@@ -12,12 +13,12 @@ Szczegóły planu nauki: [plan-nauki.md](./plan-nauki.md).
 
 ## Kanały (darmowe)
 
-| Kanał           | Kiedy                      | Koszt     |
-| --------------- | -------------------------- | --------- |
-| In-app banner   | zawsze, gdy otwarte        | 0         |
-| Nowy czat       | klik w powiadomienie       | 0         |
-| Web Push (PWA)  | tło, telefon / desktop     | 0         |
-| Discord webhook | jeśli już masz serwer      | 0         |
+| Kanał           | Kiedy                  | Koszt |
+| --------------- | ---------------------- | ----- |
+| In-app banner   | zawsze, gdy otwarte    | 0     |
+| Nowy czat       | klik w powiadomienie   | 0     |
+| Web Push (PWA)  | tło, telefon / desktop | 0     |
+| Discord webhook | jeśli już masz serwer  | 0     |
 
 Bez płatnych usług push — Web Push standard + własny VAPID.
 
@@ -31,7 +32,8 @@ ostatnia_lekcja_koniec(dziś) + 30 minut
 
 Źródło czasu (kolejność):
 
-1. **Teraz:** `packages/core/timetable.ts` — `getDayLessons` + `LESSON_SLOTS` (plan 3A, patrz [plan-lekcji.md](./plan-lekcji.md))
+1. **Teraz:** `packages/core/timetable.ts` — `getDayLessons` + `LESSON_SLOTS` (plan 3A, patrz
+   [plan-lekcji.md](./plan-lekcji.md))
 2. **Docelowo:** `~/school/librus/schedule.json` (plan lekcji z wtyczki)
 
 Fallback: brak planu → stała godzina z profilu lub brak push (tylko wieczorny plan).
@@ -64,18 +66,18 @@ Fallback: brak planu → stała godzina z profilu lub brak push (tylko wieczorny
 
 ## Alerty sprawdzianowe
 
-| Offset | Treść |
-| ------ | ----- |
-| T-7 | „Za tydzień {przedmiot} — dziś 15–20 min powtórki” + zadanie w TODO |
-| T-3 | „Za 3 dni sprawdzian — zaplanowano {N} min w tym tygodniu” |
-| T-1 rano | „Jutro sprawdzian z {przedmiot} — checklista” |
+| Offset   | Treść                                                               |
+| -------- | ------------------------------------------------------------------- |
+| T-7      | „Za tydzień {przedmiot} — dziś 15–20 min powtórki” + zadanie w TODO |
+| T-3      | „Za 3 dni sprawdzian — zaplanowano {N} min w tym tygodniu”          |
+| T-1 rano | „Jutro sprawdzian z {przedmiot} — checklista”                       |
 
 Generowane przez cron + wąski prompt AI (patrz [plan-nauki.md](./plan-nauki.md)).
 
 ## Quiet hours
 
-Z profilu (`studyEndHard` = 21:30): nie wysyłaj **push** po tej godzinie.
-Wyjątek: T-1 rano (7:00–8:00) „dziś sprawdzian”.
+Z profilu (`studyEndHard` = 21:30): nie wysyłaj **push** po tej godzinie. Wyjątek: T-1 rano
+(7:00–8:00) „dziś sprawdzian”.
 
 ## Plan dnia — format wiadomości agenta
 
@@ -101,8 +103,8 @@ Jeśli coś Ci dziś nie pasuje (lekarz, zajęcia), napisz — przesunę na inny
 
 ## Definition of Done
 
-- [ ] Powiadomienie 30 min po ostatniej lekcji
-- [ ] Klik → czat z wiadomością agenta
-- [ ] TODO dziś + budżet minut w UI powiadomienia
-- [ ] T-7 alert przed sprawdzianem
-- [ ] Web Push na telefonie (PWA)
+- [x] Powiadomienie 30 min po ostatniej lekcji
+- [x] Klik → czat z wiadomością agenta
+- [x] TODO dziś + budżet minut w UI powiadomienia
+- [x] T-7 alert przed sprawdzianem
+- [ ] Web Push na telefonie (PWA) — wymaga VAPID w `.env`

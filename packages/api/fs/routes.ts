@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppDatabase } from "../db/client.ts";
-import { FsError, fsDelete, fsList, fsMkdir, fsRead, fsWrite } from "./service.ts";
+import { fsDelete, FsError, fsList, fsMkdir, fsRead, fsWrite } from "./service.ts";
 
 export function createFsRoutes(getDatabase: () => AppDatabase | null) {
   const fs = new Hono();

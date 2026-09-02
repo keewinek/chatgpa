@@ -1329,7 +1329,8 @@
           "jsr:@hono/hono@4",
           "npm:@electric-sql/pglite@~0.3.16",
           "npm:drizzle-orm@~0.44.7",
-          "npm:postgres@^3.4.9"
+          "npm:postgres@^3.4.9",
+          "npm:web-push@3"
         ]
       },
       "packages/web": {

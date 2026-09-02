@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ChatGPA Librus</title>
+    <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 1rem;
+      min-width: 16rem;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.35rem;
+      margin-bottom: 0.75rem;
+    }
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      cursor: pointer;
+    }
+    #status {
+      font-size: 0.8rem;
+      margin-top: 0.75rem;
+      color: #555;
+    }
+    </style>
+  </head>
+  <body>
+    <label for="api">ChatGPA API</label>
+    <input id="api" type="url" placeholder="http://localhost:8000" />
+    <button id="sync" type="button">Sync Librus → ChatGPA</button>
+    <p id="status"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

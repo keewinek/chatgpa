@@ -89,7 +89,8 @@ const FIELD_ALIASES: Record<string, string> = {
 };
 
 function toCamelKey(key: string): string {
-  return FIELD_ALIASES[key] ?? key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  return FIELD_ALIASES[key] ??
+    key.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
 function toRowValues(data: Record<string, unknown>): Record<string, unknown> {
@@ -160,7 +161,7 @@ export async function pushChanges(
       row.updatedAt = incomingUpdatedAt ?? now;
       if (!row.createdAt) row.createdAt = now;
 
-      const { id: _id, createdAt, ...updateFields } = row;
+      const { id: _id, createdAt: _createdAt, ...updateFields } = row;
 
       await db
         .insert(table)

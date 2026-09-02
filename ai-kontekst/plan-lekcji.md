@@ -2,10 +2,11 @@
 
 ## Status
 
-**✅ Zaimplementowane** (wrzesień 2026) — klasa **3A**, CXXII LO Warszawa (Staffa 3/5).
-Źródło: branch `cursor/timetable-plan-lekcji-d48b` (Cursor Cloud Agent), scalone do `main`.
+**✅ Zaimplementowane** (wrzesień 2026) — klasa **3A**, CXXII LO Warszawa (Staffa 3/5). Źródło:
+branch `cursor/timetable-plan-lekcji-d48b` (Cursor Cloud Agent), scalone do `main`.
 
-Docelowo plan może pochodzić z Librus (`~/school/librus/schedule.json`) — na razie **statyczny** w kodzie.
+Docelowo plan może pochodzić z Librus (`~/school/librus/schedule.json`) — na razie **statyczny** w
+kodzie.
 
 ## Co działa
 
@@ -33,16 +34,16 @@ Docelowo plan może pochodzić z Librus (`~/school/librus/schedule.json`) — na
 
 ## Gdzie w kodzie
 
-| Co | Ścieżka |
-| --- | --- |
-| Dane planu + logika | `packages/core/timetable.ts` |
-| Data/czas Warszawa | `packages/core/datetime.ts` |
-| Eksport typów | `packages/core/mod.ts` |
-| UI panelu | `packages/web/islands/TimetablePanel.tsx` |
-| Preferencje grup (localStorage) | `packages/web/lib/timetable-storage.ts` |
-| Kontekst AI | `packages/api/ai/providers.ts` → `withMemoryContext` |
-| Narzędzia | `packages/api/ai/tools.ts` |
-| Walidacja `groupPrefs` | `packages/api/validate.ts` |
+| Co                              | Ścieżka                                              |
+| ------------------------------- | ---------------------------------------------------- |
+| Dane planu + logika             | `packages/core/timetable.ts`                         |
+| Data/czas Warszawa              | `packages/core/datetime.ts`                          |
+| Eksport typów                   | `packages/core/mod.ts`                               |
+| UI panelu                       | `packages/web/islands/TimetablePanel.tsx`            |
+| Preferencje grup (localStorage) | `packages/web/lib/timetable-storage.ts`              |
+| Kontekst AI                     | `packages/api/ai/providers.ts` → `withMemoryContext` |
+| Narzędzia                       | `packages/api/ai/tools.ts`                           |
+| Walidacja `groupPrefs`          | `packages/api/validate.ts`                           |
 
 ## Grupy lekcyjne (`GroupPrefs`)
 
@@ -57,22 +58,24 @@ Docelowo plan może pochodzić z Librus (`~/school/librus/schedule.json`) — na
 
 Domyślnie: wszystkie `1`. Klucz localStorage: `chatgpa:timetable:groups`.
 
-Przy lekcjach z podziałem na grupy (np. dwa języki obce w tym samym slocie) `resolveLesson` wybiera właściwą lekcję wg preferencji.
+Przy lekcjach z podziałem na grupy (np. dwa języki obce w tym samym slocie) `resolveLesson` wybiera
+właściwą lekcję wg preferencji.
 
 ## Godziny lekcji (`LESSON_SLOTS`)
 
 | Slot | Start | Koniec |
-| --- | --- | --- |
-| 1 | 08:00 | 08:45 |
-| 2 | 08:55 | 09:40 |
-| 3 | 09:50 | 10:35 |
-| 4 | 10:45 | 11:30 |
-| 5 | 11:40 | 12:25 |
-| 6 | 12:45 | 13:30 |
-| 7 | 13:50 | 14:35 |
-| 8 | 14:45 | 15:30 |
+| ---- | ----- | ------ |
+| 1    | 08:00 | 08:45  |
+| 2    | 08:55 | 09:40  |
+| 3    | 09:50 | 10:35  |
+| 4    | 10:45 | 11:30  |
+| 5    | 11:40 | 12:25  |
+| 6    | 12:45 | 13:30  |
+| 7    | 13:50 | 14:35  |
+| 8    | 14:45 | 15:30  |
 
-`getCurrentLesson()` — status `during` / `before` / `after` / `weekend` + następna lekcja w tygodniu.
+`getCurrentLesson()` — status `during` / `before` / `after` / `weekend` + następna lekcja w
+tygodniu.
 
 ## Aktualizacja planu
 
@@ -82,12 +85,12 @@ Przy lekcjach z podziałem na grupy (np. dwa języki obce w tym samym slocie) `r
 
 ## Relacja z innymi systemami
 
-| System | Jak używa planu |
-| --- | --- |
+| System                                 | Jak używa planu                                                                              |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
 | [powiadomienia.md](./powiadomienia.md) | Trigger: koniec ostatniej lekcji + 30 min → na razie licz z `LESSON_SLOTS` + `getDayLessons` |
-| [kalendarz.md](./kalendarz.md) | Wolne okna nauki po ostatniej lekcji dnia |
-| [librus.md](./librus.md) | Docelowy sync zastąpi statyczny `TIMETABLE` |
-| [prompty.md](./prompty.md) | Wyjątek od „lazy context” — plan jest w prompcie (świadomie, bo często potrzebny) |
+| [kalendarz.md](./kalendarz.md)         | Wolne okna nauki po ostatniej lekcji dnia                                                    |
+| [librus.md](./librus.md)               | Docelowy sync zastąpi statyczny `TIMETABLE`                                                  |
+| [prompty.md](./prompty.md)             | Wyjątek od „lazy context” — plan jest w prompcie (świadomie, bo często potrzebny)            |
 
 ## Definition of Done (obecna implementacja)
 

@@ -170,9 +170,9 @@ Szczegóły: [system-plikow.md](./system-plikow.md).
 
 ## Storage path
 
-| Faza | Storage                                  |
-| ---- | ---------------------------------------- |
-| 0    | localStorage (czat + memory string[])    |
-| 1    | localStorage (historia v2)               |
+| Faza | Storage                                                            |
+| ---- | ------------------------------------------------------------------ |
+| 0    | localStorage (czat + memory string[])                              |
+| 1    | localStorage (historia v2)                                         |
 | 2    | PostgreSQL + wirtualny FS ([serwer-i-sync.md](./serwer-i-sync.md)) |
-| 3+   | pgvector (RAG po książkach / notatkach)  |
+| 3+   | pgvector (RAG po książkach / notatkach)                            |

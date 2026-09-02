@@ -1,13 +1,7 @@
 import { Hono } from "hono";
 import type { TaskPriority, TaskSource, TaskStatus } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
-import {
-  addTask,
-  completeTask,
-  deleteTask,
-  listTasks,
-  updateTask,
-} from "./service.ts";
+import { addTask, completeTask, deleteTask, listTasks, updateTask } from "./service.ts";
 
 function parseStatus(value: string | undefined): TaskStatus | null {
   if (!value) return null;
@@ -38,7 +32,12 @@ export function createTodoRoutes(getDatabase: () => AppDatabase | null) {
     }
 
     const dueBefore = c.req.query("dueBefore") ?? undefined;
-    const tasks = await listTasks(db, { status: status ?? undefined, dueBefore });
+    const scheduledFor = c.req.query("scheduledFor") ?? undefined;
+    const tasks = await listTasks(db, {
+      status: status ?? undefined,
+      dueBefore,
+      scheduledFor,
+    });
     return c.json({ tasks });
   });
 
@@ -62,6 +61,8 @@ export function createTodoRoutes(getDatabase: () => AppDatabase | null) {
           : undefined,
         source: parseSource(body.source),
         roiScore: typeof body.roiScore === "number" ? body.roiScore : undefined,
+        scheduledFor: typeof body.scheduledFor === "string" ? body.scheduledFor : undefined,
+        notes: typeof body.notes === "string" ? body.notes : undefined,
       });
       return c.json({ task }, 201);
     } catch (err) {
@@ -106,6 +107,12 @@ export function createTodoRoutes(getDatabase: () => AppDatabase | null) {
         : typeof body.roiScore === "number"
         ? body.roiScore
         : undefined,
+      scheduledFor: body.scheduledFor === null
+        ? null
+        : typeof body.scheduledFor === "string"
+        ? body.scheduledFor
+        : undefined,
+      notes: body.notes === null ? null : typeof body.notes === "string" ? body.notes : undefined,
     });
 
     if (!task) return c.json({ error: "Nie znaleziono zadania" }, 404);

@@ -2,8 +2,8 @@
 
 ## Cel
 
-Kalendarz łączy: **Librus** (sprawdziany, prace), **bloki nauki** (AI), **życie prywatne** (lekarz, muzyka).
-Agent planuje naukę w **realnych oknach czasowych** — nie zakłada nieskończonego wieczoru.
+Kalendarz łączy: **Librus** (sprawdziany, prace), **bloki nauki** (AI), **życie prywatne** (lekarz,
+muzyka). Agent planuje naukę w **realnych oknach czasowych** — nie zakłada nieskończonego wieczoru.
 
 ## Pliki
 
@@ -11,15 +11,16 @@ Jeden plik na miesiąc: `~/calendar/2026-09.cal` ([system-plikow.md](./system-pl
 
 ## Źródła wydarzeń
 
-| Źródło | Opis |
-| ------ | ---- |
-| `librus` | Sprawdziany, kartkówki, terminy z syncu |
-| `ai` | Bloki `study_block`, przesunięcia po „dziś nie mogę” |
-| `manual` | Użytkownik lub agent (lekarz, korepetycje muzyki) |
+| Źródło   | Opis                                                 |
+| -------- | ---------------------------------------------------- |
+| `librus` | Sprawdziany, kartkówki, terminy z syncu              |
+| `ai`     | Bloki `study_block`, przesunięcia po „dziś nie mogę” |
+| `manual` | Użytkownik lub agent (lekarz, korepetycje muzyki)    |
 
 ## Plan lekcji
 
-**Teraz (✅):** statyczny plan klasy 3A w `@chatgpa/core` — patrz [plan-lekcji.md](./plan-lekcji.md).
+**Teraz (✅):** statyczny plan klasy 3A w `@chatgpa/core` — patrz
+[plan-lekcji.md](./plan-lekcji.md).
 
 **Później (Librus):**
 
@@ -32,14 +33,14 @@ Jeden plik na miesiąc: `~/calendar/2026-09.cal` ([system-plikow.md](./system-pl
 
 Zapis w `~/profile/me.profile`:
 
-| Parametr | Wartość | Uwagi |
-| -------- | ------- | ----- |
-| `commuteAfterSchoolMinutes` | **60** | Powrót do domu ≈ 1h po końcu lekcji |
-| `commuteExtraMinutes` | **30** | Czasem obiad — bufor |
-| `studyEndPreferred` | **21:00** | Preferowany koniec nauki |
-| `studyEndHard` | **21:30** | Absolutne maximum |
-| `showerAndBreakMinutes` | **30** | Po powrocie, przed nauką |
-| `notificationAfterSchoolMinutes` | **30** | Powiadomienie 30 min po ostatniej lekcji |
+| Parametr                         | Wartość   | Uwagi                                    |
+| -------------------------------- | --------- | ---------------------------------------- |
+| `commuteAfterSchoolMinutes`      | **60**    | Powrót do domu ≈ 1h po końcu lekcji      |
+| `commuteExtraMinutes`            | **30**    | Czasem obiad — bufor                     |
+| `studyEndPreferred`              | **21:00** | Preferowany koniec nauki                 |
+| `studyEndHard`                   | **21:30** | Absolutne maximum                        |
+| `showerAndBreakMinutes`          | **30**    | Po powrocie, przed nauką                 |
+| `notificationAfterSchoolMinutes` | **30**    | Powiadomienie 30 min po ostatniej lekcji |
 
 ### Przykład dnia szkolnego
 
@@ -63,16 +64,17 @@ Agent liczy **dostępne minuty nauki** = od (powrót + przerwa) do `studyEndPref
 
 1. Sync dostarcza **surowe dane** — nie nadpisuj ślepo całego kalendarza.
 2. Agent / job porównuje: nowe oceny, nowe terminy, zmiana planu lekcji.
-3. Przy konflikcie lub niejasności → wpis do short memory + opcjonalnie pytanie użytkownika przy następnym czacie.
+3. Przy konflikcie lub niejasności → wpis do short memory + opcjonalnie pytanie użytkownika przy
+   następnym czacie.
 4. **Nie psuj** ręcznych wpisów użytkownika (lekarz, muzyka) — merge, nie replace all.
 
 ## Tools
 
-| Tool | Opis |
-| ---- | ---- |
-| `calendar.list` | `{ from, to }` — wydarzenia w zakresie |
-| `calendar.add` | nowe wydarzenie |
-| `calendar.update` | zmiana / przesunięcie |
+| Tool                 | Opis                                                 |
+| -------------------- | ---------------------------------------------------- |
+| `calendar.list`      | `{ from, to }` — wydarzenia w zakresie               |
+| `calendar.add`       | nowe wydarzenie                                      |
+| `calendar.update`    | zmiana / przesunięcie                                |
 | `calendar.freeSlots` | `{ date }` — okna wolne na naukę (uwzględnia profil) |
 
 ## UI

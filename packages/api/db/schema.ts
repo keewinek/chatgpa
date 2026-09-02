@@ -1,12 +1,5 @@
-import {
-  date,
-  integer,
-  jsonb,
-  pgTable,
-  real,
-  text,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import type { NotificationChatPrefill, NotificationKind, NotificationPayload } from "@chatgpa/core";
+import { date, integer, jsonb, pgTable, real, text, timestamp } from "drizzle-orm/pg-core";
 
 /** Shared sync columns — updatedAt is the pull cursor. */
 const syncMeta = {
@@ -28,10 +21,27 @@ export const profile = pgTable("profile", {
   ...syncMeta,
 });
 
+export type ChatThreadMetadata = {
+  notificationContext?: {
+    todoToday: unknown[];
+    freeMinutes: number;
+  };
+  clientCreatedAt?: number;
+  clientUpdatedAt?: number;
+};
+
+export type ChatMessageMetadata = {
+  error?: boolean;
+  streaming?: boolean;
+  toolResults?: Array<{ tool: string; ok: boolean; output?: string; error?: string }>;
+  attachments?: unknown[];
+};
+
 export const chatThreads = pgTable("chat_threads", {
   id: text("id").primaryKey(),
   title: text("title"),
   mode: text("mode").$type<"ask" | "plan" | "agent" | "focus">(),
+  metadata: jsonb("metadata").$type<ChatThreadMetadata>(),
   ...syncMeta,
 });
 
@@ -42,6 +52,7 @@ export const chatMessages = pgTable("chat_messages", {
   content: text("content").notNull(),
   model: text("model"),
   provider: text("provider"),
+  metadata: jsonb("metadata").$type<ChatMessageMetadata>(),
   ...syncMeta,
 });
 
@@ -66,6 +77,8 @@ export const tasks = pgTable("tasks", {
   source: text("source").$type<"manual" | "librus" | "ai" | "plan">().notNull().default("manual"),
   status: text("status").$type<"open" | "done" | "cancelled">().notNull().default("open"),
   estimatedMinutes: integer("estimated_minutes"),
+  scheduledFor: date("scheduled_for", { mode: "string" }),
+  notes: text("notes"),
   ...syncMeta,
 });
 
@@ -78,6 +91,25 @@ export const fileNodes = pgTable("file_nodes", {
   ...syncMeta,
 });
 
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey(),
+  kind: text("kind").$type<NotificationKind>().notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  chatPrefill: jsonb("chat_prefill").$type<NotificationChatPrefill>(),
+  payload: jsonb("payload").$type<NotificationPayload>(),
+  planDate: date("plan_date", { mode: "string" }),
+  readAt: timestamp("read_at", { withTimezone: true, mode: "string" }),
+  ...syncMeta,
+});
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: text("id").primaryKey(),
+  endpoint: text("endpoint").notNull().unique(),
+  keys: jsonb("keys").$type<{ p256dh: string; auth: string }>().notNull(),
+  ...syncMeta,
+});
+
 export const schema = {
   profile,
   chatThreads,
@@ -85,6 +117,8 @@ export const schema = {
   memoryEntries,
   tasks,
   fileNodes,
+  notifications,
+  pushSubscriptions,
 };
 
 export type ProfileRow = typeof profile.$inferSelect;
@@ -93,3 +127,5 @@ export type ChatMessageRow = typeof chatMessages.$inferSelect;
 export type MemoryEntryRow = typeof memoryEntries.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type FileNodeRow = typeof fileNodes.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;

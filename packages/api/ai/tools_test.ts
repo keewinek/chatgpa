@@ -191,3 +191,88 @@ withTestDb("todo.complete via tools", async ({ db }) => {
     setDbForTests(undefined);
   }
 });
+
+withTestDb("notes.write and notes.read via tools", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    const write = await executeActions(
+      [{
+        tool: "notes.write",
+        args: { path: "chemia/kwasy", content: "# Kwasy\n\nTreść." },
+      }],
+      store,
+    );
+    assertEquals(write.results[0].ok, true);
+
+    const read = await executeActions(
+      [{ tool: "notes.read", args: { path: "chemia/kwasy" } }],
+      store,
+    );
+    assertEquals(read.results[0].ok, true);
+    assertEquals(read.results[0].output?.includes("# Kwasy"), true);
+
+    const append = await executeActions(
+      [{ tool: "notes.append", args: { path: "chemia/kwasy", content: "\n## Zasady" } }],
+      store,
+    );
+    assertEquals(append.results[0].ok, true);
+
+    const list = await executeActions([{ tool: "notes.list", args: { path: "chemia" } }], store);
+    assertEquals(list.results[0].ok, true);
+    assertEquals(list.results[0].output?.includes("kwasy.md"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
+withTestDb("calendar.list returns empty calendar message", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    const { results } = await executeActions([{ tool: "calendar.list", args: {} }], store);
+    assertEquals(results[0].ok, true);
+    assertEquals(results[0].output?.toLowerCase().includes("brak wydarzeń"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
+withTestDb("calendar.freeSlots computes study windows", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    const { results } = await executeActions(
+      [{ tool: "calendar.freeSlots", args: { date: "2026-09-02" } }],
+      store,
+    );
+    assertEquals(results[0].ok, true);
+    assertEquals(results[0].output?.includes("Budżet:"), true);
+    assertEquals(results[0].output?.includes("21:00"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
+withTestDb("calendar.add creates event", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    const { results } = await executeActions(
+      [{
+        tool: "calendar.add",
+        args: {
+          title: "Lekarz",
+          kind: "personal",
+          start: "2026-09-03T16:00:00+02:00",
+          end: "2026-09-03T17:00:00+02:00",
+        },
+      }],
+      store,
+    );
+    assertEquals(results[0].ok, true);
+    assertEquals(results[0].output?.includes("Lekarz"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});

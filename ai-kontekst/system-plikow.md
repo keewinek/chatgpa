@@ -2,8 +2,9 @@
 
 ## Cel
 
-ChatGPA to nie tylko chat — to **osobisty OS do szkoły**. Dane użytkownika (TODO, notatki, pamięć, kalendarz, książki) żyją jako **pliki w katalogach** z rozpoznawalnymi rozszerzeniami.
-Użytkownik i agent mają ten sam widok; agent operuje przez tools `fs.*`.
+ChatGPA to nie tylko chat — to **osobisty OS do szkoły**. Dane użytkownika (TODO, notatki, pamięć,
+kalendarz, książki) żyją jako **pliki w katalogach** z rozpoznawalnymi rozszerzeniami. Użytkownik i
+agent mają ten sam widok; agent operuje przez tools `fs.*`.
 
 ## Zasady
 
@@ -51,17 +52,17 @@ Użytkownik i agent mają ten sam widok; agent operuje przez tools `fs.*`.
 
 ## Rozszerzenia plików
 
-| Rozszerzenie | Zawartość | Edycja w UI |
-| ------------ | --------- | ----------- |
-| `.memory` | JSONL wpisów pamięci | read-only + panel pamięci |
-| `.todo` | Markdown z checkboxami + metadane YAML frontmatter | edytor TODO |
-| `.md` | Notatki Markdown | edytor notatek |
-| `.cal` | Wydarzenia miesiąca (JSON lub iCal subset) | widok kalendarza |
-| `.plan` | Plan dnia/tygodnia (Markdown + bloki czasu) | widok planu |
-| `.profile` | YAML/JSON profilu | formularz ustawień |
-| `.subject` | Meta przedmiotu (cel średniej, nauczyciel) | formularz |
-| `.json` | Snapshoty (Librus) | read-only, sync |
-| `.pdf`, obrazy | Książki / materiały | podgląd + AI read |
+| Rozszerzenie   | Zawartość                                          | Edycja w UI               |
+| -------------- | -------------------------------------------------- | ------------------------- |
+| `.memory`      | JSONL wpisów pamięci                               | read-only + panel pamięci |
+| `.todo`        | Markdown z checkboxami + metadane YAML frontmatter | edytor TODO               |
+| `.md`          | Notatki Markdown                                   | edytor notatek            |
+| `.cal`         | Wydarzenia miesiąca (JSON lub iCal subset)         | widok kalendarza          |
+| `.plan`        | Plan dnia/tygodnia (Markdown + bloki czasu)        | widok planu               |
+| `.profile`     | YAML/JSON profilu                                  | formularz ustawień        |
+| `.subject`     | Meta przedmiotu (cel średniej, nauczyciel)         | formularz                 |
+| `.json`        | Snapshoty (Librus)                                 | read-only, sync           |
+| `.pdf`, obrazy | Książki / materiały                                | podgląd + AI read         |
 
 ## Format `.todo` (przykład)
 
@@ -104,28 +105,28 @@ Agent i API parsują do encji `Task` ([model-danych.md](./model-danych.md)).
 
 ## Tools dla agenta (`fs.*`)
 
-| Tool | Opis |
-| ---- | ---- |
-| `fs.list` | `{ path: string }` → lista plików/katalogów |
-| `fs.read` | `{ path: string, offset?, limit? }` → treść (tekst) lub meta (binarny) |
-| `fs.write` | `{ path, content, createOnly? }` |
-| `fs.append` | `{ path, content }` — np. dopisanie do `.memory` |
-| `fs.mkdir` | `{ path }` |
-| `fs.delete` | `{ path }` — z potwierdzeniem dla ważnych plików |
-| `fs.search` | `{ query, path?, glob? }` — grep po notatkach/książkach (tekst) |
+| Tool        | Opis                                                                   |
+| ----------- | ---------------------------------------------------------------------- |
+| `fs.list`   | `{ path: string }` → lista plików/katalogów                            |
+| `fs.read`   | `{ path: string, offset?, limit? }` → treść (tekst) lub meta (binarny) |
+| `fs.write`  | `{ path, content, createOnly? }`                                       |
+| `fs.append` | `{ path, content }` — np. dopisanie do `.memory`                       |
+| `fs.mkdir`  | `{ path }`                                                             |
+| `fs.delete` | `{ path }` — z potwierdzeniem dla ważnych plików                       |
+| `fs.search` | `{ query, path?, glob? }` — grep po notatkach/książkach (tekst)        |
 
 Dla PDF/książek: `fs.read` zwraca wyciągnięty tekst (jak obecny pipeline załączników).
 
 ## API (HTTP)
 
-| Method | Path | Opis |
-| ------ | ---- | ---- |
-| GET | `/api/fs?path=~` | list |
-| GET | `/api/fs/file?path=...` | read |
-| PUT | `/api/fs/file` | write |
-| POST | `/api/fs/mkdir` | mkdir |
-| DELETE | `/api/fs/file?path=...` | delete |
-| POST | `/api/fs/upload` | upload do `books/` itd. |
+| Method | Path                    | Opis                    |
+| ------ | ----------------------- | ----------------------- |
+| GET    | `/api/fs?path=~`        | list                    |
+| GET    | `/api/fs/file?path=...` | read                    |
+| PUT    | `/api/fs/file`          | write                   |
+| POST   | `/api/fs/mkdir`         | mkdir                   |
+| DELETE | `/api/fs/file?path=...` | delete                  |
+| POST   | `/api/fs/upload`        | upload do `books/` itd. |
 
 ## UI
 

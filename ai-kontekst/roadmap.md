@@ -17,9 +17,9 @@
 - [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator, pliki)
 - [x] Streaming odpowiedzi (SSE via `/api/chat/stream`)
 - [x] Plan lekcji 3A — UI + kontekst AI + tools `timetable.*` ([plan-lekcji.md](./plan-lekcji.md))
-- [ ] **Kontekst AI v2** — lazy context przez tools ([prompty.md](./prompty.md))
-- [ ] Komendy slash ([komendy.md](./komendy.md))
-- [ ] Pomodoro (`/pomodoro`)
+- [x] **Kontekst AI v2** — lazy context przez tools ([prompty.md](./prompty.md))
+- [x] Komendy slash ([komendy.md](./komendy.md))
+- [x] Pomodoro (`/pomodoro`)
 
 ## Faza 2 — Serwer, pliki, sync (NOWA — priorytet)
 
@@ -29,18 +29,18 @@ Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
 - [x] Wirtualny system plików `~/` ([system-plikow.md](./system-plikow.md))
 - [x] Pamięć short-term + long-term ([pamiec.md](./pamiec.md))
 - [x] Globalna TODO ([todo.md](./todo.md))
-- [ ] Notatki Markdown ([notatki.md](./notatki.md))
-- [ ] Sync czatów multi-device
-- [ ] Kalendarz + profil czasu ([kalendarz.md](./kalendarz.md))
-- [ ] Profil ucznia w `~/profile/me.profile`
+- [x] Notatki Markdown ([notatki.md](./notatki.md))
+- [x] Sync czatów multi-device
+- [x] Kalendarz + profil czasu ([kalendarz.md](./kalendarz.md))
+- [x] Profil ucznia w `~/profile/me.profile`
 
 ## Faza 3 — Szkoła i planowanie
 
-- [ ] Wtyczka Librus + `POST /api/librus/sync` ([librus.md](./librus.md))
-- [ ] Plan dnia / tygodnia + anty-prokrastynacja T-7 ([plan-nauki.md](./plan-nauki.md))
-- [ ] Powiadomienia po szkole (30 min po lekcjach) ([powiadomienia.md](./powiadomienia.md))
-- [ ] Klik powiadomienia → czat z agentem + TODO dziś
-- [ ] Negocjacja planu („dziś lekarz” → przesunięcie)
+- [x] Wtyczka Librus + `POST /api/librus/sync` ([librus.md](./librus.md))
+- [x] Plan dnia / tygodnia + anty-prokrastynacja T-7 ([plan-nauki.md](./plan-nauki.md))
+- [x] Powiadomienia po szkole (30 min po lekcjach) ([powiadomienia.md](./powiadomienia.md))
+- [x] Klik powiadomienia → czat z agentem + TODO dziś
+- [x] Negocjacja planu („dziś lekarz” → przesunięcie)
 - [ ] ROI ranking po syncu
 - [ ] Diff wiedzy / średniej (`/diff`)
 - [ ] Weekly review
@@ -69,4 +69,5 @@ Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
 
 ## Kontekst (wrzesień 2026)
 
-Pełna specyfikacja nowych feature'ów: [plan-implementacji.md](./plan-implementacji.md) + pliki w sekcji „Funkcje” w [README.md](./README.md).
+Pełna specyfikacja nowych feature'ów: [plan-implementacji.md](./plan-implementacji.md) + pliki w
+sekcji „Funkcje” w [README.md](./README.md).

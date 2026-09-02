@@ -2,8 +2,9 @@
 
 ## Cel
 
-Wewnętrzne notatki użytkownika — **Markdown na serwerze**, w katalogu `~/notes/`, dostępne z telefonu i komputera.
-Agent może je czytać, tworzyć i edytować (np. po lekcji: „zapisz notatkę z tego”).
+Wewnętrzne notatki użytkownika — **Markdown na serwerze**, w katalogu `~/notes/`, dostępne z
+telefonu i komputera. Agent może je czytać, tworzyć i edytować (np. po lekcji: „zapisz notatkę z
+tego”).
 
 ## Lokalizacja
 
@@ -36,12 +37,12 @@ Treść notatki...
 
 ## Tools dla agenta
 
-| Tool | Opis |
-| ---- | ---- |
-| `notes.list` | `{ path?: string }` — lista notatek |
-| `notes.read` | `{ path: string }` |
-| `notes.write` | `{ path, content }` — create or overwrite |
-| `notes.append` | `{ path, content }` — dopisanie na końcu |
+| Tool           | Opis                                      |
+| -------------- | ----------------------------------------- |
+| `notes.list`   | `{ path?: string }` — lista notatek       |
+| `notes.read`   | `{ path: string }`                        |
+| `notes.write`  | `{ path, content }` — create or overwrite |
+| `notes.append` | `{ path, content }` — dopisanie na końcu  |
 
 Równoważne z `fs.*` w `~/notes/` — można użyć jednego API.
 
@@ -64,8 +65,8 @@ Równoważne z `fs.*` w `~/notes/` — można użyć jednego API.
 
 ## Definition of Done
 
-- [ ] CRUD notatek przez API
-- [ ] UI edytora Markdown
-- [ ] Tools dla agenta
+- [x] CRUD notatek przez API
+- [x] UI edytora Markdown
+- [x] Tools dla agenta
 - [ ] Sync multi-device
-- [ ] Katalogi per przedmiot
+- [x] Katalogi per przedmiot
