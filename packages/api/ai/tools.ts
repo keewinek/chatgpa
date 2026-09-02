@@ -1,5 +1,17 @@
 import type { ChatAction } from "./actions.ts";
 import type { ChatAttachment } from "@chatgpa/core";
+import {
+  DEFAULT_GROUP_PREFS,
+  formatDaySchedule,
+  formatTimetableForAi,
+  formatWarsawDateTime,
+  getCurrentLesson,
+  getWarsawNow,
+  weekdayFromDate,
+  type GroupPrefs,
+  type Weekday,
+  WEEKDAY_LABELS,
+} from "@chatgpa/core";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
 
@@ -41,15 +53,65 @@ function safeCalc(expression: string): number {
   return value;
 }
 
-function warsawNow(): string {
-  return new Intl.DateTimeFormat("pl-PL", {
-    timeZone: "Europe/Warsaw",
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(new Date());
+const DAY_ALIASES: Record<string, Weekday> = {
+  poniedziałek: "mon",
+  poniedzialek: "mon",
+  pn: "mon",
+  mon: "mon",
+  monday: "mon",
+  wtorek: "tue",
+  wt: "tue",
+  tue: "tue",
+  tuesday: "tue",
+  środa: "wed",
+  sroda: "wed",
+  śr: "wed",
+  sr: "wed",
+  wed: "wed",
+  wednesday: "wed",
+  czwartek: "thu",
+  czw: "thu",
+  thu: "thu",
+  thursday: "thu",
+  piątek: "fri",
+  piatek: "fri",
+  pi: "fri",
+  fri: "fri",
+  friday: "fri",
+};
+
+function parseDayArg(raw: unknown): Weekday | null {
+  if (typeof raw !== "string") return null;
+  return DAY_ALIASES[raw.trim().toLowerCase()] ?? null;
 }
 
-async function runOne(action: ChatAction, memory: string[]): Promise<ToolResult> {
+function formatCurrentLesson(prefs: GroupPrefs): string {
+  const info = getCurrentLesson(prefs);
+  const now = getWarsawNow();
+  const timeStr = now.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+
+  if (info.status === "weekend") {
+    return `Teraz jest ${timeStr} — weekend, brak lekcji.`;
+  }
+
+  if (info.status === "during" && info.lesson && info.time) {
+    return `Teraz (${timeStr}) trwa lekcja ${info.slot}: ${info.lesson.subject} (${info.lesson.teacher}, sala ${info.lesson.room}), ${info.time.start}–${info.time.end}.`;
+  }
+
+  if (info.nextLesson) {
+    const dayLabel = WEEKDAY_LABELS[info.nextLesson.day];
+    const { lesson, time, slot } = info.nextLesson;
+    return `Teraz jest ${timeStr}. Następna lekcja: ${dayLabel}, ${slot}. ${time.start}–${time.end}: ${lesson.subject} (${lesson.teacher}, sala ${lesson.room}).`;
+  }
+
+  return `Teraz jest ${timeStr}. Brak kolejnych lekcji w tym tygodniu.`;
+}
+
+async function runOne(
+  action: ChatAction,
+  memory: string[],
+  groupPrefs: GroupPrefs,
+): Promise<ToolResult> {
   const args = action.args ?? {};
   switch (action.tool) {
     case "memory.remember": {
@@ -79,7 +141,7 @@ async function runOne(action: ChatAction, memory: string[]): Promise<ToolResult>
       return { tool: action.tool, ok: true, output: `Usunięto: „${removed}”` };
     }
     case "datetime.now": {
-      return { tool: action.tool, ok: true, output: warsawNow() };
+      return { tool: action.tool, ok: true, output: formatWarsawDateTime() };
     }
     case "calc.eval": {
       const expression = typeof args.expression === "string" ? args.expression : "";
@@ -124,6 +186,30 @@ async function runOne(action: ChatAction, memory: string[]): Promise<ToolResult>
         };
       }
     }
+    case "timetable.today": {
+      const day = weekdayFromDate(getWarsawNow());
+      if (!day) {
+        return { tool: action.tool, ok: true, output: "Dziś weekend — brak lekcji." };
+      }
+      return { tool: action.tool, ok: true, output: formatDaySchedule(day, groupPrefs) };
+    }
+    case "timetable.now": {
+      return { tool: action.tool, ok: true, output: formatCurrentLesson(groupPrefs) };
+    }
+    case "timetable.day": {
+      const day = parseDayArg(args.day);
+      if (!day) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: "Podaj args.day: poniedziałek, wtorek, środa, czwartek lub piątek",
+        };
+      }
+      return { tool: action.tool, ok: true, output: formatDaySchedule(day, groupPrefs) };
+    }
+    case "timetable.full": {
+      return { tool: action.tool, ok: true, output: formatTimetableForAi(groupPrefs) };
+    }
     default:
       return { tool: action.tool, ok: false, error: `Nieznane narzędzie: ${action.tool}` };
   }
@@ -132,10 +218,11 @@ async function runOne(action: ChatAction, memory: string[]): Promise<ToolResult>
 export async function executeActions(
   actions: ChatAction[],
   memory: string[],
+  groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
 ): Promise<ToolRunSummary> {
   const results: ToolResult[] = [];
   for (const action of actions) {
-    results.push(await runOne(action, memory));
+    results.push(await runOne(action, memory, groupPrefs));
   }
   return { results, memory };
 }

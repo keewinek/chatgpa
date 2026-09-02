@@ -1,4 +1,4 @@
-import type { ChatAttachment, ChatMessage, ChatRole } from "@chatgpa/core";
+import type { ChatAttachment, ChatMessage, ChatRole, GroupPrefs } from "@chatgpa/core";
 
 export type { ChatAttachment, ChatMessage, ChatRole };
 
@@ -47,6 +47,8 @@ export interface ChatRequestBody {
   model?: string;
   /** Facts the client remembers about the student (localStorage). */
   memory?: string[];
+  /** Student's lesson group preferences for timetable filtering. */
+  groupPrefs?: GroupPrefs;
 }
 
 export interface ChatResponseBody {

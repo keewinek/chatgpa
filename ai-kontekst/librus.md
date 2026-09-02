@@ -5,7 +5,8 @@ zadań.
 
 ## Status
 
-`planned` — chat + AI cascade są pierwsze; wtyczka / sync osobnym torem (może osobne repo).
+`partial` — **plan lekcji 3A jest już w aplikacji** ([plan-lekcji.md](./plan-lekcji.md)).
+Sync ocen, terminów i dynamicznych zmian planu — `planned` (wtyczka + `/api/librus/sync`).
 
 ## Preferowana architektura: wtyczka przeglądarki
 

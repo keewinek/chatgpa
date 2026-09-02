@@ -4,6 +4,7 @@ import ChatBubble from "./ChatBubble.tsx";
 import ChatComposer from "./ChatComposer.tsx";
 import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
+import TimetablePanel from "./TimetablePanel.tsx";
 import {
   type ChatSession,
   type ChatStore,
@@ -26,6 +27,7 @@ import {
   streamChat,
   uploadFile,
 } from "../lib/chat-api.ts";
+import { loadGroupPrefs } from "../lib/timetable-storage.ts";
 import type { ChatAttachment } from "@chatgpa/core";
 
 function msgId() {
@@ -44,6 +46,7 @@ export default function ChatApp() {
   const loading = useSignal(false);
   const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
+  const view = useSignal<"chat" | "timetable">("chat");
   const pending = useSignal<PendingFile[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -184,7 +187,7 @@ export default function ChatApp() {
       updatedAt: Date.now(),
     }, memBefore));
 
-    await streamChat(history, memBefore, (event: ChatStreamEvent) => {
+    await streamChat(history, memBefore, loadGroupPrefs(), (event: ChatStreamEvent) => {
       if (event.type === "delta") {
         const current = getActiveSession(store.value).messages.find((m) => m.id === assistantId);
         patchMessage(assistantId, { content: (current?.content ?? "") + event.text });
@@ -261,6 +264,7 @@ export default function ChatApp() {
         loading={loading.value}
         open={sidebarOpen.value}
         memory={memory()}
+        view={view.value}
         onSelect={switchSession}
         onNew={newChat}
         onDelete={deleteChat}
@@ -268,60 +272,89 @@ export default function ChatApp() {
           sidebarOpen.value = false;
         }}
         onClearMemory={clearStudentMemory}
+        onViewChange={(v) => {
+          view.value = v;
+          sidebarOpen.value = false;
+        }}
       />
 
-      <div class="chat-main">
-        <header class="chat-header">
-          <button
-            type="button"
-            class="sidebar-toggle"
-            aria-label="Otwórz listę rozmów"
-            onClick={() => {
-              sidebarOpen.value = true;
-            }}
-          >
-            ☰
-          </button>
-          <div class="chat-header-text">
-            <h1 class="chat-title">{session().title}</h1>
-            <p class="chat-status">{status.value}</p>
+      {view.value === "timetable"
+        ? (
+          <div class="chat-main">
+            <TimetablePanel
+              onBack={() => {
+                view.value = "chat";
+              }}
+            />
           </div>
-        </header>
+        )
+        : (
+          <div class="chat-main">
+            <header class="chat-header">
+              <button
+                type="button"
+                class="sidebar-toggle"
+                aria-label="Otwórz listę rozmów"
+                onClick={() => {
+                  sidebarOpen.value = true;
+                }}
+              >
+                ☰
+              </button>
+              <div class="chat-header-text">
+                <h1 class="chat-title">{session().title}</h1>
+                <p class="chat-status">{status.value}</p>
+              </div>
+              <button
+                type="button"
+                class="chat-timetable-btn"
+                aria-label="Plan lekcji"
+                title="Plan lekcji"
+                onClick={() => {
+                  view.value = "timetable";
+                }}
+              >
+                📅
+              </button>
+            </header>
 
-        <div class="chat-messages" role="log" aria-live="polite">
-          {!messages.length && !loading.value && (
-            <ChatEmpty
-              disabled={loading.value}
-              onPick={(prompt) => void send(prompt)}
-            />
-          )}
-          {messages.map((m, i) => (
-            <ChatBubble
-              key={m.id}
-              message={m}
-              onRetry={m.error && i === messages.length - 1 ? () => void retryLast() : undefined}
-            />
-          ))}
-          <div ref={bottomRef} />
-        </div>
+            <div class="chat-messages" role="log" aria-live="polite">
+              {!messages.length && !loading.value && (
+                <ChatEmpty
+                  disabled={loading.value}
+                  onPick={(prompt) => void send(prompt)}
+                />
+              )}
+              {messages.map((m, i) => (
+                <ChatBubble
+                  key={m.id}
+                  message={m}
+                  onRetry={m.error && i === messages.length - 1
+                    ? () => void retryLast()
+                    : undefined}
+                />
+              ))}
+              <div ref={bottomRef} />
+            </div>
 
-        <ChatComposer
-          text={input.value}
-          loading={loading.value}
-          pending={pending.value}
-          onText={(v) => {
-            input.value = v;
-          }}
-          onSend={() => void send()}
-          onFiles={(files) => {
-            if (!files || loading.value) return;
-            pending.value = [...pending.value, ...Array.from(files).map(pendingFrom)];
-          }}
-          onRemovePending={(id) => {
-            pending.value = pending.value.filter((p) => p.id !== id);
-          }}
-        />
-      </div>
+            <ChatComposer
+              text={input.value}
+              loading={loading.value}
+              pending={pending.value}
+              onText={(v) => {
+                input.value = v;
+              }}
+              onSend={() => void send()}
+              onFiles={(files) => {
+                if (!files || loading.value) return;
+                pending.value = [...pending.value, ...Array.from(files).map(pendingFrom)];
+              }}
+              onRemovePending={(id) => {
+                pending.value = pending.value.filter((p) => p.id !== id);
+              }}
+            />
+          </div>
+        )}
     </div>
   );
 }

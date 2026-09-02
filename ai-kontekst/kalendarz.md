@@ -17,11 +17,16 @@ Jeden plik na miesiąc: `~/calendar/2026-09.cal` ([system-plikow.md](./system-pl
 | `ai` | Bloki `study_block`, przesunięcia po „dziś nie mogę” |
 | `manual` | Użytkownik lub agent (lekarz, korepetycje muzyki) |
 
-## Plan lekcji (Librus)
+## Plan lekcji
+
+**Teraz (✅):** statyczny plan klasy 3A w `@chatgpa/core` — patrz [plan-lekcji.md](./plan-lekcji.md).
+
+**Później (Librus):**
 
 - Wtyczka pobiera **plan lekcji** + **zmiany** ([librus.md](./librus.md))
 - Zapis: `~/school/librus/schedule.json`, `timetable-changes.json`
 - Agent porównuje snapshoty — przy zmianie aktualizuje kalendarz (z weryfikacją AI, nie ślepy cron)
+- Docelowo zastępuje lub synchronizuje `packages/core/timetable.ts`
 
 ## Stałe czasowe użytkownika (profil)
 

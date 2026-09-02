@@ -11,6 +11,7 @@
 | AI      | Multi-provider cascade              | ✅      |
 | DB      | PostgreSQL + pgvector + Drizzle     | planned |
 | PWA     | manifest + (później) service worker | partial |
+| Timetable | Plan lekcji 3A (core + UI)        | ✅      |
 | Ext     | Browser extension (Librus)          | planned |
 
 ## Monorepo

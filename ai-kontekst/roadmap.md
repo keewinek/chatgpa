@@ -16,6 +16,7 @@
 - [x] Markdown w odpowiedziach asystenta
 - [x] Narzędzia (`chatgpa-action`: pamięć, czas, kalkulator, pliki)
 - [x] Streaming odpowiedzi (SSE via `/api/chat/stream`)
+- [x] Plan lekcji 3A — UI + kontekst AI + tools `timetable.*` ([plan-lekcji.md](./plan-lekcji.md))
 - [ ] **Kontekst AI v2** — lazy context przez tools ([prompty.md](./prompty.md))
 - [ ] Komendy slash ([komendy.md](./komendy.md))
 - [ ] Pomodoro (`/pomodoro`)

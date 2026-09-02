@@ -53,9 +53,10 @@ Stary model (XML w prompcie) zastępujemy **on-demand tools**:
 
 ### Wyjątki (mały stały kontekst OK)
 
-- Dzisiejsza data (`datetime.now` lub jedna linia w prompcie)
+- Dzisiejsza data (`datetime.now` lub blok w prompcie — **już wstrzykiwane**)
+- **Plan lekcji klasy 3A** — wstrzykiwany w `withMemoryContext` + tools `timetable.*` ([plan-lekcji.md](./plan-lekcji.md))
 - Tryb agenta (`ask` | `plan` | `agent`) jeśli wprowadzimy tryby
-- **Nie** wklejaj listy ocen, całego TODO ani pamięci
+- **Nie** wklejaj listy ocen, całego TODO ani pamięci (pamięć docelowo tylko przez tools)
 
 ## Zasady packingu (zaktualizowane)
 

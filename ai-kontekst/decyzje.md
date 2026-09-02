@@ -32,6 +32,12 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** projekt ma rosnąć; chat historii nie wystarczy.
 - **Konsekwencje:** trzeba aktualizować kontekst przy decyzjach.
 
+## 2026-09-02 — Statyczny plan lekcji 3A w core
+
+- **Decyzja:** plan tygodnia klasy 3A w `packages/core/timetable.ts` + UI + kontekst AI; `groupPrefs` w localStorage i API.
+- **Kontekst:** szybka wartość przed Librus; powiadomienia i plan dnia potrzebują godzin lekcji.
+- **Konsekwencje:** wyjątek od lazy context dla planu; później sync Librus → `schedule.json` lub merge z core.
+
 ## 2026-09-02 — Automatyczna kolejka epików (`epic:done`)
 
 - **Decyzja:** `deno task epic:done` po każdym agencie regeneruje `aktualny-prompt.md` i sekcję w `plan-implementacji.md`.

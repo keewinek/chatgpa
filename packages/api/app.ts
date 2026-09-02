@@ -8,7 +8,7 @@ import {
   sanitizeFilename,
 } from "./files/mime.ts";
 import { getFile, putFile, toAttachment } from "./files/store.ts";
-import { isChatMessage, sanitizeMemory } from "./validate.ts";
+import { isChatMessage, sanitizeGroupPrefs, sanitizeMemory } from "./validate.ts";
 
 export function createApp() {
   const app = new Hono();
@@ -70,6 +70,7 @@ export function createApp() {
     }
 
     const memory = sanitizeMemory(body.memory);
+    const groupPrefs = sanitizeGroupPrefs(body.groupPrefs);
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -82,6 +83,7 @@ export function createApp() {
             const event of runChatStream(body.messages, {
               forceModel: body.model,
               memory,
+              groupPrefs,
             })
           ) {
             send(event);
@@ -123,6 +125,7 @@ export function createApp() {
     const result = await runChat(body.messages, {
       forceModel: body.model,
       memory: sanitizeMemory(body.memory),
+      groupPrefs: sanitizeGroupPrefs(body.groupPrefs),
     });
 
     if (!result.ok) {

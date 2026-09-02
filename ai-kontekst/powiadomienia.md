@@ -29,8 +29,12 @@ Bez płatnych usług push — Web Push standard + własny VAPID.
 ostatnia_lekcja_koniec(dziś) + 30 minut
 ```
 
-Źródło czasu: `~/school/librus/schedule.json` (plan lekcji z wtyczki).
-Fallback: brak planu → nie wysyłaj lub użyj `profile.defaultSchoolEnd`.
+Źródło czasu (kolejność):
+
+1. **Teraz:** `packages/core/timetable.ts` — `getDayLessons` + `LESSON_SLOTS` (plan 3A, patrz [plan-lekcji.md](./plan-lekcji.md))
+2. **Docelowo:** `~/school/librus/schedule.json` (plan lekcji z wtyczki)
+
+Fallback: brak planu → stała godzina z profilu lub brak push (tylko wieczorny plan).
 
 ### Payload
 

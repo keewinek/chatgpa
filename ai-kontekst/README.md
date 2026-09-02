@@ -42,6 +42,7 @@ mieli wspólne źródło prawdy.
 | [plan-nauki.md](./plan-nauki.md)         | Plan dnia, anty-prokrastynacja, T-7       |
 | [powiadomienia.md](./powiadomienia.md)   | Push po szkole, klik → czat               |
 | [librus.md](./librus.md)                 | Wtyczka + sync ocen / planu lekcji       |
+| [plan-lekcji.md](./plan-lekcji.md)       | **Plan 3A — zaimplementowany** (UI + AI) |
 
 ## Pliki — AI i UI
 
@@ -62,7 +63,7 @@ między urządzeniami. AI pobiera kontekst przez **tools**, nie dostaje wszystki
 
 ## Stan (wrzesień 2026)
 
-**Zrobione:** chat, streaming, kaskada AI, pamięć v1 (localStorage), załączniki, narzędzia `memory.*`.
+**Zrobione:** chat, streaming, kaskada AI, pamięć v1 (localStorage), załączniki, narzędzia `memory.*`, **plan lekcji 3A** (UI + AI).
 
 **Następne (wg [plan-implementacji.md](./plan-implementacji.md)):** serwer + DB → system plików →
 pamięć short/long → lazy context → TODO/notatki → kalendarz → Librus → powiadomienia.

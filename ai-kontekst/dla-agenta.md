@@ -37,6 +37,8 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 | UI chatu         | `packages/web/islands/ChatApp.tsx`      |
 | Markdown         | `packages/web/islands/MarkdownBody.tsx` |
 | Historia/pamięć  | `packages/web/lib/chat-storage.ts`      |
+| Plan lekcji      | `packages/core/timetable.ts`, `packages/web/islands/TimetablePanel.tsx` |
+| Grupy lekcyjne   | `packages/web/lib/timetable-storage.ts` |
 | Style            | `packages/web/assets/styles.css`        |
 | Typy shared      | `packages/core/types.ts`                |
 | Env przykładowy  | `.env.example`                          |
