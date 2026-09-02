@@ -9,7 +9,6 @@ export default define.page(function App({ Component }) {
         <meta name="theme-color" content="#12100e" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="stylesheet" href="/styles.css" />
         <title>ChatGPA</title>
       </head>
       <body>

@@ -248,9 +248,11 @@ export default function ChatApp() {
   }
 
   function switchSession(id: string) {
-    if (loading.value || !store.value || id === store.value.activeSessionId) return;
+    if (loading.value || !store.value) return;
+    if (id === store.value.activeSessionId && view.value === "chat") return;
     setStore({ ...store.value, activeSessionId: id });
     saveStore(store.value);
+    view.value = "chat";
     input.value = "";
     sidebarOpen.value = false;
   }
@@ -262,6 +264,7 @@ export default function ChatApp() {
     setStore(next);
     saveStore(next);
     void pushChatToServer(next, s.id);
+    view.value = "chat";
     input.value = "";
     sidebarOpen.value = false;
   }
@@ -642,94 +645,40 @@ export default function ChatApp() {
                 >
                   🍅
                 </button>
-                <button
-                  type="button"
-                  class="chat-timetable-btn"
-                  aria-label="TODO"
-                  title="TODO"
-                  onClick={() => {
-                    view.value = "todo";
-                  }}
-                >
-                  ✅
-                </button>
-                <button
-                  type="button"
-                  class="chat-timetable-btn"
-                  aria-label="Notatki"
-                  title="Notatki"
-                  onClick={() => {
-                    notesInitialPath.value = null;
-                    view.value = "notes";
-                  }}
-                >
-                  📝
-                </button>
-                <button
-                  type="button"
-                  class="chat-timetable-btn"
-                  aria-label="Pliki"
-                  title="Pliki"
-                  onClick={() => {
-                    view.value = "files";
-                  }}
-                >
-                  📁
-                </button>
-                <button
-                  type="button"
-                  class="chat-timetable-btn"
-                  aria-label="Kalendarz"
-                  title="Kalendarz"
-                  onClick={() => {
-                    view.value = "calendar";
-                  }}
-                >
-                  🗓
-                </button>
-                <button
-                  type="button"
-                  class="chat-timetable-btn"
-                  aria-label="Plan lekcji"
-                  title="Plan lekcji"
-                  onClick={() => {
-                    view.value = "timetable";
-                  }}
-                >
-                  📅
-                </button>
               </div>
             </header>
 
-            <NotificationsBanner
-              notifications={unreadNotifications.value}
-              onOpen={(n) => void handleOpenNotification(n)}
-              onDismiss={(id) => void handleDismissNotification(id)}
-            />
+            <div class="chat-body">
+              <NotificationsBanner
+                notifications={unreadNotifications.value}
+                onOpen={(n) => void handleOpenNotification(n)}
+                onDismiss={(id) => void handleDismissNotification(id)}
+              />
 
-            <div class="chat-messages" role="log" aria-live="polite">
-              {session().notificationContext && (
-                <NotificationPlanCard
-                  todoToday={session().notificationContext!.todoToday}
-                  freeMinutes={session().notificationContext!.freeMinutes}
-                />
-              )}
-              {!messages.length && !loading.value && (
-                <ChatEmpty
-                  disabled={loading.value}
-                  onPick={(prompt) => void send(prompt)}
-                />
-              )}
-              {messages.map((m, i) => (
-                <ChatBubble
-                  key={m.id}
-                  message={m}
-                  onRetry={m.error && i === messages.length - 1
-                    ? () => void retryLast()
-                    : undefined}
-                />
-              ))}
-              <div ref={bottomRef} />
+              <div class="chat-messages" role="log" aria-live="polite">
+                {session().notificationContext && (
+                  <NotificationPlanCard
+                    todoToday={session().notificationContext!.todoToday}
+                    freeMinutes={session().notificationContext!.freeMinutes}
+                  />
+                )}
+                {!messages.length && !loading.value && (
+                  <ChatEmpty
+                    disabled={loading.value}
+                    onPick={(prompt) => void send(prompt)}
+                  />
+                )}
+                {messages.map((m, i) => (
+                  <ChatBubble
+                    key={m.id}
+                    message={m}
+                    onRetry={m.error && i === messages.length - 1
+                      ? () => void retryLast()
+                      : undefined}
+                  />
+                ))}
+                <div ref={bottomRef} />
+              </div>
             </div>
 
             <ChatComposer
