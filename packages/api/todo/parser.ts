@@ -49,7 +49,7 @@ function parseLine(line: string): Task | null {
   const title = parts[0]?.trim();
   if (!title) return null;
 
-  let id = newTaskId();
+  let id: string | undefined;
   let dueDate: string | undefined;
   let priority: TaskPriority = "medium";
   let status: TaskStatus = checked ? "done" : "open";
@@ -121,6 +121,11 @@ function parseLine(line: string): Task | null {
 
   if (checked && status === "open") status = "done";
 
+  // Stable id when user edits the file without an id: — so re-import doesn't churn rows.
+  if (!id) {
+    id = `task-file-${stableHash(`${title}|${dueDate ?? ""}|${scheduledFor ?? ""}`)}`;
+  }
+
   return {
     id,
     title,
@@ -134,6 +139,15 @@ function parseLine(line: string): Task | null {
     scheduledFor,
     notes,
   };
+}
+
+function stableHash(input: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
 }
 
 export function parseTodoFile(content: string): { updatedAt?: string; tasks: Task[] } {

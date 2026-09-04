@@ -2,7 +2,7 @@ import { and, eq, isNull, lte } from "drizzle-orm";
 import type { Task, TaskPriority, TaskSource, TaskStatus } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
 import { tasks } from "../db/schema.ts";
-import { fsWrite } from "../fs/service.ts";
+import { FsError, fsRead, fsWrite } from "../fs/service.ts";
 import { newTaskId, parseTodoFile, serializeTodoFile } from "./parser.ts";
 
 export const GLOBAL_TODO_PATH = "~/todo/global.todo";
@@ -31,7 +31,8 @@ export interface ListTasksOptions {
   scheduledFor?: string;
 }
 
-export async function listTasks(
+/** DB-only query — used by sync so we don't re-import mid-write. */
+async function queryTasks(
   db: AppDatabase,
   options: ListTasksOptions = {},
 ): Promise<Task[]> {
@@ -58,6 +59,119 @@ export async function listTasks(
     });
 }
 
+async function readTodoFileContent(db: AppDatabase): Promise<string> {
+  try {
+    const file = await fsRead(db, GLOBAL_TODO_PATH, 0, 1_000_000);
+    return file.content;
+  } catch (err) {
+    if (err instanceof FsError && err.status === 404) return "";
+    throw err;
+  }
+}
+
+/**
+ * File is source of truth: sync `tasks` table to match ~/todo/global.todo.
+ */
+export async function importTodoFromFile(db: AppDatabase): Promise<number> {
+  const content = await readTodoFileContent(db);
+  const { tasks: fromFile } = parseTodoFile(content);
+  const now = new Date().toISOString();
+
+  const dbRows = await db
+    .select()
+    .from(tasks)
+    .where(isNull(tasks.deletedAt));
+
+  const fileById = new Map(fromFile.map((t) => [t.id, t]));
+
+  for (const row of dbRows) {
+    if (!fileById.has(row.id)) {
+      await db
+        .update(tasks)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(eq(tasks.id, row.id));
+    }
+  }
+
+  const active = await db
+    .select()
+    .from(tasks)
+    .where(isNull(tasks.deletedAt));
+  const byId = new Map(active.map((r) => [r.id, r]));
+
+  let changed = 0;
+  for (const task of fromFile) {
+    const existing = byId.get(task.id);
+    if (!existing) {
+      await db.insert(tasks).values({
+        id: task.id,
+        title: task.title,
+        subjectId: task.subjectId ?? null,
+        dueDate: task.dueDate ?? null,
+        priority: task.priority,
+        status: task.status,
+        estimatedMinutes: task.estimatedMinutes ?? null,
+        source: task.source,
+        roiScore: task.roiScore ?? null,
+        scheduledFor: task.scheduledFor ?? null,
+        notes: task.notes ?? null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      changed++;
+      continue;
+    }
+
+    const needsUpdate = existing.title !== task.title ||
+      (existing.subjectId ?? undefined) !== task.subjectId ||
+      (existing.dueDate ?? undefined) !== task.dueDate ||
+      existing.priority !== task.priority ||
+      existing.status !== task.status ||
+      (existing.estimatedMinutes ?? undefined) !== task.estimatedMinutes ||
+      existing.source !== task.source ||
+      (existing.roiScore ?? undefined) !== task.roiScore ||
+      (existing.scheduledFor ?? undefined) !== task.scheduledFor ||
+      (existing.notes ?? undefined) !== task.notes;
+
+    if (needsUpdate) {
+      await db
+        .update(tasks)
+        .set({
+          title: task.title,
+          subjectId: task.subjectId ?? null,
+          dueDate: task.dueDate ?? null,
+          priority: task.priority,
+          status: task.status,
+          estimatedMinutes: task.estimatedMinutes ?? null,
+          source: task.source,
+          roiScore: task.roiScore ?? null,
+          scheduledFor: task.scheduledFor ?? null,
+          notes: task.notes ?? null,
+          updatedAt: now,
+          deletedAt: null,
+        })
+        .where(eq(tasks.id, task.id));
+      changed++;
+    }
+  }
+
+  return changed;
+}
+
+/** @deprecated Use importTodoFromFile — kept for callers that pass content. */
+export async function importFromTodoFile(db: AppDatabase, content: string): Promise<number> {
+  await fsWrite(db, GLOBAL_TODO_PATH, content);
+  return await importTodoFromFile(db);
+}
+
+export async function listTasks(
+  db: AppDatabase,
+  options: ListTasksOptions = {},
+): Promise<Task[]> {
+  await importTodoFromFile(db);
+  return queryTasks(db, options);
+}
+
 export interface AddTaskInput {
   title: string;
   subjectId?: string;
@@ -73,6 +187,9 @@ export interface AddTaskInput {
 export async function addTask(db: AppDatabase, input: AddTaskInput): Promise<Task> {
   const title = input.title.trim();
   if (!title) throw new Error("Tytuł zadania nie może być pusty");
+
+  // Pick up file edits before adding, so we don't clobber them on sync.
+  await importTodoFromFile(db);
 
   const now = new Date().toISOString();
   const task: Task = {
@@ -129,8 +246,8 @@ export async function updateTask(
   id: string,
   patch: UpdateTaskInput,
 ): Promise<Task | null> {
-  const existing = await listTasks(db);
-  const current = existing.find((t) => t.id === id);
+  await importTodoFromFile(db);
+  const current = (await queryTasks(db)).find((t) => t.id === id);
   if (!current) return null;
 
   const now = new Date().toISOString();
@@ -156,8 +273,7 @@ export async function updateTask(
     .where(eq(tasks.id, id));
 
   await syncGlobalTodoFile(db);
-  const updated = await listTasks(db);
-  return updated.find((t) => t.id === id) ?? null;
+  return (await queryTasks(db)).find((t) => t.id === id) ?? null;
 }
 
 export async function completeTask(db: AppDatabase, id: string): Promise<Task | null> {
@@ -165,8 +281,8 @@ export async function completeTask(db: AppDatabase, id: string): Promise<Task | 
 }
 
 export async function deleteTask(db: AppDatabase, id: string): Promise<Task | null> {
-  const existing = await listTasks(db);
-  const current = existing.find((t) => t.id === id);
+  await importTodoFromFile(db);
+  const current = (await queryTasks(db)).find((t) => t.id === id);
   if (!current) return null;
 
   const now = new Date().toISOString();
@@ -179,43 +295,11 @@ export async function deleteTask(db: AppDatabase, id: string): Promise<Task | nu
   return current;
 }
 
+/** Write DB tasks out to the file (after API mutations). Does not re-import. */
 export async function syncGlobalTodoFile(db: AppDatabase): Promise<void> {
-  const all = await listTasks(db);
+  const all = await queryTasks(db);
   const content = serializeTodoFile(all);
   await fsWrite(db, GLOBAL_TODO_PATH, content);
-}
-
-export async function importFromTodoFile(db: AppDatabase, content: string): Promise<number> {
-  const { tasks: parsed } = parseTodoFile(content);
-  if (!parsed.length) return 0;
-
-  const existing = await listTasks(db);
-  const byId = new Map(existing.map((t) => [t.id, t]));
-  let imported = 0;
-  const now = new Date().toISOString();
-
-  for (const task of parsed) {
-    if (byId.has(task.id)) continue;
-    await db.insert(tasks).values({
-      id: task.id,
-      title: task.title,
-      subjectId: task.subjectId ?? null,
-      dueDate: task.dueDate ?? null,
-      priority: task.priority,
-      status: task.status,
-      estimatedMinutes: task.estimatedMinutes ?? null,
-      source: task.source,
-      roiScore: task.roiScore ?? null,
-      scheduledFor: task.scheduledFor ?? null,
-      notes: task.notes ?? null,
-      createdAt: now,
-      updatedAt: now,
-    });
-    imported++;
-  }
-
-  if (imported > 0) await syncGlobalTodoFile(db);
-  return imported;
 }
 
 export function formatTaskLine(task: Task, index: number): string {

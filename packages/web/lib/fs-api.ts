@@ -58,6 +58,7 @@ export async function fsWrite(
   const result = await parseJson<{ path: string; created: boolean }>(res);
   invalidateCache("fs:");
   if (path.includes("long-term.memory")) invalidateCache("memory:");
+  if (path.includes("global.todo")) invalidateCache("todo:");
   return result;
 }
 

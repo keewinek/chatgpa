@@ -32,6 +32,14 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** projekt ma rosnąć; chat historii nie wystarczy.
 - **Konsekwencje:** trzeba aktualizować kontekst przy decyzjach.
 
+## 2026-09-04 — Pliki wirtualnego FS = source of truth
+
+- **Decyzja:** domeny z plikiem pod `~/` traktują ten plik jako SoT; tabele (`tasks`,
+  `memory_entries` long) są cache/indeksem. `fsWrite` / Save w UI importuje plik do tabeli.
+- **Kontekst:** edycja `long-term.memory` / `global.todo` w Files nie zmieniała stanu aplikacji.
+- **Konsekwencje:** `importLongTermFromFile`, `importTodoFromFile`; calendar/notes/profile/librus
+  już były file-backed. Chat pozostaje DB-only.
+
 ## 2026-09-02 — Z.AI + Mistral w kaskadzie
 
 - **Decyzja:** dodać sloty `zai` (glm-4.7-flash, glm-4.5-flash) i `mistral` (small, nemo) jako
@@ -120,12 +128,10 @@ Format: data · decyzja · kontekst · konsekwencje.
 
 ## 2026-09-02 — Globalna TODO (DB + plik)
 
-- **Decyzja:** tabela `tasks` jako source of truth; dual-write do `~/todo/global.todo` po każdej
-  mutacji; dedykowane tools `todo.*` zamiast ręcznego parsowania przez `fs.write`.
-- **Kontekst:** agent, API i UI operują na tym samym modelu `Task`; plik `.todo` służy do podglądu w
-  panelu Pliki i syncu.
-- **Konsekwencje:** `/api/todos` CRUD, panel TODO w UI, komenda `/todo` otwiera panel (bez pełnego
-  parsera slash).
+- **Decyzja:** plik `~/todo/global.todo` jako source of truth; tabela `tasks` jest indeksem
+  synchronizowanym po `fsWrite` / list / mutacjach API (dual-write DB→file po API).
+- **Kontekst:** wcześniej tabela była SoT, a plik tylko eksportem — edycja w Files nic nie dawała.
+- **Konsekwencje:** `importTodoFromFile` przy list/Save; tools `todo.*` nadal preferowane.
 
 ## 2026-09-02 — Notatki Markdown (~/notes)
 
