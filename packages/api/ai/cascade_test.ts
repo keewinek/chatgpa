@@ -16,8 +16,13 @@ Deno.test("MODEL_CASCADE is ordered by priority descending", () => {
   }
 });
 
-Deno.test("MODEL_CASCADE prefers Groq for speed", () => {
-  assertEquals(MODEL_CASCADE[0].provider, "groq");
+Deno.test("MODEL_CASCADE prefers smarter Gemini before weaker fallbacks", () => {
+  assertEquals(MODEL_CASCADE[0].provider, "gemini");
+  assertEquals(MODEL_CASCADE[0].model, "gemini-3.5-flash");
+  const groq120 = MODEL_CASCADE.findIndex((s) => s.model === "openai/gpt-oss-120b");
+  const groq20 = MODEL_CASCADE.findIndex((s) => s.model === "openai/gpt-oss-20b");
+  assertEquals(groq120 > 0, true);
+  assertEquals(groq20 > groq120, true);
   assertEquals(MODEL_CASCADE.some((s) => s.model.includes("flash-lite")), false);
 });
 
