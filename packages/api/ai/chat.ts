@@ -2,13 +2,14 @@ import type { MemoryEntry } from "@chatgpa/core";
 import { hydrateMessageFiles } from "../files/store.ts";
 import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
+import { autoRememberFromTurn, formatMemoryContextHint } from "./memory-extract.ts";
 import { withChatContext } from "./providers.ts";
 import { createMemoryStore, executeActions, formatToolResults } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
 
-const MAX_TOOL_ROUNDS = 2;
+const MAX_TOOL_ROUNDS = 3;
 
 export interface ChatRunResult {
   ok: true;
@@ -48,11 +49,13 @@ export async function runChat(
 ): Promise<ChatRunOutcome> {
   const store = await createMemoryStore(options.memory);
   const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
+  const memoryHint = formatMemoryContextHint(store.list());
   await hydrateMessageFiles(messages);
   const attempts: AiAttempt[] = [];
   const toolResults: ToolResultPublic[] = [];
   const attachments: ChatAttachment[] = [];
-  let conversation = withChatContext(messages, groupPrefs);
+  let conversation = withChatContext(messages, groupPrefs, { memoryHint });
+  let rememberedThisTurn = false;
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const result = await runCascade(conversation, options.forceModel, { skipSystemWrap: true });
@@ -64,6 +67,7 @@ export async function runChat(
     const actions = parseActions(result.content);
     const stripped = stripActions(result.content);
     if (!actions.length) {
+      if (!rememberedThisTurn) await autoRememberFromTurn(messages, store);
       return success(
         stripped,
         result.provider,
@@ -75,6 +79,7 @@ export async function runChat(
       );
     }
 
+    rememberedThisTurn ||= actions.some((a) => a.tool === "memory.remember");
     const { results } = await executeActions(actions, store, groupPrefs);
     toolResults.push(...results);
     for (const r of results) {
@@ -84,6 +89,7 @@ export async function runChat(
     }
 
     if (round === MAX_TOOL_ROUNDS - 1) {
+      if (!rememberedThisTurn) await autoRememberFromTurn(messages, store);
       const suffix = results.map((
         r,
       ) => (r.ok ? `✓ ${r.tool}: ${r.output}` : `✗ ${r.tool}: ${r.error}`)).join("\n");
@@ -110,6 +116,7 @@ export async function runChat(
         },
       ],
       groupPrefs,
+      { memoryHint },
     );
   }
 

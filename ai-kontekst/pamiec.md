@@ -75,11 +75,16 @@ Szczegóły komend: [komendy.md](./komendy.md).
 
 ## Zasady dla agenta (prompt)
 
-1. **Nie zapisuj wszystkiego** — tylko trwałe fakty → long; tymczasowe → short z TTL.
-2. **Nie powtarzaj** — przed `remember` sprawdź `memory.list`.
-3. **Nie wklejaj pamięci do odpowiedzi** — użytkownik nie musi widzieć surowych wpisów.
-4. Gdy użytkownik mówi „zapomnij o X” → `memory.forget` lub edycja pliku.
-5. Preferencje czasu nauki, powrót do domu, quiet hours → **long-term** + profil.
+1. **Proaktywnie** — zapisuj ważne fakty od razu (`memory.remember`), bez czekania na
+   „zapamiętaj” / „remember”. Drugi pas: po turze czatu lekki ekstraktor łapie pominięte fakty.
+2. **Nie zapisuj wszystkiego** — tylko trwałe fakty → long; tymczasowe → short z TTL.
+3. **Nie powtarzaj** — przed `remember` sprawdź `memory.list` (albo dedupe w store).
+4. **Czytaj pamięć** — przy personalizacji / planowaniu zawsze `memory.list`.
+5. **Nie wklejaj pamięci do odpowiedzi** — użytkownik nie musi widzieć surowych wpisów.
+6. Gdy użytkownik mówi „zapomnij o X” → `memory.forget` lub edycja pliku.
+7. Preferencje czasu nauki, powrót do domu, quiet hours → **long-term** + profil.
+
+W system promptcie jest tylko **hint liczników** (ile short/long), nie treść wpisów.
 
 ## UI
 

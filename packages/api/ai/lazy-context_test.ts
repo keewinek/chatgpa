@@ -13,12 +13,15 @@ Deno.test("SYSTEM_PROMPT documents lazy context and grades.get", () => {
   assertEquals(SYSTEM_PROMPT.includes("todo.list"), true);
   assertEquals(SYSTEM_PROMPT.includes("NIE masz na start ocen"), true);
   assertEquals(SYSTEM_PROMPT.includes("NIE zgaduj"), true);
+  assertEquals(SYSTEM_PROMPT.includes("NIE czekaj na „zapamiętaj”"), true);
+  assertEquals(SYSTEM_PROMPT.includes("memory.remember"), true);
 });
 
 Deno.test("withChatContext does not inject memory, todo, grades, or calendar data", () => {
   const messages = withChatContext(
     [{ role: "user", content: "Jaka mam średnia z chemii?" }],
     DEFAULT_GROUP_PREFS,
+    { memoryHint: "Pamięć ucznia: 2 długich, 0 krótkich wpisów." },
   );
   const system = messages[0]?.content ?? "";
 
@@ -27,6 +30,7 @@ Deno.test("withChatContext does not inject memory, todo, grades, or calendar dat
   assertEquals(system.includes("syncedAt"), false);
   assertEquals(system.includes("~/calendar"), false);
   assertEquals(system.includes("Plan lekcji ucznia"), true);
+  assertEquals(system.includes("2 długich"), true);
 });
 
 Deno.test("grade question workflow calls grades.get instead of guessing", () => {
