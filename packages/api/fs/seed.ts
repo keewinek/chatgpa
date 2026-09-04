@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, like, or } from "drizzle-orm";
 import type { AppDatabase } from "../db/client.ts";
 import { fileNodes } from "../db/schema.ts";
 import { nodeIdForPath, USER_ROOT } from "./path.ts";
@@ -24,6 +24,16 @@ export const SEED_UI_SHORTCUTS = [
   { dir: "notes", file: "notes.ui", view: "notes", title: "Notatki" },
   { dir: "profile", file: "profile.ui", view: "profile", title: "Profil czasu" },
   { dir: "pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
+] as const;
+
+/** Old Polish-capitalized shortcut dirs — replaced by lowercase SEED_DIRECTORIES. */
+const LEGACY_CAPITALIZED_DIRS = [
+  "Kalendarz",
+  "Notatki",
+  "Plan lekcji",
+  "Pomodoro",
+  "Profil",
+  "TODO",
 ] as const;
 
 export async function isFsSeeded(db: AppDatabase): Promise<boolean> {
@@ -113,10 +123,28 @@ export async function seedUiShortcuts(db: AppDatabase): Promise<void> {
   );
 }
 
+/** Soft-delete leftover capitalized Polish dirs (and their .ui shortcuts). */
+export async function removeLegacyCapitalizedDirs(db: AppDatabase): Promise<void> {
+  const now = new Date().toISOString();
+  for (const name of LEGACY_CAPITALIZED_DIRS) {
+    const prefix = `${USER_ROOT}/${name}`;
+    await db
+      .update(fileNodes)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(
+        and(
+          isNull(fileNodes.deletedAt),
+          or(eq(fileNodes.path, prefix), like(fileNodes.path, `${prefix}/%`)),
+        ),
+      );
+  }
+}
+
 /** Ensure virtual FS exists — idempotent, safe on every request. */
 export async function ensureFsSeeded(db: AppDatabase): Promise<void> {
   if (!(await isFsSeeded(db))) {
     await seedFs(db);
   }
   await seedUiShortcuts(db);
+  await removeLegacyCapitalizedDirs(db);
 }
