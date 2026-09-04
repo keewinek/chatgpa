@@ -1,5 +1,6 @@
 import { messagesNeedVision } from "../files/store.ts";
 import { availableSlots, invokeSlot, streamSlot, withSystemPrompt } from "./providers.ts";
+import { isSlotCoolingDown, markSlotFailure } from "./slot-cooldown.ts";
 import type { AiAttempt, AiResult, ChatMessage } from "./types.ts";
 
 const TIMEOUT_MS = 45_000;
@@ -23,6 +24,12 @@ export interface StreamCascadeFailure {
 
 export type StreamCascadeOutcome = StreamCascadeResult | StreamCascadeFailure;
 
+function pickSlots(forceModel?: string, visionOnly = false) {
+  return availableSlots(forceModel, visionOnly).filter((s) =>
+    !isSlotCoolingDown(s.provider, s.model)
+  );
+}
+
 export async function runCascade(
   messages: ChatMessage[],
   forceModel?: string,
@@ -30,11 +37,20 @@ export async function runCascade(
 ): Promise<AiResult> {
   const prepared = options?.skipSystemWrap ? messages : withSystemPrompt(messages);
   const visionOnly = await messagesNeedVision(prepared);
-  const slots = availableSlots(forceModel, visionOnly);
+  const slots = pickSlots(forceModel, visionOnly);
   const attempts: AiAttempt[] = [];
 
   if (!slots.length) {
-    return { ok: false, error: visionOnly ? NO_VISION_KEYS : NO_KEYS, attempts };
+    const anyConfigured = availableSlots(forceModel, visionOnly).length > 0;
+    return {
+      ok: false,
+      error: visionOnly
+        ? NO_VISION_KEYS
+        : anyConfigured
+        ? "Wszystkie modele są tymczasowo niedostępne (limity). Spróbuj za chwilę."
+        : NO_KEYS,
+      attempts,
+    };
   }
 
   for (const slot of slots) {
@@ -57,6 +73,7 @@ export async function runCascade(
         error,
         latencyMs: Math.round(performance.now() - start),
       });
+      markSlotFailure(slot.provider, slot.model, error);
       console.warn(`[cascade] ${slot.provider}/${slot.model}: ${error}`);
     }
   }
@@ -72,11 +89,20 @@ export async function* runCascadeStream(
 ): AsyncGenerator<string, StreamCascadeOutcome, void> {
   const prepared = options?.skipSystemWrap ? messages : withSystemPrompt(messages);
   const visionOnly = await messagesNeedVision(prepared);
-  const slots = availableSlots(forceModel, visionOnly);
+  const slots = pickSlots(forceModel, visionOnly);
   const attempts: AiAttempt[] = [];
 
   if (!slots.length) {
-    return { ok: false, error: visionOnly ? NO_VISION_KEYS : NO_KEYS, attempts };
+    const anyConfigured = availableSlots(forceModel, visionOnly).length > 0;
+    return {
+      ok: false,
+      error: visionOnly
+        ? NO_VISION_KEYS
+        : anyConfigured
+        ? "Wszystkie modele są tymczasowo niedostępne (limity). Spróbuj za chwilę."
+        : NO_KEYS,
+      attempts,
+    };
   }
 
   for (const slot of slots) {
@@ -104,6 +130,7 @@ export async function* runCascadeStream(
         error,
         latencyMs: Math.round(performance.now() - start),
       });
+      markSlotFailure(slot.provider, slot.model, error);
       console.warn(`[cascade] ${slot.provider}/${slot.model}: ${error}`);
     }
   }

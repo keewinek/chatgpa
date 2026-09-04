@@ -1,34 +1,37 @@
 import type { ModelSlot } from "./types.ts";
 
-/** Smartest first. Multiple Gemini fallbacks — Groq replacements for deprecated Llama IDs. */
+/**
+ * Fast-first cascade: Groq is typically <500ms; Gemini free-tier often 429s first.
+ * Dead IDs (404) are omitted. Cooldown in cascade.ts further skips hot failures.
+ */
 export const MODEL_CASCADE: ModelSlot[] = [
   {
-    provider: "gemini",
-    model: "gemini-2.5-flash",
-    apiKeyEnv: "GEMINI_API_KEY",
+    provider: "groq",
+    model: "openai/gpt-oss-120b",
+    apiKeyEnv: "GROQ_API_KEY",
     priority: 100,
-    label: "Gemini 2.5 Flash",
+    label: "GPT-OSS 120B (Groq)",
   },
   {
-    provider: "gemini",
-    model: "gemini-2.5-flash-lite",
-    apiKeyEnv: "GEMINI_API_KEY",
+    provider: "groq",
+    model: "openai/gpt-oss-20b",
+    apiKeyEnv: "GROQ_API_KEY",
     priority: 95,
-    label: "Gemini 2.5 Flash-Lite",
-  },
-  {
-    provider: "gemini",
-    model: "gemini-3.5-flash",
-    apiKeyEnv: "GEMINI_API_KEY",
-    priority: 90,
-    label: "Gemini 3.5 Flash",
+    label: "GPT-OSS 20B (Groq)",
   },
   {
     provider: "gemini",
     model: "gemini-3-flash-preview",
     apiKeyEnv: "GEMINI_API_KEY",
-    priority: 85,
+    priority: 90,
     label: "Gemini 3 Flash",
+  },
+  {
+    provider: "gemini",
+    model: "gemini-3.5-flash",
+    apiKeyEnv: "GEMINI_API_KEY",
+    priority: 85,
+    label: "Gemini 3.5 Flash",
   },
   {
     provider: "gemini",
@@ -38,11 +41,11 @@ export const MODEL_CASCADE: ModelSlot[] = [
     label: "Gemini Flash (latest)",
   },
   {
-    provider: "groq",
-    model: "openai/gpt-oss-120b",
-    apiKeyEnv: "GROQ_API_KEY",
-    priority: 70,
-    label: "GPT-OSS 120B (Groq)",
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    apiKeyEnv: "GEMINI_API_KEY",
+    priority: 75,
+    label: "Gemini 2.5 Flash",
   },
   {
     provider: "zai",
@@ -57,13 +60,6 @@ export const MODEL_CASCADE: ModelSlot[] = [
     apiKeyEnv: "ZAI_API_KEY",
     priority: 65,
     label: "GLM 4.5 Flash (Z.AI)",
-  },
-  {
-    provider: "groq",
-    model: "openai/gpt-oss-20b",
-    apiKeyEnv: "GROQ_API_KEY",
-    priority: 60,
-    label: "GPT-OSS 20B (Groq)",
   },
   {
     provider: "mistral",

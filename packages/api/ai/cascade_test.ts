@@ -1,14 +1,24 @@
 import { assertEquals } from "@std/assert";
 import { MODEL_CASCADE } from "./cascade-config.ts";
 import { availableSlots, listPublicModels } from "./providers.ts";
+import {
+  clearSlotCooldowns,
+  isSlotCoolingDown,
+  markSlotFailure,
+} from "./slot-cooldown.ts";
 
-Deno.test("MODEL_CASCADE is ordered smart → dumb by priority", () => {
+Deno.test("MODEL_CASCADE is ordered by priority descending", () => {
   for (let i = 1; i < MODEL_CASCADE.length; i++) {
     assertEquals(
       MODEL_CASCADE[i - 1].priority > MODEL_CASCADE[i].priority,
       true,
     );
   }
+});
+
+Deno.test("MODEL_CASCADE prefers Groq for speed", () => {
+  assertEquals(MODEL_CASCADE[0].provider, "groq");
+  assertEquals(MODEL_CASCADE.some((s) => s.model.includes("flash-lite")), false);
 });
 
 Deno.test("listPublicModels mirrors cascade length", () => {
@@ -34,4 +44,20 @@ Deno.test("availableSlots empty without keys", () => {
       else Deno.env.set(k, v);
     }
   }
+});
+
+Deno.test("slot cooldown skips quota and gone models", () => {
+  clearSlotCooldowns();
+  const now = Date.now();
+  markSlotFailure("gemini", "gemini-2.5-flash", "gemini 429: quota exceeded", now);
+  markSlotFailure(
+    "gemini",
+    "gemini-2.5-flash-lite",
+    "gemini 404: no longer available",
+    now,
+  );
+  assertEquals(isSlotCoolingDown("gemini", "gemini-2.5-flash", now + 1000), true);
+  assertEquals(isSlotCoolingDown("gemini", "gemini-2.5-flash-lite", now + 1000), true);
+  assertEquals(isSlotCoolingDown("groq", "openai/gpt-oss-20b", now + 1000), false);
+  clearSlotCooldowns();
 });
