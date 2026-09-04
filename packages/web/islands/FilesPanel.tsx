@@ -13,6 +13,7 @@ import TimetablePanel from "./TimetablePanel.tsx";
 import TodoPanel from "./TodoPanel.tsx";
 import NotesPanel from "./NotesPanel.tsx";
 import ProfilePanel from "./ProfilePanel.tsx";
+import Icon from "./Icon.tsx";
 
 interface FilesPanelProps {
   onBack: () => void;
@@ -203,7 +204,7 @@ export default function FilesPanel({
     <div class="files-panel">
       <header class="files-header">
         <button type="button" class="files-back" onClick={onBack} title="Czat">
-          ←
+          <Icon name="arrow-left" />
         </button>
         <span class="files-header-label">~/</span>
         <div class="files-header-spacer" />
@@ -218,7 +219,7 @@ export default function FilesPanel({
           {showData.value ? "dane" : "apps"}
         </button>
         <button type="button" class="files-refresh" onClick={() => void loadRoot()} title="Odśwież">
-          ↻
+          <Icon name="arrows-rotate" />
         </button>
       </header>
 
@@ -241,7 +242,9 @@ export default function FilesPanel({
                       }`}
                       onClick={() => void openUiByView(def.view)}
                     >
-                      <span class="files-tree-icon">◇</span>
+                      <span class="files-tree-icon">
+                        <Icon name={def.icon} />
+                      </span>
                       <span>{def.title}</span>
                     </button>
                   </li>
@@ -264,7 +267,9 @@ export default function FilesPanel({
                     previewMeta.value = "";
                   }}
                 >
-                  <span class="files-tree-icon">~</span>
+                  <span class="files-tree-icon">
+                    <Icon name="house" />
+                  </span>
                   <span>home</span>
                 </button>
                 <ul class="files-tree-children">
@@ -355,7 +360,14 @@ function TreeBranch({
         onClick={() => onClick(node)}
       >
         <span class="files-tree-icon">
-          {isDir ? (node.expanded ? "▾" : "▸") : isUi ? "◇" : entryIcon(node.entry)}
+          {isDir
+            ? (
+              <Icon
+                name={node.expanded ? "chevron-down" : "chevron-right"}
+                class="files-tree-chevron"
+              />
+            )
+            : <Icon name={isUi ? "window-maximize" : entryIcon(node.entry)} />}
         </span>
         <span>{node.entry.name}</span>
       </button>

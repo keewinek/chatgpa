@@ -10,6 +10,7 @@ import {
   priorityLabel,
   type TodoFilter,
 } from "../lib/todo-api.ts";
+import Icon from "./Icon.tsx";
 
 interface TodoPanelProps {
   onBack: () => void;
@@ -91,7 +92,7 @@ export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) 
       <header class="todo-header">
         {!embedded && (
           <button type="button" class="todo-back" onClick={onBack}>
-            ← Czat
+            <Icon name="arrow-left" /> Czat
           </button>
         )}
         <div class="todo-header-text">
@@ -187,7 +188,7 @@ export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) 
                     aria-label="Usuń zadanie"
                     onClick={() => void handleDelete(task.id)}
                   >
-                    ×
+                    <Icon name="trash" />
                   </button>
                 </li>
               ))}

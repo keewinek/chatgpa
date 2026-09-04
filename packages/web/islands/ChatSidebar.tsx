@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import type { MemoryEntry } from "@chatgpa/core";
 import type { ChatSession } from "../lib/chat-storage.ts";
 import { formatExpiry } from "../lib/memory-api.ts";
+import Icon from "./Icon.tsx";
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -58,10 +59,11 @@ export default function ChatSidebar({
               title="Pliki"
               aria-label="Pliki"
             >
-              ◇
+              <Icon name="folder" />
             </button>
           </div>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
+            <Icon name="plus" class="sidebar-new-icon" />
             Nowa
           </button>
         </div>
@@ -94,7 +96,7 @@ export default function ChatSidebar({
                   onDelete(session.id);
                 }}
               >
-                ×
+                <Icon name="xmark" />
               </button>
             </div>
           ))}
@@ -109,7 +111,9 @@ export default function ChatSidebar({
               memoryOpen.value = !memoryOpen.value;
             }}
           >
-            <span>Pamięć</span>
+            <span>
+              <Icon name="brain" class="sidebar-memory-icon" /> Pamięć
+            </span>
             <span class="sidebar-memory-count">{memoryCount || "—"}</span>
           </button>
 

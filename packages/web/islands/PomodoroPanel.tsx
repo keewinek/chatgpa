@@ -1,5 +1,6 @@
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import Icon from "./Icon.tsx";
 
 type PomodoroPhase = "work" | "break";
 
@@ -103,7 +104,7 @@ export default function PomodoroPanel({ onClose }: PomodoroPanelProps) {
         <header class="pomodoro-header">
           <h2 class="pomodoro-title">Pomodoro</h2>
           <button type="button" class="pomodoro-close" aria-label="Zamknij" onClick={onClose}>
-            ×
+            <Icon name="xmark" />
           </button>
         </header>
 

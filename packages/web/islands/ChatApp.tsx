@@ -9,6 +9,7 @@ import FilesPanel from "./FilesPanel.tsx";
 import PomodoroPanel from "./PomodoroPanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
+import Icon from "./Icon.tsx";
 import {
   type ChatSession,
   type ChatStore,
@@ -569,7 +570,7 @@ export default function ChatApp() {
                   sidebarOpen.value = true;
                 }}
               >
-                ☰
+                <Icon name="bars" />
               </button>
               <div class="chat-header-text">
                 <h1 class="chat-title">{session().title}</h1>
@@ -586,7 +587,7 @@ export default function ChatApp() {
                     view.value = "files";
                   }}
                 >
-                  ◇
+                  <Icon name="folder" />
                 </button>
                 <button
                   type="button"
@@ -599,9 +600,10 @@ export default function ChatApp() {
                     }
                   }}
                 >
-                  {unreadNotifications.value.length
-                    ? String(unreadNotifications.value.length)
-                    : "·"}
+                  <Icon name="bell" />
+                  {unreadNotifications.value.length > 0 && (
+                    <span class="chat-icon-badge">{unreadNotifications.value.length}</span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -614,7 +616,10 @@ export default function ChatApp() {
                   disabled={loading.value || librusSyncing.value}
                   onClick={() => void handleLibrusSync()}
                 >
-                  {librusSyncing.value ? "…" : "↻"}
+                  <Icon
+                    name={librusSyncing.value ? "spinner" : "arrows-rotate"}
+                    class={librusSyncing.value ? "fa-spin" : undefined}
+                  />
                 </button>
                 <button
                   type="button"
@@ -625,7 +630,7 @@ export default function ChatApp() {
                     pomodoroOpen.value = true;
                   }}
                 >
-                  ◐
+                  <Icon name="stopwatch" />
                 </button>
               </div>
             </header>

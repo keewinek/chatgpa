@@ -1,4 +1,5 @@
 import type { AppNotification } from "@chatgpa/core";
+import Icon from "./Icon.tsx";
 
 interface NotificationsBannerProps {
   notifications: AppNotification[];
@@ -36,7 +37,7 @@ export default function NotificationsBanner({
             aria-label="Oznacz jako przeczytane"
             onClick={() => onDismiss(n.id)}
           >
-            ×
+            <Icon name="xmark" />
           </button>
         </article>
       ))}

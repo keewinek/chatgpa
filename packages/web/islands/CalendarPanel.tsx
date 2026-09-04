@@ -9,6 +9,7 @@ import {
   KIND_COLORS,
   KIND_LABELS,
 } from "../lib/calendar-api.ts";
+import Icon from "./Icon.tsx";
 
 interface CalendarPanelProps {
   onBack: () => void;
@@ -328,7 +329,7 @@ export default function CalendarPanel({
       <header class="gcal-toolbar">
         {!embedded && (
           <button type="button" class="gcal-back" onClick={onBack}>
-            ←
+            <Icon name="arrow-left" />
           </button>
         )}
         <button type="button" class="gcal-today" onClick={goToday}>
@@ -336,10 +337,10 @@ export default function CalendarPanel({
         </button>
         <div class="gcal-nav">
           <button type="button" class="gcal-nav-btn" onClick={prev} aria-label="Wstecz">
-            ‹
+            <Icon name="chevron-left" />
           </button>
           <button type="button" class="gcal-nav-btn" onClick={next} aria-label="Dalej">
-            ›
+            <Icon name="chevron-right" />
           </button>
         </div>
         <h2 class="gcal-title">{titleLabel}</h2>
@@ -357,7 +358,7 @@ export default function CalendarPanel({
               title="Profil czasu"
               aria-label="Profil czasu"
             >
-              ⏱
+              <Icon name="user-clock" />
             </button>
           )}
           <div class="gcal-view-toggle" role="group" aria-label="Widok">

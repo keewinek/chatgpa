@@ -60,7 +60,10 @@ body {
 }
 
 .chat-app--loading .chat-status {
-  display: none;
+  display: block;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
 .sidebar-backdrop {
@@ -392,6 +395,10 @@ body {
 .chat-new:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.chat-header .chat-status {
+  display: none;
 }
 
 .chat-status {
@@ -3232,4 +3239,84 @@ body {
 .notification-plan-card__empty {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* ——— Font Awesome icons ——— */
+
+.chat-icon-btn,
+.sidebar-icon-btn,
+.sidebar-toggle,
+.files-back,
+.files-refresh,
+.gcal-back,
+.gcal-nav-btn,
+.gcal-icon-btn,
+.composer-file-btn,
+.pomodoro-close {
+  position: relative;
+}
+
+.chat-icon-btn .fa-solid,
+.chat-icon-btn .fa-regular,
+.sidebar-icon-btn .fa-solid,
+.sidebar-toggle .fa-solid,
+.files-tree-icon .fa-solid,
+.files-back .fa-solid,
+.files-refresh .fa-solid,
+.gcal-back .fa-solid,
+.gcal-nav-btn .fa-solid,
+.gcal-icon-btn .fa-solid,
+.composer-file-btn .fa-solid,
+.composer-attachment-icon .fa-solid,
+.notes-tree-icon .fa-solid,
+.sidebar-item-delete .fa-solid,
+.todo-item-delete .fa-solid,
+.notifications-banner__dismiss .fa-solid,
+.pomodoro-close .fa-solid {
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+.files-tree-icon {
+  width: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.files-tree-chevron {
+  font-size: 0.7em;
+  opacity: 0.75;
+}
+
+.sidebar-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.sidebar-new-icon,
+.sidebar-memory-icon {
+  font-size: 0.75em;
+  opacity: 0.85;
+}
+
+.chat-icon-badge {
+  position: absolute;
+  top: 0.05rem;
+  right: 0.05rem;
+  min-width: 0.85rem;
+  height: 0.85rem;
+  padding: 0 0.2rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.58rem;
+  font-weight: 700;
+  line-height: 0.85rem;
+  text-align: center;
+}
+
+.chat-icon-btn .fa-spin {
+  opacity: 0.85;
 }

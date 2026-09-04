@@ -14,16 +14,42 @@ export type UiShortcutDef = {
   file: string;
   view: UiView;
   title: string;
+  /** Font Awesome icon name (fa-solid). */
+  icon: string;
 };
 
 /** Polish app folders with launcher shortcuts. */
 export const UI_SHORTCUTS: readonly UiShortcutDef[] = [
-  { dir: "Kalendarz", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
-  { dir: "Plan lekcji", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },
-  { dir: "TODO", file: "todo.ui", view: "todo", title: "TODO" },
-  { dir: "Notatki", file: "notes.ui", view: "notes", title: "Notatki" },
-  { dir: "Profil", file: "profile.ui", view: "profile", title: "Profil czasu" },
-  { dir: "Pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
+  {
+    dir: "Kalendarz",
+    file: "calendar.ui",
+    view: "calendar",
+    title: "Kalendarz",
+    icon: "calendar",
+  },
+  {
+    dir: "Plan lekcji",
+    file: "timetable.ui",
+    view: "timetable",
+    title: "Plan lekcji",
+    icon: "table-columns",
+  },
+  { dir: "TODO", file: "todo.ui", view: "todo", title: "TODO", icon: "list-check" },
+  { dir: "Notatki", file: "notes.ui", view: "notes", title: "Notatki", icon: "note-sticky" },
+  {
+    dir: "Profil",
+    file: "profile.ui",
+    view: "profile",
+    title: "Profil czasu",
+    icon: "user-clock",
+  },
+  {
+    dir: "Pomodoro",
+    file: "pomodoro.ui",
+    view: "pomodoro",
+    title: "Pomodoro",
+    icon: "stopwatch",
+  },
 ] as const;
 
 export function uiShortcutPath(def: UiShortcutDef): string {

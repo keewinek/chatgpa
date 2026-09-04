@@ -3,6 +3,7 @@ import { useSignal } from "@preact/signals";
 import type { TimeProfile } from "@chatgpa/core";
 import { DEFAULT_TIME_PROFILE } from "@chatgpa/core";
 import { fetchProfile, formatStudyExample, saveProfile } from "../lib/profile-api.ts";
+import Icon from "./Icon.tsx";
 
 interface ProfilePanelProps {
   onBack: () => void;
@@ -57,7 +58,7 @@ export default function ProfilePanel({ onBack, embedded = false }: ProfilePanelP
       <header class="profile-header">
         {!embedded && (
           <button type="button" class="profile-back" onClick={onBack}>
-            ← Czat
+            <Icon name="arrow-left" /> Czat
           </button>
         )}
         <div class="profile-header-text">

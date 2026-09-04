@@ -10,6 +10,7 @@ import {
   notesWrite,
 } from "../lib/notes-api.ts";
 import type { FsEntry } from "../lib/fs-api.ts";
+import Icon from "./Icon.tsx";
 
 interface NotesPanelProps {
   onBack: () => void;
@@ -226,7 +227,7 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
       <header class="notes-header">
         {!embedded && (
           <button type="button" class="notes-back" onClick={onBack}>
-            ← Czat
+            <Icon name="arrow-left" /> Czat
           </button>
         )}
         <div class="notes-header-text">
@@ -260,7 +261,7 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
             onClick={() => void loadRoot()}
             title="Odśwież"
           >
-            ↻
+            <Icon name="arrows-rotate" />
           </button>
         </div>
       </header>
@@ -315,7 +316,9 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
                     savedContent.value = "";
                   }}
                 >
-                  <span class="notes-tree-icon">📝</span>
+                  <span class="notes-tree-icon">
+                    <Icon name="note-sticky" />
+                  </span>
                   <span>notes/</span>
                 </button>
                 <ul class="notes-tree-children">
@@ -416,7 +419,9 @@ function TreeBranch({
         onClick={() => onClick(node)}
       >
         <span class="notes-tree-icon">
-          {isDir ? (node.expanded ? "📂" : "📁") : "📄"}
+          {isDir
+            ? <Icon name={node.expanded ? "folder-open" : "folder"} />
+            : <Icon name="file-lines" />}
         </span>
         <span>{node.entry.name}</span>
       </button>

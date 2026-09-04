@@ -53,18 +53,24 @@ export async function fsWrite(
 }
 
 export function entryIcon(entry: FsEntry): string {
-  if (entry.kind === "directory") return "📁";
+  if (entry.kind === "directory") return "folder";
   const ext = entry.name.split(".").pop()?.toLowerCase() ?? "";
   const icons: Record<string, string> = {
-    md: "📝",
-    todo: "✅",
-    memory: "🧠",
-    cal: "📅",
-    plan: "📋",
-    profile: "👤",
-    ui: "◇",
-    json: "📊",
-    pdf: "📕",
+    md: "file-lines",
+    todo: "list-check",
+    memory: "brain",
+    cal: "calendar",
+    plan: "clipboard-list",
+    profile: "user",
+    ui: "window-maximize",
+    json: "file-code",
+    pdf: "file-pdf",
+    txt: "file-lines",
+    png: "file-image",
+    jpg: "file-image",
+    jpeg: "file-image",
+    webp: "file-image",
+    gif: "file-image",
   };
-  return icons[ext] ?? "📄";
+  return icons[ext] ?? "file";
 }

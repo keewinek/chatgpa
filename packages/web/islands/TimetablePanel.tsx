@@ -14,6 +14,7 @@ import {
   weekdayFromDate,
 } from "@chatgpa/core";
 import { loadGroupPrefs, saveGroupPrefs } from "../lib/timetable-storage.ts";
+import Icon from "./Icon.tsx";
 
 const WEEKDAYS: Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
 
@@ -60,7 +61,7 @@ export default function TimetablePanel({ onBack, embedded = false }: TimetablePa
       <header class="timetable-header">
         {!embedded && (
           <button type="button" class="timetable-back" onClick={onBack} aria-label="Wróć do czatu">
-            ← Czat
+            <Icon name="arrow-left" /> Czat
           </button>
         )}
         <div class="timetable-header-text">

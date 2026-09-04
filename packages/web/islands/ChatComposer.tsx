@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { ACCEPTED_FILES, type PendingFile, releasePending } from "../lib/chat-api.ts";
 import { type CommandEntry, filterCommands } from "../lib/commands.ts";
+import Icon from "./Icon.tsx";
 
 interface ChatComposerProps {
   text: string;
@@ -83,7 +84,11 @@ export default function ChatComposer({
             <div key={p.id} class="composer-attachment">
               {p.preview
                 ? <img class="composer-attachment-thumb" src={p.preview} alt={p.file.name} />
-                : <span class="composer-attachment-icon">📄</span>}
+                : (
+                  <span class="composer-attachment-icon">
+                    <Icon name="file" />
+                  </span>
+                )}
               <span class="composer-attachment-name">{p.file.name}</span>
               <button
                 type="button"
@@ -94,7 +99,7 @@ export default function ChatComposer({
                   onRemovePending(p.id);
                 }}
               >
-                ×
+                <Icon name="xmark" />
               </button>
             </div>
           ))}
@@ -138,7 +143,7 @@ export default function ChatComposer({
             disabled={loading}
             onClick={() => fileRef.current?.click()}
           >
-            📎
+            <Icon name="paperclip" />
           </button>
           <textarea
             ref={textRef}

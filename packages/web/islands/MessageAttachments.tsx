@@ -1,4 +1,5 @@
 import type { ChatAttachment } from "@chatgpa/core";
+import Icon from "./Icon.tsx";
 
 interface MessageAttachmentsProps {
   attachments: ChatAttachment[];
@@ -43,7 +44,9 @@ export default function MessageAttachments({ attachments }: MessageAttachmentsPr
                 rel="noopener noreferrer"
                 download={att.name}
               >
-                <span class="attachment-file-icon">📄</span>
+                <span class="attachment-file-icon">
+                  <Icon name="file" />
+                </span>
                 <span class="attachment-file-name">{att.name}</span>
                 {att.size !== undefined && (
                   <span class="attachment-file-size">{formatSize(att.size)}</span>
