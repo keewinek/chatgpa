@@ -36,6 +36,13 @@ const LEGACY_CAPITALIZED_DIRS = [
   "TODO",
 ] as const;
 
+/** Per-DB gate so we don't re-seed / legacy-purge on every FS request. */
+const seededDbs = new WeakMap<object, true>();
+
+export function invalidateFsSeedCache(db?: AppDatabase): void {
+  if (db) seededDbs.delete(db as object);
+}
+
 export async function isFsSeeded(db: AppDatabase): Promise<boolean> {
   const rows = await db
     .select({ id: fileNodes.id })
@@ -92,7 +99,7 @@ export async function seedFs(db: AppDatabase): Promise<void> {
   }
 }
 
-/** Idempotent — safe on every request so existing DBs get new shortcuts. */
+/** Idempotent — creates missing UI shortcuts and groups.json. */
 export async function seedUiShortcuts(db: AppDatabase): Promise<void> {
   const now = new Date().toISOString();
 
@@ -140,11 +147,14 @@ export async function removeLegacyCapitalizedDirs(db: AppDatabase): Promise<void
   }
 }
 
-/** Ensure virtual FS exists — idempotent, safe on every request. */
+/** Ensure virtual FS exists — once per DB handle after warm-up. */
 export async function ensureFsSeeded(db: AppDatabase): Promise<void> {
+  if (seededDbs.has(db as object)) return;
+
   if (!(await isFsSeeded(db))) {
     await seedFs(db);
   }
   await seedUiShortcuts(db);
   await removeLegacyCapitalizedDirs(db);
+  seededDbs.set(db as object, true);
 }

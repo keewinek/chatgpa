@@ -1,6 +1,6 @@
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { entryIcon, type FsEntry, fsList, fsRead } from "../lib/fs-api.ts";
+import { entryIcon, type FsEntry, fsList, fsRead, fsWrite } from "../lib/fs-api.ts";
 import {
   isUiShortcut,
   parseUiShortcut,
@@ -54,10 +54,16 @@ export default function FilesPanel({
   const tree = useSignal<TreeNode[]>([]);
   const selectedPath = useSignal<string | null>(null);
   const preview = useSignal<string>("");
+  const savedContent = useSignal<string>("");
   const previewLoading = useSignal(false);
   const previewMeta = useSignal<string>("");
+  const saving = useSignal(false);
+  const saveStatus = useSignal<string | null>(null);
   const activeUi = useSignal<ActiveUi | null>(null);
   const treeOpen = useSignal(true);
+
+  const dirty = preview.value !== savedContent.value && Boolean(selectedPath.value) &&
+    Boolean(previewMeta.value) && !activeUi.value;
 
   async function loadRoot() {
     loading.value = true;
@@ -131,14 +137,18 @@ export default function FilesPanel({
       selectedPath.value = path;
       activeUi.value = null;
       preview.value = "";
+      savedContent.value = "";
       previewMeta.value = "";
+      saveStatus.value = null;
       treeOpen.value = false;
       return;
     }
     selectedPath.value = path;
     activeUi.value = { view, title, path };
     preview.value = "";
+    savedContent.value = "";
     previewMeta.value = "";
+    saveStatus.value = null;
     treeOpen.value = false;
   }
 
@@ -146,7 +156,9 @@ export default function FilesPanel({
     selectedPath.value = path;
     previewLoading.value = true;
     preview.value = "";
+    savedContent.value = "";
     previewMeta.value = "";
+    saveStatus.value = null;
     activeUi.value = null;
     try {
       const file = await fsRead(path);
@@ -157,13 +169,32 @@ export default function FilesPanel({
           return;
         }
       }
-      preview.value = file.content || "(pusty)";
+      const content = file.content ?? "";
+      preview.value = content;
+      savedContent.value = content;
       previewMeta.value = file.mimeType ?? "text/plain";
       treeOpen.value = true;
     } catch (err) {
       preview.value = err instanceof Error ? err.message : String(err);
+      savedContent.value = preview.value;
     } finally {
       previewLoading.value = false;
+    }
+  }
+
+  async function saveFile() {
+    const path = selectedPath.value;
+    if (!path || !previewMeta.value || activeUi.value || saving.value) return;
+    saving.value = true;
+    saveStatus.value = null;
+    try {
+      await fsWrite(path, preview.value);
+      savedContent.value = preview.value;
+      saveStatus.value = "Zapisano";
+    } catch (err) {
+      saveStatus.value = err instanceof Error ? err.message : String(err);
+    } finally {
+      saving.value = false;
     }
   }
 
@@ -197,15 +228,30 @@ export default function FilesPanel({
     })();
   }, [initialUi]);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        if (!dirty || activeUi.value) return;
+        e.preventDefault();
+        void saveFile();
+      }
+    }
+    globalThis.addEventListener("keydown", onKeyDown);
+    return () => globalThis.removeEventListener("keydown", onKeyDown);
+  });
+
   function closeUi() {
     activeUi.value = null;
     preview.value = "";
+    savedContent.value = "";
     previewMeta.value = "";
+    saveStatus.value = null;
     treeOpen.value = true;
   }
 
   const ui = activeUi.value;
   const treeCollapsed = !treeOpen.value;
+  const editorOpen = Boolean(selectedPath.value && previewMeta.value && !ui);
 
   const treePane = (
     <aside class="files-tree" aria-label="Drzewo plików">
@@ -222,7 +268,9 @@ export default function FilesPanel({
                 selectedPath.value = "~";
                 activeUi.value = null;
                 preview.value = "";
+                savedContent.value = "";
                 previewMeta.value = "";
+                saveStatus.value = null;
               }}
             >
               <span class="files-tree-icon">
@@ -250,7 +298,7 @@ export default function FilesPanel({
   const previewPane = (
     <section
       class={`files-preview${ui ? " files-preview--ui" : ""}`}
-      aria-label={ui ? ui.title : "Podgląd"}
+      aria-label={ui ? ui.title : "Edytor pliku"}
     >
       {ui
         ? (
@@ -276,18 +324,49 @@ export default function FilesPanel({
         )
         : (
           <>
-            {selectedPath.value && previewMeta.value && (
+            {editorOpen && (
               <div class="files-preview-head">
-                <span class="files-preview-path">{selectedPath.value}</span>
+                <span class="files-preview-path">
+                  {selectedPath.value}
+                  {dirty ? " •" : ""}
+                </span>
+                <span class="files-preview-actions">
+                  {saveStatus.value && (
+                    <span
+                      class={`files-save-status${
+                        saveStatus.value === "Zapisano" ? "" : " files-save-status--error"
+                      }`}
+                    >
+                      {saveStatus.value}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    class="files-save-btn"
+                    disabled={!dirty || saving.value}
+                    onClick={() => void saveFile()}
+                  >
+                    {saving.value ? "Zapisywanie…" : "Save"}
+                  </button>
+                </span>
               </div>
             )}
-            {previewLoading.value
-              ? <p class="files-muted">…</p>
-              : preview.value
-              ? <pre class="files-preview-content">{preview.value}</pre>
+            {previewLoading.value ? <p class="files-muted">…</p> : editorOpen
+              ? (
+                <textarea
+                  class="files-preview-content files-preview-editor"
+                  value={preview.value}
+                  spellcheck={false}
+                  aria-label={`Treść ${selectedPath.value}`}
+                  onInput={(e) => {
+                    preview.value = (e.target as HTMLTextAreaElement).value;
+                    if (saveStatus.value === "Zapisano") saveStatus.value = null;
+                  }}
+                />
+              )
               : (
                 <p class="files-empty-hint">
-                  Otwórz dowolny plik — <code>.ui</code> pokazuje panel, reszta to podgląd
+                  Otwórz dowolny plik — <code>.ui</code> pokazuje panel, reszta to edytor z Save
                 </p>
               )}
           </>

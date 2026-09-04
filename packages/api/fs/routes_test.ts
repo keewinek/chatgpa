@@ -13,17 +13,19 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
   assertEquals(body.path, "~");
   assertEquals(body.entries.every((e) => e.kind === "directory"), true);
   const names = body.entries.map((e) => e.name).sort((a, b) => a.localeCompare(b, "pl"));
-  for (const dir of [
-    "books",
-    "calendar",
-    "memory",
-    "notes",
-    "plans",
-    "pomodoro",
-    "profile",
-    "school",
-    "todo",
-  ]) {
+  for (
+    const dir of [
+      "books",
+      "calendar",
+      "memory",
+      "notes",
+      "plans",
+      "pomodoro",
+      "profile",
+      "school",
+      "todo",
+    ]
+  ) {
     assertEquals(names.includes(dir), true, `missing seed dir: ${dir}`);
   }
 });
@@ -38,6 +40,7 @@ withTestDb("fs seeds .ui files in domain folders", async ({ db }) => {
   assertEquals(listRes.status, 200);
   const listBody = await listRes.json() as { entries: { name: string; kind: string }[] };
   assertEquals(listBody.entries.some((e) => e.name === "calendar.ui" && e.kind === "file"), true);
+  assertEquals(listBody.entries[0]?.name, "calendar.ui");
 
   const readRes = await app.request(
     "/api/fs/file?path=" + encodeURIComponent("~/calendar/calendar.ui"),
@@ -85,6 +88,7 @@ withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
   assertEquals(listRes.status, 200);
   const listBody = await listRes.json() as { entries: { name: string }[] };
   assertEquals(listBody.entries.some((e) => e.name === "test.md"), true);
+  assertEquals(listBody.entries[0]?.name, "notes.ui");
 
   const mkdirRes = await app.request("/api/fs/mkdir", {
     method: "POST",
@@ -92,6 +96,18 @@ withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
     body: JSON.stringify({ path: "~/notes/chemia" }),
   });
   assertEquals(mkdirRes.status, 200);
+
+  // Nested file under chemia must not appear as a child of ~/notes.
+  await app.request("/api/fs/file", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path: "~/notes/chemia/deep.md", content: "x" }),
+  });
+  const listNotesAgain = await app.request("/api/fs?path=" + encodeURIComponent("~/notes"));
+  const notesAgain = await listNotesAgain.json() as { entries: { name: string }[] };
+  assertEquals(notesAgain.entries.some((e) => e.name === "chemia"), true);
+  assertEquals(notesAgain.entries.some((e) => e.name === "deep.md"), false);
+  assertEquals(notesAgain.entries[0]?.name, "notes.ui");
 
   const delRes = await app.request(
     "/api/fs/file?path=" + encodeURIComponent("~/notes/test.md"),

@@ -1,3 +1,5 @@
+import { cachedGet, invalidateCache } from "./api-cache.ts";
+
 export type FsEntry = {
   name: string;
   path: string;
@@ -30,14 +32,18 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export async function fsList(path = "~"): Promise<FsListResponse> {
-  const res = await fetch(`/api/fs?path=${encodeURIComponent(path)}`);
-  return parseJson<FsListResponse>(res);
+export function fsList(path = "~"): Promise<FsListResponse> {
+  return cachedGet(`fs:list:${path}`, async () => {
+    const res = await fetch(`/api/fs?path=${encodeURIComponent(path)}`);
+    return parseJson<FsListResponse>(res);
+  });
 }
 
-export async function fsRead(path: string): Promise<FsReadResponse> {
-  const res = await fetch(`/api/fs/file?path=${encodeURIComponent(path)}`);
-  return parseJson<FsReadResponse>(res);
+export function fsRead(path: string): Promise<FsReadResponse> {
+  return cachedGet(`fs:read:${path}`, async () => {
+    const res = await fetch(`/api/fs/file?path=${encodeURIComponent(path)}`);
+    return parseJson<FsReadResponse>(res);
+  });
 }
 
 export async function fsWrite(
@@ -49,7 +55,29 @@ export async function fsWrite(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path, content }),
   });
-  return parseJson(res);
+  const result = await parseJson<{ path: string; created: boolean }>(res);
+  invalidateCache("fs:");
+  return result;
+}
+
+export async function fsMkdir(path: string): Promise<{ path: string }> {
+  const res = await fetch("/api/fs/mkdir", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  const result = await parseJson<{ path: string }>(res);
+  invalidateCache("fs:");
+  return result;
+}
+
+export async function fsDelete(path: string): Promise<{ path: string }> {
+  const res = await fetch(`/api/fs/file?path=${encodeURIComponent(path)}`, {
+    method: "DELETE",
+  });
+  const result = await parseJson<{ path: string }>(res);
+  invalidateCache("fs:");
+  return result;
 }
 
 export function entryIcon(entry: FsEntry): string {

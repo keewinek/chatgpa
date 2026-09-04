@@ -528,174 +528,174 @@ export default function ChatApp() {
         handleLabel="Zmień szerokość listy rozmów"
       >
         <ChatSidebar
-        sessions={store.value.sessions}
-        activeId={store.value.activeSessionId}
-        loading={loading.value}
-        open={sidebarOpen.value}
-        memory={memoryEntries.value}
-        filesActive={view.value === "files"}
-        onSelect={switchSession}
-        onNew={newChat}
-        onDelete={deleteChat}
-        onClose={() => {
-          sidebarOpen.value = false;
-        }}
-        onClearShortMemory={() => void handleClearShortMemory()}
-        onOpenFiles={() => {
-          filesUi.value = null;
-          notesInitialPath.value = null;
-          view.value = "files";
-          sidebarOpen.value = false;
-        }}
-      />
+          sessions={store.value.sessions}
+          activeId={store.value.activeSessionId}
+          loading={loading.value}
+          open={sidebarOpen.value}
+          memory={memoryEntries.value}
+          filesActive={view.value === "files"}
+          onSelect={switchSession}
+          onNew={newChat}
+          onDelete={deleteChat}
+          onClose={() => {
+            sidebarOpen.value = false;
+          }}
+          onClearShortMemory={() => void handleClearShortMemory()}
+          onOpenFiles={() => {
+            filesUi.value = null;
+            notesInitialPath.value = null;
+            view.value = "files";
+            sidebarOpen.value = false;
+          }}
+        />
 
-      {view.value === "files"
-        ? (
-          <div class="chat-main">
-            <FilesPanel
-              initialUi={filesUi.value}
-              notesInitialPath={notesInitialPath.value}
-              onInitialUiConsumed={() => {
-                filesUi.value = null;
-              }}
-              onOpenPomodoro={() => {
-                pomodoroOpen.value = true;
-              }}
-              onBack={() => {
-                view.value = "chat";
-                filesUi.value = null;
-                notesInitialPath.value = null;
-              }}
-            />
-          </div>
-        )
-        : (
-          <div class="chat-main">
-            <header class="chat-header">
-              <button
-                type="button"
-                class="sidebar-toggle"
-                aria-label="Otwórz listę rozmów"
-                onClick={() => {
-                  sidebarOpen.value = true;
+        {view.value === "files"
+          ? (
+            <div class="chat-main">
+              <FilesPanel
+                initialUi={filesUi.value}
+                notesInitialPath={notesInitialPath.value}
+                onInitialUiConsumed={() => {
+                  filesUi.value = null;
                 }}
-              >
-                <Icon name="bars" />
-              </button>
-              <div class="chat-header-text">
-                <h1 class="chat-title">{session().title}</h1>
-              </div>
-              <div class="chat-header-actions">
-                <button
-                  type="button"
-                  class="chat-icon-btn"
-                  aria-label="Pliki"
-                  title="Pliki"
-                  onClick={() => {
-                    filesUi.value = null;
-                    notesInitialPath.value = null;
-                    view.value = "files";
-                  }}
-                >
-                  <Icon name="folder" />
-                </button>
-                <button
-                  type="button"
-                  class="chat-icon-btn"
-                  aria-label="Powiadomienia"
-                  title="Powiadomienia"
-                  onClick={() => {
-                    if (unreadNotifications.value[0]) {
-                      void handleOpenNotification(unreadNotifications.value[0]);
-                    }
-                  }}
-                >
-                  <Icon name="bell" />
-                  {unreadNotifications.value.length > 0 && (
-                    <span class="chat-icon-badge">{unreadNotifications.value.length}</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  class={`chat-icon-btn${librusStale.value ? " chat-icon-btn--warn" : ""}`}
-                  aria-label="Sync Librus"
-                  title={librusSyncError.value ??
-                    (librusSyncedAt.value
-                      ? `Librus: ${formatLibrusSyncTime(librusSyncedAt.value)}`
-                      : "Sync Librus")}
-                  disabled={loading.value || librusSyncing.value}
-                  onClick={() => void handleLibrusSync()}
-                >
-                  <Icon
-                    name={librusSyncing.value ? "spinner" : "arrows-rotate"}
-                    class={librusSyncing.value ? "fa-spin" : undefined}
-                  />
-                </button>
-                <button
-                  type="button"
-                  class="chat-icon-btn"
-                  aria-label="Pomodoro"
-                  title="Pomodoro"
-                  onClick={() => {
-                    pomodoroOpen.value = true;
-                  }}
-                >
-                  <Icon name="stopwatch" />
-                </button>
-              </div>
-            </header>
-
-            <div class="chat-body">
-              <NotificationsBanner
-                notifications={unreadNotifications.value}
-                onOpen={(n) => void handleOpenNotification(n)}
-                onDismiss={(id) => void handleDismissNotification(id)}
+                onOpenPomodoro={() => {
+                  pomodoroOpen.value = true;
+                }}
+                onBack={() => {
+                  view.value = "chat";
+                  filesUi.value = null;
+                  notesInitialPath.value = null;
+                }}
               />
-
-              <div class="chat-messages" role="log" aria-live="polite">
-                {session().notificationContext && (
-                  <NotificationPlanCard
-                    todoToday={session().notificationContext!.todoToday}
-                    freeMinutes={session().notificationContext!.freeMinutes}
-                  />
-                )}
-                {!messages.length && !loading.value && (
-                  <ChatEmpty
-                    disabled={loading.value}
-                    onPick={(prompt) => void send(prompt)}
-                  />
-                )}
-                {messages.map((m, i) => (
-                  <ChatBubble
-                    key={m.id}
-                    message={m}
-                    onRetry={m.error && i === messages.length - 1
-                      ? () => void retryLast()
-                      : undefined}
-                  />
-                ))}
-                <div ref={bottomRef} />
-              </div>
             </div>
+          )
+          : (
+            <div class="chat-main">
+              <header class="chat-header">
+                <button
+                  type="button"
+                  class="sidebar-toggle"
+                  aria-label="Otwórz listę rozmów"
+                  onClick={() => {
+                    sidebarOpen.value = true;
+                  }}
+                >
+                  <Icon name="bars" />
+                </button>
+                <div class="chat-header-text">
+                  <h1 class="chat-title">{session().title}</h1>
+                </div>
+                <div class="chat-header-actions">
+                  <button
+                    type="button"
+                    class="chat-icon-btn"
+                    aria-label="Pliki"
+                    title="Pliki"
+                    onClick={() => {
+                      filesUi.value = null;
+                      notesInitialPath.value = null;
+                      view.value = "files";
+                    }}
+                  >
+                    <Icon name="folder" />
+                  </button>
+                  <button
+                    type="button"
+                    class="chat-icon-btn"
+                    aria-label="Powiadomienia"
+                    title="Powiadomienia"
+                    onClick={() => {
+                      if (unreadNotifications.value[0]) {
+                        void handleOpenNotification(unreadNotifications.value[0]);
+                      }
+                    }}
+                  >
+                    <Icon name="bell" />
+                    {unreadNotifications.value.length > 0 && (
+                      <span class="chat-icon-badge">{unreadNotifications.value.length}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    class={`chat-icon-btn${librusStale.value ? " chat-icon-btn--warn" : ""}`}
+                    aria-label="Sync Librus"
+                    title={librusSyncError.value ??
+                      (librusSyncedAt.value
+                        ? `Librus: ${formatLibrusSyncTime(librusSyncedAt.value)}`
+                        : "Sync Librus")}
+                    disabled={loading.value || librusSyncing.value}
+                    onClick={() => void handleLibrusSync()}
+                  >
+                    <Icon
+                      name={librusSyncing.value ? "spinner" : "arrows-rotate"}
+                      class={librusSyncing.value ? "fa-spin" : undefined}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    class="chat-icon-btn"
+                    aria-label="Pomodoro"
+                    title="Pomodoro"
+                    onClick={() => {
+                      pomodoroOpen.value = true;
+                    }}
+                  >
+                    <Icon name="stopwatch" />
+                  </button>
+                </div>
+              </header>
 
-            <ChatComposer
-              text={input.value}
-              loading={loading.value}
-              pending={pending.value}
-              onText={(v) => {
-                input.value = v;
-              }}
-              onSend={() => void send()}
-              onFiles={(files) => {
-                if (!files || loading.value) return;
-                pending.value = [...pending.value, ...Array.from(files).map(pendingFrom)];
-              }}
-              onRemovePending={(id) => {
-                pending.value = pending.value.filter((p) => p.id !== id);
-              }}
-            />
-          </div>
-        )}
+              <div class="chat-body">
+                <NotificationsBanner
+                  notifications={unreadNotifications.value}
+                  onOpen={(n) => void handleOpenNotification(n)}
+                  onDismiss={(id) => void handleDismissNotification(id)}
+                />
+
+                <div class="chat-messages" role="log" aria-live="polite">
+                  {session().notificationContext && (
+                    <NotificationPlanCard
+                      todoToday={session().notificationContext!.todoToday}
+                      freeMinutes={session().notificationContext!.freeMinutes}
+                    />
+                  )}
+                  {!messages.length && !loading.value && (
+                    <ChatEmpty
+                      disabled={loading.value}
+                      onPick={(prompt) => void send(prompt)}
+                    />
+                  )}
+                  {messages.map((m, i) => (
+                    <ChatBubble
+                      key={m.id}
+                      message={m}
+                      onRetry={m.error && i === messages.length - 1
+                        ? () => void retryLast()
+                        : undefined}
+                    />
+                  ))}
+                  <div ref={bottomRef} />
+                </div>
+              </div>
+
+              <ChatComposer
+                text={input.value}
+                loading={loading.value}
+                pending={pending.value}
+                onText={(v) => {
+                  input.value = v;
+                }}
+                onSend={() => void send()}
+                onFiles={(files) => {
+                  if (!files || loading.value) return;
+                  pending.value = [...pending.value, ...Array.from(files).map(pendingFrom)];
+                }}
+                onRemovePending={(id) => {
+                  pending.value = pending.value.filter((p) => p.id !== id);
+                }}
+              />
+            </div>
+          )}
       </ResizablePanels>
 
       {pomodoroOpen.value && (

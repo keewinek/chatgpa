@@ -1,4 +1,5 @@
 import type { TimeProfile } from "@chatgpa/core";
+import { cachedGet, invalidateCache } from "./api-cache.ts";
 
 async function parseJson<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({})) as { error?: string };
@@ -8,9 +9,11 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export async function fetchProfile(): Promise<TimeProfile> {
-  const res = await fetch("/api/profile");
-  return parseJson<TimeProfile>(res);
+export function fetchProfile(): Promise<TimeProfile> {
+  return cachedGet("profile", async () => {
+    const res = await fetch("/api/profile");
+    return parseJson<TimeProfile>(res);
+  });
 }
 
 export async function saveProfile(patch: Partial<TimeProfile>): Promise<TimeProfile> {
@@ -19,7 +22,10 @@ export async function saveProfile(patch: Partial<TimeProfile>): Promise<TimeProf
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
-  return parseJson<TimeProfile>(res);
+  const profile = await parseJson<TimeProfile>(res);
+  invalidateCache("profile");
+  invalidateCache("cal:");
+  return profile;
 }
 
 export function formatStudyExample(profile: TimeProfile): string {

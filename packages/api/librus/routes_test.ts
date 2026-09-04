@@ -4,7 +4,7 @@ import { setDbForTests } from "../db/client.ts";
 import { withTestDb } from "../db/test-helpers.ts";
 
 const SAMPLE_SYNC = {
-  syncedAt: "2026-09-02T12:00:00+02:00",
+  syncedAt: new Date().toISOString(),
   subjects: [{
     name: "Chemia",
     grades: [{

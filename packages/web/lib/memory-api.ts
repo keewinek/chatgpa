@@ -1,13 +1,17 @@
 import type { MemoryEntry } from "@chatgpa/core";
+import { cachedGet, invalidateCache } from "./api-cache.ts";
 
 const API = "";
 
-export async function fetchMemory(kind?: "short" | "long"): Promise<MemoryEntry[]> {
-  const params = kind ? `?kind=${kind}` : "";
-  const res = await fetch(`${API}/api/memory${params}`);
-  if (!res.ok) return [];
-  const data = await res.json() as { entries?: MemoryEntry[] };
-  return Array.isArray(data.entries) ? data.entries : [];
+export function fetchMemory(kind?: "short" | "long"): Promise<MemoryEntry[]> {
+  const key = `memory:${kind ?? "all"}`;
+  return cachedGet(key, async () => {
+    const params = kind ? `?kind=${kind}` : "";
+    const res = await fetch(`${API}/api/memory${params}`);
+    if (!res.ok) return [];
+    const data = await res.json() as { entries?: MemoryEntry[] };
+    return Array.isArray(data.entries) ? data.entries : [];
+  });
 }
 
 export async function migrateLegacyMemory(facts: string[]): Promise<MemoryEntry[]> {
@@ -17,6 +21,7 @@ export async function migrateLegacyMemory(facts: string[]): Promise<MemoryEntry[
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ facts }),
   });
+  invalidateCache("memory:");
   if (!res.ok) return [];
   const data = await res.json() as { entries?: MemoryEntry[] };
   return Array.isArray(data.entries) ? data.entries : [];
@@ -24,6 +29,7 @@ export async function migrateLegacyMemory(facts: string[]): Promise<MemoryEntry[
 
 export async function clearShortMemory(): Promise<MemoryEntry[]> {
   const res = await fetch(`${API}/api/memory?kind=short`, { method: "DELETE" });
+  invalidateCache("memory:");
   if (!res.ok) return fetchMemory();
   const data = await res.json() as { entries?: MemoryEntry[] };
   return Array.isArray(data.entries) ? data.entries : [];
@@ -31,6 +37,7 @@ export async function clearShortMemory(): Promise<MemoryEntry[]> {
 
 export async function clearAllMemory(): Promise<MemoryEntry[]> {
   const res = await fetch(`${API}/api/memory?kind=all`, { method: "DELETE" });
+  invalidateCache("memory:");
   if (!res.ok) return fetchMemory();
   const data = await res.json() as { entries?: MemoryEntry[] };
   return Array.isArray(data.entries) ? data.entries : [];

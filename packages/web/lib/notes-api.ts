@@ -1,4 +1,5 @@
 import type { FsEntry } from "./fs-api.ts";
+import { invalidateCache } from "./api-cache.ts";
 
 export type NotesListResponse = {
   path: string;
@@ -43,7 +44,9 @@ export async function notesWrite(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path, content }),
   });
-  return parseJson(res);
+  const result = await parseJson<{ path: string; created: boolean }>(res);
+  invalidateCache("fs:");
+  return result;
 }
 
 export async function notesMkdir(path: string): Promise<{ path: string }> {
@@ -52,14 +55,18 @@ export async function notesMkdir(path: string): Promise<{ path: string }> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path }),
   });
-  return parseJson(res);
+  const result = await parseJson<{ path: string }>(res);
+  invalidateCache("fs:");
+  return result;
 }
 
 export async function notesDelete(path: string): Promise<{ path: string }> {
   const res = await fetch(`/api/notes/file?path=${encodeURIComponent(path)}`, {
     method: "DELETE",
   });
-  return parseJson(res);
+  const result = await parseJson<{ path: string }>(res);
+  invalidateCache("fs:");
+  return result;
 }
 
 /** Strip ~/notes/ prefix for display in the tree. */

@@ -124,7 +124,11 @@ withTestDb("freeSlots for today starts near now, not in the past", async ({ db }
     const [h, m] = slots.studyWindowStart.split(":").map(Number);
     const start = h! * 60 + m!;
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    // Start should be at/after "now" (with the +5 buffer baked into computeFreeSlots).
+    // After hard study end there may be zero free minutes — otherwise start ≥ now.
+    if (slots.freeMinutes === 0) {
+      assertEquals(start <= nowMin + 5, true);
+      return;
+    }
     assertEquals(start >= nowMin, true);
   } finally {
     setDbForTests(undefined);

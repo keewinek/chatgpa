@@ -169,7 +169,10 @@ function NowStrip({
   if (info.status === "during" && info.lesson && info.time) {
     const color = SUBJECT_COLORS[info.lesson.subject] ?? "var(--accent)";
     return (
-      <div class="tt-now tt-now--live" style={{ "--subject-color": color } as Record<string, string>}>
+      <div
+        class="tt-now tt-now--live"
+        style={{ "--subject-color": color } as Record<string, string>}
+      >
         <span class="tt-now-time">{timeStr}</span>
         <span class="tt-now-text">
           <strong>{info.lesson.subject}</strong>

@@ -1868,6 +1868,45 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.files-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.files-save-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--surface, var(--bg));
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.files-save-btn:hover:not(:disabled) {
+  border-color: var(--accent, #3b82f6);
+}
+
+.files-save-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.files-save-status {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.files-save-status--error {
+  color: #c44;
 }
 
 .files-preview-meta {
@@ -1887,6 +1926,17 @@ body {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+textarea.files-preview-editor {
+  width: 100%;
+  min-height: 0;
+  resize: none;
+  color: var(--text);
+  outline: none;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
 }
 
 .files-muted,

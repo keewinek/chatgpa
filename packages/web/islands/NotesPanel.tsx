@@ -318,7 +318,9 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
                 <li>
                   <button
                     type="button"
-                    class={`notes-tree-item${!selectedPath.value ? " notes-tree-item--active" : ""}`}
+                    class={`notes-tree-item${
+                      !selectedPath.value ? " notes-tree-item--active" : ""
+                    }`}
                     onClick={() => {
                       selectedPath.value = null;
                       editorContent.value = "";

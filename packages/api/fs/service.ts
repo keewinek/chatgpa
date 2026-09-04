@@ -1,4 +1,4 @@
-import { and, eq, isNull, like } from "drizzle-orm";
+import { and, eq, isNull, like, not, sql } from "drizzle-orm";
 import type { AppDatabase } from "../db/client.ts";
 import { fileNodes } from "../db/schema.ts";
 import { ensureFsSeeded } from "./seed.ts";
@@ -40,6 +40,18 @@ function parentPath(internal: string): string | null {
   return idx === -1 ? null : internal.slice(0, idx);
 }
 
+function isUiFile(name: string): boolean {
+  return name.toLowerCase().endsWith(".ui");
+}
+
+function compareFsEntries(a: FsEntry, b: FsEntry): number {
+  const aUi = isUiFile(a.name);
+  const bUi = isUiFile(b.name);
+  if (aUi !== bUi) return aUi ? -1 : 1;
+  if (a.kind !== b.kind) return a.kind === "directory" ? -1 : 1;
+  return a.name.localeCompare(b.name, "pl");
+}
+
 async function getNode(db: AppDatabase, internalPath: string) {
   const rows = await db
     .select()
@@ -49,48 +61,42 @@ async function getNode(db: AppDatabase, internalPath: string) {
   return rows[0] ?? null;
 }
 
+/** Immediate children only (one path segment under the directory). */
 async function listChildren(db: AppDatabase, internalDir: string): Promise<FsEntry[]> {
   const prefix = internalDir === USER_ROOT ? `${USER_ROOT}/` : `${internalDir}/`;
   const rows = await db
     .select()
     .from(fileNodes)
-    .where(and(like(fileNodes.path, `${prefix}%`), isNull(fileNodes.deletedAt)));
+    .where(
+      and(
+        like(fileNodes.path, `${prefix}%`),
+        not(like(fileNodes.path, `${prefix}%/%`)),
+        isNull(fileNodes.deletedAt),
+        sql`${fileNodes.path} <> ${internalDir}`,
+      ),
+    );
 
-  const children = new Map<string, FsEntry>();
-
-  for (const row of rows) {
-    if (row.path === internalDir) continue;
-    const rel = row.path.startsWith(prefix) ? row.path.slice(prefix.length) : "";
-    if (!rel) continue;
-
-    const slash = rel.indexOf("/");
-    const name = slash === -1 ? rel : rel.slice(0, slash);
-    if (!name || children.has(name)) continue;
-
-    const childInternal = `${prefix}${name}`;
-    if (slash === -1 && row.kind === "file") {
-      children.set(name, {
+  const entries: FsEntry[] = rows.map((row) => {
+    const name = row.path.slice(prefix.length);
+    if (row.kind === "file") {
+      return {
         name,
         path: toVirtualPath(row.path),
-        kind: "file",
+        kind: "file" as const,
         mimeType: row.mimeType,
         size: row.content?.length ?? 0,
         updatedAt: row.updatedAt,
-      });
-    } else {
-      children.set(name, {
-        name,
-        path: toVirtualPath(childInternal),
-        kind: "directory",
-        updatedAt: row.updatedAt,
-      });
+      };
     }
-  }
-
-  return [...children.values()].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === "directory" ? -1 : 1;
-    return a.name.localeCompare(b.name, "pl");
+    return {
+      name,
+      path: toVirtualPath(row.path),
+      kind: "directory" as const,
+      updatedAt: row.updatedAt,
+    };
   });
+
+  return entries.sort(compareFsEntries);
 }
 
 export async function fsList(db: AppDatabase, virtualPath: string): Promise<FsListResult> {

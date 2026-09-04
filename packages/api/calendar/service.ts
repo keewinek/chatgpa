@@ -107,8 +107,7 @@ export async function listEvents(
   from?: string,
   to?: string,
 ): Promise<CalEvent[]> {
-  const allMonths = await listMonths(db);
-  const targetMonths = from && to ? monthsInRange(from, to) : allMonths;
+  const targetMonths = from && to ? monthsInRange(from, to) : await listMonths(db);
 
   const events: CalEvent[] = [];
   for (const month of targetMonths) {

@@ -63,12 +63,15 @@ export async function cleanupExpiredShort(db: AppDatabase): Promise<number> {
   return rows.length;
 }
 
+const memoryCleanupDone = new WeakMap<object, true>();
+
 export async function listMemory(
   db: AppDatabase,
   options: { kind?: MemoryKind; includeExpired?: boolean } = {},
 ): Promise<MemoryEntry[]> {
-  if (!options.includeExpired) {
+  if (!options.includeExpired && !memoryCleanupDone.has(db as object)) {
     await cleanupExpiredShort(db);
+    memoryCleanupDone.set(db as object, true);
   }
 
   const rows = await db

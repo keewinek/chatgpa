@@ -1,23 +1,18 @@
 import type { CalEvent, Task, TimeSlot } from "@chatgpa/core";
 import {
   formatMinutesToTime,
+  newEventId,
   parseTimeToMinutes,
   WEEKDAY_LABELS,
   weekdayFromDate,
 } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
-import {
-  addEvent,
-  computeFreeSlots,
-  deleteEvent,
-  listEvents,
-  readMonth,
-} from "../calendar/service.ts";
+import { computeFreeSlots, listEvents, readMonth, writeMonth } from "../calendar/service.ts";
 import { ensureFsSeeded } from "../fs/seed.ts";
 import { fsWrite } from "../fs/service.ts";
 import { listMemory } from "../memory/service.ts";
 import { addTask, listTasks, updateTask } from "../todo/service.ts";
-import { generatePlanMessage } from "./ai.ts";
+import { buildFallbackMessage } from "./ai.ts";
 import {
   addDaysIso,
   collectExamAlerts,
@@ -187,14 +182,11 @@ export function formatPlanMarkdown(plan: DailyPlanResult): string {
 async function removeStudyBlocksForDate(db: AppDatabase, date: string): Promise<void> {
   const month = date.slice(0, 7);
   const data = await readMonth(db, month);
-  const toRemove = data.events.filter(
-    (e) => e.kind === "study_block" && e.source === "ai" && e.start.startsWith(date),
+  const next = data.events.filter(
+    (e) => !(e.kind === "study_block" && e.source === "ai" && e.start.startsWith(date)),
   );
-  if (!toRemove.length) return;
-
-  for (const event of toRemove) {
-    await deleteEvent(db, event.id);
-  }
+  if (next.length === data.events.length) return;
+  await writeMonth(db, { month, events: next });
 }
 
 async function ensurePlanTasks(
@@ -253,17 +245,20 @@ async function ensurePlanTasks(
 }
 
 async function writeStudyBlocks(db: AppDatabase, date: string, blocks: PlanBlock[]): Promise<void> {
-  await removeStudyBlocksForDate(db, date);
-
-  for (const block of blocks) {
-    await addEvent(db, {
-      title: block.title,
-      kind: "study_block",
-      start: `${date}T${block.start}:00+02:00`,
-      end: `${date}T${block.end}:00+02:00`,
-      source: "ai",
-    });
-  }
+  const month = date.slice(0, 7);
+  const data = await readMonth(db, month);
+  const kept = data.events.filter(
+    (e) => !(e.kind === "study_block" && e.source === "ai" && e.start.startsWith(date)),
+  );
+  const created: CalEvent[] = blocks.map((block) => ({
+    id: newEventId(),
+    title: block.title,
+    kind: "study_block" as const,
+    start: `${date}T${block.start}:00+02:00`,
+    end: `${date}T${block.end}:00+02:00`,
+    source: "ai" as const,
+  }));
+  await writeMonth(db, { month, events: [...kept, ...created] });
 }
 
 export async function generateDailyPlan(
@@ -310,14 +305,15 @@ export async function generateDailyPlan(
   const blocks = assignBlocksToSlots(date, freeSlots.slots, selectedItems);
   const usedMinutes = blocks.reduce((s, b) => s + b.minutes, 0);
 
-  const { message, notes, aiUsed } = await generatePlanMessage({
+  // Structured plan for tools/cron; chat finale round rewrites it for the student.
+  const message = buildFallbackMessage(
     date,
-    weekdayLabel: weekdayLabel(date),
-    freeSlots,
-    items: selectedItems,
-    examAlerts,
-    blocks,
-  });
+    weekdayLabel(date),
+    freeSlots.freeMinutes,
+    selectedItems,
+  );
+  const notes: string[] = [];
+  const aiUsed = false;
 
   const planTasks = await ensurePlanTasks(db, date, selectedItems);
   await writeStudyBlocks(db, date, blocks);

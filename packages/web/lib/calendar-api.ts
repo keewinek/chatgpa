@@ -1,4 +1,5 @@
 import type { CalEvent, CalMonth, EventKind, FreeSlotsResult } from "@chatgpa/core";
+import { cachedGet, invalidateCache } from "./api-cache.ts";
 
 async function parseJson<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({})) as { error?: string };
@@ -8,22 +9,28 @@ async function parseJson<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export async function fetchCalendarMonths(): Promise<string[]> {
-  const res = await fetch("/api/calendar");
-  const body = await parseJson<{ months: string[] }>(res);
-  return body.months;
+export function fetchCalendarMonths(): Promise<string[]> {
+  return cachedGet("cal:months", async () => {
+    const res = await fetch("/api/calendar");
+    const body = await parseJson<{ months: string[] }>(res);
+    return body.months;
+  });
 }
 
-export async function fetchCalendarMonth(month: string): Promise<CalMonth> {
-  const res = await fetch(`/api/calendar/month?month=${encodeURIComponent(month)}`);
-  return parseJson<CalMonth>(res);
+export function fetchCalendarMonth(month: string): Promise<CalMonth> {
+  return cachedGet(`cal:month:${month}`, async () => {
+    const res = await fetch(`/api/calendar/month?month=${encodeURIComponent(month)}`);
+    return parseJson<CalMonth>(res);
+  });
 }
 
-export async function fetchCalendarEvents(from: string, to: string): Promise<CalEvent[]> {
-  const q = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
-  const res = await fetch(`/api/calendar${q}`);
-  const body = await parseJson<{ events: CalEvent[] }>(res);
-  return body.events;
+export function fetchCalendarEvents(from: string, to: string): Promise<CalEvent[]> {
+  return cachedGet(`cal:events:${from}:${to}`, async () => {
+    const q = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    const res = await fetch(`/api/calendar${q}`);
+    const body = await parseJson<{ events: CalEvent[] }>(res);
+    return body.events;
+  });
 }
 
 export async function createCalendarEvent(
@@ -34,7 +41,9 @@ export async function createCalendarEvent(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(event),
   });
-  return parseJson<CalEvent>(res);
+  const created = await parseJson<CalEvent>(res);
+  invalidateCache("cal:");
+  return created;
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
@@ -42,11 +51,14 @@ export async function deleteCalendarEvent(id: string): Promise<void> {
     method: "DELETE",
   });
   await parseJson(res);
+  invalidateCache("cal:");
 }
 
-export async function fetchFreeSlots(date: string): Promise<FreeSlotsResult> {
-  const res = await fetch(`/api/calendar/free-slots?date=${encodeURIComponent(date)}`);
-  return parseJson<FreeSlotsResult>(res);
+export function fetchFreeSlots(date: string): Promise<FreeSlotsResult> {
+  return cachedGet(`cal:free:${date}`, async () => {
+    const res = await fetch(`/api/calendar/free-slots?date=${encodeURIComponent(date)}`);
+    return parseJson<FreeSlotsResult>(res);
+  }, 10_000);
 }
 
 export function monthKey(date: Date): string {
