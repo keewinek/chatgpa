@@ -1,11 +1,18 @@
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { entryIcon, type FsEntry, fsList, fsRead, fsWrite } from "../lib/fs-api.ts";
+import {
+  entryIcon,
+  type FsEntry,
+  fsList,
+  fsMkdir,
+  fsRead,
+  fsWrite,
+} from "../lib/fs-api.ts";
 import {
   isUiShortcut,
+  PANEL_TARGETS,
   parseUiShortcut,
   UI_SHORTCUTS,
-  uiShortcutPath,
   type UiView,
 } from "../lib/ui-shortcuts.ts";
 import CalendarPanel from "./CalendarPanel.tsx";
@@ -42,6 +49,21 @@ function shortcutIconForName(name: string): string | null {
   return def?.icon ?? null;
 }
 
+function parentDir(path: string): string {
+  if (path === "~") return "~";
+  const idx = path.lastIndexOf("/");
+  if (idx <= 0) return "~";
+  return path.slice(0, idx) || "~";
+}
+
+function sanitizeName(raw: string): string | null {
+  const name = raw.trim().replace(/^\/+|\/+$/g, "");
+  if (!name || name.includes("/") || name.includes("..") || name === "." || name === "..") {
+    return null;
+  }
+  return name;
+}
+
 export default function FilesPanel({
   onBack,
   initialUi,
@@ -61,9 +83,30 @@ export default function FilesPanel({
   const saveStatus = useSignal<string | null>(null);
   const activeUi = useSignal<ActiveUi | null>(null);
   const treeOpen = useSignal(true);
+  const creating = useSignal(false);
 
   const dirty = preview.value !== savedContent.value && Boolean(selectedPath.value) &&
     Boolean(previewMeta.value) && !activeUi.value;
+
+  /** Directory used for New file / New folder. */
+  function targetDir(): string {
+    const path = selectedPath.value;
+    if (!path || path === "~") return "~";
+    const node = findNode(tree.value, path);
+    if (node?.entry.kind === "directory") return path;
+    return parentDir(path);
+  }
+
+  function findNode(nodes: TreeNode[], path: string): TreeNode | null {
+    for (const n of nodes) {
+      if (n.entry.path === path) return n;
+      if (n.children) {
+        const found = findNode(n.children, path);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
 
   async function loadRoot() {
     loading.value = true;
@@ -200,6 +243,12 @@ export default function FilesPanel({
 
   async function onEntryClick(node: TreeNode) {
     if (node.entry.kind === "directory") {
+      selectedPath.value = node.entry.path;
+      activeUi.value = null;
+      preview.value = "";
+      savedContent.value = "";
+      previewMeta.value = "";
+      saveStatus.value = null;
       await toggleDir(node);
     } else {
       await selectFile(node.entry.path, node.entry.name);
@@ -207,11 +256,58 @@ export default function FilesPanel({
   }
 
   async function openUiByView(view: UiView) {
-    const def = UI_SHORTCUTS.find((s) => s.view === view);
-    if (!def) return;
-    const path = uiShortcutPath(def);
-    await expandPathTo(path);
-    openUi(view, def.title, path);
+    const target = PANEL_TARGETS[view];
+    if (!target) return;
+    await expandPathTo(target.path);
+    openUi(view, target.title, target.path);
+  }
+
+  async function createFile() {
+    if (creating.value) return;
+    const name = sanitizeName(
+      globalThis.prompt("Nazwa nowego pliku (np. notatka.md):") ?? "",
+    );
+    if (!name) return;
+    creating.value = true;
+    error.value = null;
+    try {
+      const dir = targetDir();
+      const path = dir === "~" ? `~/${name}` : `${dir}/${name}`;
+      await fsWrite(path, "");
+      await loadRoot();
+      await expandPathTo(path);
+      await selectFile(path, name);
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : String(err);
+    } finally {
+      creating.value = false;
+    }
+  }
+
+  async function createFolder() {
+    if (creating.value) return;
+    const name = sanitizeName(
+      globalThis.prompt("Nazwa nowego katalogu:") ?? "",
+    );
+    if (!name) return;
+    creating.value = true;
+    error.value = null;
+    try {
+      const dir = targetDir();
+      const path = dir === "~" ? `~/${name}` : `${dir}/${name}`;
+      await fsMkdir(path);
+      await loadRoot();
+      await expandPathTo(path);
+      selectedPath.value = path;
+      activeUi.value = null;
+      preview.value = "";
+      savedContent.value = "";
+      previewMeta.value = "";
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : String(err);
+    } finally {
+      creating.value = false;
+    }
   }
 
   useEffect(() => {
@@ -366,7 +462,9 @@ export default function FilesPanel({
               )
               : (
                 <p class="files-empty-hint">
-                  Otwórz dowolny plik — <code>.ui</code> pokazuje panel, reszta to edytor z Save
+                  Otwórz plik albo utwórz nowy — szkoła to jeden codebase pod{" "}
+                  <code>~</code>. Kalendarz i plan lekcji: pliki{" "}
+                  <code>.ui</code>.
                 </p>
               )}
           </>
@@ -391,6 +489,26 @@ export default function FilesPanel({
           aria-pressed={treeOpen.value}
         >
           <Icon name="folder-tree" />
+        </button>
+        <button
+          type="button"
+          class="files-create"
+          disabled={creating.value}
+          onClick={() => void createFile()}
+          title="Nowy plik"
+          aria-label="Nowy plik"
+        >
+          <Icon name="file" />
+        </button>
+        <button
+          type="button"
+          class="files-create"
+          disabled={creating.value}
+          onClick={() => void createFolder()}
+          title="Nowy katalog"
+          aria-label="Nowy katalog"
+        >
+          <Icon name="folder-plus" />
         </button>
         <div class="files-header-spacer" />
         {ui && <span class="files-header-ui">{ui.title}</span>}

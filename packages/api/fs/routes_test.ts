@@ -59,6 +59,16 @@ withTestDb("fs seeds .ui files in domain folders", async ({ db }) => {
   const groupsBody = await groupsRes.json() as { content: string };
   const groups = JSON.parse(groupsBody.content) as { language: number };
   assertEquals(groups.language, 1);
+
+  // Obsolete .ui launchers are not seeded.
+  const todoUi = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent("~/todo/todo.ui"),
+  );
+  assertEquals(todoUi.status, 404);
+  const notesUi = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent("~/notes/notes.ui"),
+  );
+  assertEquals(notesUi.status, 404);
 });
 
 withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
@@ -88,7 +98,7 @@ withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
   assertEquals(listRes.status, 200);
   const listBody = await listRes.json() as { entries: { name: string }[] };
   assertEquals(listBody.entries.some((e) => e.name === "test.md"), true);
-  assertEquals(listBody.entries[0]?.name, "notes.ui");
+  assertEquals(listBody.entries.some((e) => e.name === "notes.ui"), false);
 
   const mkdirRes = await app.request("/api/fs/mkdir", {
     method: "POST",
@@ -107,7 +117,7 @@ withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
   const notesAgain = await listNotesAgain.json() as { entries: { name: string }[] };
   assertEquals(notesAgain.entries.some((e) => e.name === "chemia"), true);
   assertEquals(notesAgain.entries.some((e) => e.name === "deep.md"), false);
-  assertEquals(notesAgain.entries[0]?.name, "notes.ui");
+  assertEquals(notesAgain.entries.some((e) => e.name === "notes.ui"), false);
 
   const delRes = await app.request(
     "/api/fs/file?path=" + encodeURIComponent("~/notes/test.md"),

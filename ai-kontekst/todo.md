@@ -52,7 +52,8 @@ Zgodnie z [model-danych.md](./model-danych.md):
 | `todo.complete` | `{ id }`                                 |
 | `todo.delete`   | `{ id }`                                 |
 
-Alternatywa: operacje przez `fs.read` / `fs.write` na `global.todo` — **preferuj dedykowane tools**
+Alternatywa i **preferowany tor agenta:** `fs.read` / `fs.write` na `~/todo/global.todo`.
+Tools HTTP `todo.*` mogą istnieć dla UI/API, ale nie są w system prompcie.
 (mniej błędów parsowania).
 
 ## UI

@@ -43,9 +43,8 @@ czatami).
 
 - Brak wygaśnięcia (lub bardzo długi TTL, np. rok, z możliwością odświeżenia)
 - Użycie: stałe fakty (przedmioty, cele, preferencje nauki, ważne ustalenia między czatami)
-- Przechowywana jako **plik** w systemie plików (patrz [system-plikow.md](./system-plikow.md)):
-  - `~/.chatgpa/memory/long-term.memory` (lub `.memory` — do ustalenia w decyzji)
-- Agent może **czytać i dopisywać** przez tools; użytkownik też widzi plik w UI
+- Przechowywana jako **plik** `~/memory/long-term.memory` (JSONL) — SoT; tabele = indeks.
+- Agent: `fs.read` / `fs.write` tego pliku (nie `memory.*` w prompcie).
 
 ### Relacja z obecnym `memory.*`
 

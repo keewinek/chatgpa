@@ -7,15 +7,19 @@ import { withChatContext } from "./providers.ts";
 import { SYSTEM_PROMPT } from "./system-prompt.ts";
 import { createMemoryStore, executeActions } from "./tools.ts";
 
-Deno.test("SYSTEM_PROMPT documents lazy context and grades.get", () => {
-  assertEquals(SYSTEM_PROMPT.includes("grades.get"), true);
+Deno.test("SYSTEM_PROMPT is FS-first (Cursor-style) with minimal tools", () => {
+  assertEquals(SYSTEM_PROMPT.includes("fs.list"), true);
+  assertEquals(SYSTEM_PROMPT.includes("fs.read"), true);
+  assertEquals(SYSTEM_PROMPT.includes("fs.write"), true);
+  assertEquals(SYSTEM_PROMPT.includes("fs.mkdir"), true);
+  assertEquals(SYSTEM_PROMPT.includes("fs.delete"), true);
   assertEquals(SYSTEM_PROMPT.includes("calendar.freeSlots"), true);
-  assertEquals(SYSTEM_PROMPT.includes("todo.list"), true);
   assertEquals(SYSTEM_PROMPT.includes("plan.generate"), true);
-  assertEquals(SYSTEM_PROMPT.includes("NIE masz na start ocen"), true);
-  assertEquals(SYSTEM_PROMPT.includes("NIE zgaduj"), true);
-  assertEquals(SYSTEM_PROMPT.includes("NIE czekaj na „zapamiętaj”"), true);
-  assertEquals(SYSTEM_PROMPT.includes("memory.remember"), true);
+  assertEquals(SYSTEM_PROMPT.includes("web.search"), true);
+  assertEquals(SYSTEM_PROMPT.includes("Nie masz na start ocen"), true);
+  assertEquals(SYSTEM_PROMPT.includes("todo.list"), false);
+  assertEquals(SYSTEM_PROMPT.includes("grades.get"), false);
+  assertEquals(SYSTEM_PROMPT.includes("memory.remember"), false);
 });
 
 Deno.test("study plan workflow prefers plan.generate", () => {

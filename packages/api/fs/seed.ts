@@ -16,14 +16,18 @@ export const SEED_DIRECTORIES = [
   "school/librus",
 ] as const;
 
-/** Seed `.ui` view files under the same ~/ folders as related content. */
+/** Seed `.ui` launchers — only calendar + timetable (rest is plain files). */
 export const SEED_UI_SHORTCUTS = [
   { dir: "calendar", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
   { dir: "school", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },
-  { dir: "todo", file: "todo.ui", view: "todo", title: "TODO" },
-  { dir: "notes", file: "notes.ui", view: "notes", title: "Notatki" },
-  { dir: "profile", file: "profile.ui", view: "profile", title: "Profil czasu" },
-  { dir: "pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
+] as const;
+
+/** Removed from product — soft-delete if still present. */
+const OBSOLETE_UI_PATHS = [
+  "todo/todo.ui",
+  "notes/notes.ui",
+  "profile/profile.ui",
+  "pomodoro/pomodoro.ui",
 ] as const;
 
 /** Old Polish-capitalized shortcut dirs — replaced by lowercase SEED_DIRECTORIES. */
@@ -36,8 +40,11 @@ const LEGACY_CAPITALIZED_DIRS = [
   "TODO",
 ] as const;
 
+/** Bump when seed/cleanup behavior changes so existing isolates re-run once. */
+const SEED_VERSION = 3;
+
 /** Per-DB gate so we don't re-seed / legacy-purge on every FS request. */
-const seededDbs = new WeakMap<object, true>();
+const seededDbs = new WeakMap<object, number>();
 
 export function invalidateFsSeedCache(db?: AppDatabase): void {
   if (db) seededDbs.delete(db as object);
@@ -147,14 +154,27 @@ export async function removeLegacyCapitalizedDirs(db: AppDatabase): Promise<void
   }
 }
 
-/** Ensure virtual FS exists — once per DB handle after warm-up. */
+/** Soft-delete obsolete `.ui` launchers (todo/notes/profile/pomodoro). */
+export async function removeObsoleteUiShortcuts(db: AppDatabase): Promise<void> {
+  const now = new Date().toISOString();
+  for (const rel of OBSOLETE_UI_PATHS) {
+    const path = `${USER_ROOT}/${rel}`;
+    await db
+      .update(fileNodes)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(and(eq(fileNodes.path, path), isNull(fileNodes.deletedAt)));
+  }
+}
+
+/** Ensure virtual FS exists — once per DB handle after warm-up / seed version bump. */
 export async function ensureFsSeeded(db: AppDatabase): Promise<void> {
-  if (seededDbs.has(db as object)) return;
+  if (seededDbs.get(db as object) === SEED_VERSION) return;
 
   if (!(await isFsSeeded(db))) {
     await seedFs(db);
   }
   await seedUiShortcuts(db);
   await removeLegacyCapitalizedDirs(db);
-  seededDbs.set(db as object, true);
+  await removeObsoleteUiShortcuts(db);
+  seededDbs.set(db as object, SEED_VERSION);
 }

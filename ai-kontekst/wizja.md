@@ -45,7 +45,7 @@ zł**:
 | Background agents  | Automatyzacje w tle (plan dnia, alerty)                                                      |
 | Diff / PR          | Diff wiedzy / zmiana średniej                                                                |
 | Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil                                                           |
-| MCP / tools        | `fs.*` + skróty domenowe (TODO, kalendarz, Librus)                                           |
+| MCP / tools        | Głównie `fs.*` (+ `plan.generate`, `web.search`, …) — szkoła jak codebase |
 
 **Kierunek:** im więcej funkcji, tym więcej z nich powinno być „po prostu plikiem” (`.todo`, `.cal`,
 `.plan`, `.profile`, `.ui`, `groups.json`…). Panele UI nie trzymają osobnej prawdy — renderują FS.

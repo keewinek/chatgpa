@@ -1,4 +1,4 @@
-/** Views opened from virtual `.ui` files in the same tree as everything else. */
+/** Views opened from virtual `.ui` files or slash commands. */
 export type UiView =
   | "calendar"
   | "timetable"
@@ -18,7 +18,7 @@ export type UiShortcutDef = {
   icon: string;
 };
 
-/** `.ui` files live in the same folders as related content under ~/. */
+/** Only calendar + timetable ship as `.ui` launchers (Cursor-style: rest is plain files). */
 export const UI_SHORTCUTS: readonly UiShortcutDef[] = [
   {
     dir: "calendar",
@@ -34,23 +34,20 @@ export const UI_SHORTCUTS: readonly UiShortcutDef[] = [
     title: "Plan lekcji",
     icon: "table-columns",
   },
-  { dir: "todo", file: "todo.ui", view: "todo", title: "TODO", icon: "list-check" },
-  { dir: "notes", file: "notes.ui", view: "notes", title: "Notatki", icon: "note-sticky" },
-  {
-    dir: "profile",
-    file: "profile.ui",
-    view: "profile",
-    title: "Profil czasu",
-    icon: "user-clock",
-  },
-  {
-    dir: "pomodoro",
-    file: "pomodoro.ui",
-    view: "pomodoro",
-    title: "Pomodoro",
-    icon: "stopwatch",
-  },
 ] as const;
+
+/** Targets for slash/panel open — data path, not necessarily a .ui file. */
+export const PANEL_TARGETS: Record<
+  UiView,
+  { path: string; title: string; icon: string }
+> = {
+  calendar: { path: "~/calendar/calendar.ui", title: "Kalendarz", icon: "calendar" },
+  timetable: { path: "~/school/timetable.ui", title: "Plan lekcji", icon: "table-columns" },
+  todo: { path: "~/todo/global.todo", title: "TODO", icon: "list-check" },
+  notes: { path: "~/notes", title: "Notatki", icon: "note-sticky" },
+  profile: { path: "~/profile/me.profile", title: "Profil czasu", icon: "user-clock" },
+  pomodoro: { path: "~/pomodoro", title: "Pomodoro", icon: "stopwatch" },
+};
 
 export function uiShortcutPath(def: UiShortcutDef): string {
   return `~/${def.dir}/${def.file}`;
@@ -75,40 +72,28 @@ export function parseUiShortcut(
   if (content) {
     try {
       const parsed = JSON.parse(content) as { view?: string; title?: string };
-      if (
-        parsed.view === "calendar" || parsed.view === "timetable" ||
-        parsed.view === "todo" || parsed.view === "notes" ||
-        parsed.view === "profile" || parsed.view === "pomodoro"
-      ) {
-        const def = UI_SHORTCUTS.find((s) => s.view === parsed.view);
+      if (parsed.view === "calendar" || parsed.view === "timetable") {
+        const target = PANEL_TARGETS[parsed.view];
         return {
           view: parsed.view,
-          title: parsed.title ?? def?.title ?? parsed.view,
+          title: parsed.title ?? target.title,
         };
       }
+      // Obsolete .ui (todo/notes/…) — treat as plain file, no panel.
+      return null;
     } catch {
-      /* fall through to filename */
+      /* fall through */
     }
   }
 
   const stem = base.slice(0, -3).toLowerCase();
-  const byFile: Record<string, UiView> = {
-    calendar: "calendar",
-    kalendarz: "calendar",
-    timetable: "timetable",
-    plan: "timetable",
-    "plan-lekcji": "timetable",
-    todo: "todo",
-    notes: "notes",
-    notatki: "notes",
-    profile: "profile",
-    profil: "profile",
-    pomodoro: "pomodoro",
-  };
-  const view = byFile[stem];
-  if (!view) return null;
-  const def = UI_SHORTCUTS.find((s) => s.view === view);
-  return { view, title: def?.title ?? view };
+  if (stem === "calendar" || stem === "kalendarz") {
+    return { view: "calendar", title: PANEL_TARGETS.calendar.title };
+  }
+  if (stem === "timetable" || stem === "plan" || stem === "plan-lekcji") {
+    return { view: "timetable", title: PANEL_TARGETS.timetable.title };
+  }
+  return null;
 }
 
 export function viewFromSlash(command: string): UiView | null {

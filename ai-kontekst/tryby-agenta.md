@@ -27,17 +27,18 @@ Output: checklista + szacowany czas + priorytety ROI. Po „ok, zapisz” → na
 
 ## Agent
 
-**Cel:** wykonać wielokrokowe zadanie z narzędziami.
+**Cel:** wykonać wielokrokowe zadanie jak w Cursorze — przez pliki pod `~/`.
 
 Przykłady:
 
-- „Zrób 10 pytań z rozdziału X i dodaj powtórkę na środę.”
-- „Przeanalizuj oceny i zaproponuj 3 tematy o najwyższym ROI, dodaj do TODO.”
+- „Dodaj powtórkę chemii na środę” → `fs.read` / `fs.write` `~/todo/global.todo` (+ ewentualnie `.cal`).
+- „Zapamiętaj że mam grupę 2 z WF” → edycja `~/school/groups.json` lub pamięci.
+- „Ułóż plan na dziś” → `plan.generate`.
 
 Guardrails:
 
-- nie kasuje danych bez potwierdzenia,
-- nie wysyła nic na zewnątrz poza AI cascade,
+- nie kasuje ważnych plików bez potrzeby (`fs.delete`),
+- nie wysyła nic na zewnątrz poza AI cascade / `web.search`,
 - pokazuje użyty model.
 
 ## Focus

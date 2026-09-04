@@ -172,7 +172,7 @@ export async function fsWrite(
   }
 
   const parent = parentPath(resolved.internal);
-  if (parent) {
+  if (parent && parent !== USER_ROOT) {
     const parentNode = await getNode(db, parent);
     if (!parentNode) {
       throw new FsError("Katalog nadrzędny nie istnieje", 404);

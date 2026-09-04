@@ -18,7 +18,7 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 1. Chat musi **zawsze** działać (kaskada fallback).
 2. Transparentność modelu (`provider/model` w UI i API).
 3. **File-first OS** — nowe funkcje jako pliki pod `~/` ([system-plikow.md](./system-plikow.md));
-   agent runtime ma świadomie używać `fs.*`.
+   agent runtime: **FS-first** (`fs.*`), bez zalewania promptu toolsami domenowymi.
 4. Kontekst ucznia / szkoły rośnie z czasem — nie hardcoduj fikcyjnych ocen.
 5. Librus = osobny tor (wtyczka), nie blokuj chatu na syncu.
 

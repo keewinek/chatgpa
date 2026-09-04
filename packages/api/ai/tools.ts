@@ -16,7 +16,7 @@ import {
 import type { AppDatabase } from "../db/client.ts";
 import { getDb } from "../db/client.ts";
 import { formatWarsawIsoDate } from "../plan/distribute.ts";
-import { FsError, fsList, fsRead, fsWrite } from "../fs/service.ts";
+import { FsError, fsDelete, fsList, fsMkdir, fsRead, fsWrite } from "../fs/service.ts";
 import {
   formatGroupsSummary,
   loadStoredGroupPrefs,
@@ -991,9 +991,11 @@ async function runOne(
         return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
       }
       const path = typeof args.path === "string" ? args.path : "";
-      const content = typeof args.content === "string" ? args.content : "";
       if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
-      if (!content) return { tool: action.tool, ok: false, error: "Brak pola content" };
+      if (typeof args.content !== "string") {
+        return { tool: action.tool, ok: false, error: "Brak pola content" };
+      }
+      const content = args.content;
       const createOnly = args.createOnly === true;
       try {
         const result = await fsWrite(db, path, content, createOnly);
@@ -1002,6 +1004,40 @@ async function runOne(
           ok: true,
           output: result.created ? `Utworzono ${result.path}` : `Zaktualizowano ${result.path}`,
         };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "fs.mkdir": {
+      if (!db) {
+        return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+      }
+      const path = typeof args.path === "string" ? args.path : "";
+      if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
+      try {
+        const result = await fsMkdir(db, path);
+        return { tool: action.tool, ok: true, output: `Utworzono katalog ${result.path}` };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "fs.delete": {
+      if (!db) {
+        return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+      }
+      const path = typeof args.path === "string" ? args.path : "";
+      if (!path.trim()) return { tool: action.tool, ok: false, error: "Brak pola path" };
+      try {
+        const result = await fsDelete(db, path);
+        return { tool: action.tool, ok: true, output: `Usunięto ${result.path}` };
       } catch (err) {
         return {
           tool: action.tool,

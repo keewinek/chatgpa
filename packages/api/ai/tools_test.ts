@@ -112,6 +112,24 @@ withTestDb("fs.write and fs.read via tools", async ({ db }) => {
     const list = await executeActions([{ tool: "fs.list", args: { path: "~/todo" } }], store);
     assertEquals(list.results[0].ok, true);
     assertEquals(list.results[0].output?.includes("global.todo"), true);
+
+    const mkdir = await executeActions(
+      [{ tool: "fs.mkdir", args: { path: "~/notes/agent-dir" } }],
+      store,
+    );
+    assertEquals(mkdir.results[0].ok, true);
+
+    const empty = await executeActions(
+      [{ tool: "fs.write", args: { path: "~/notes/agent-dir/empty.md", content: "" } }],
+      store,
+    );
+    assertEquals(empty.results[0].ok, true);
+
+    const del = await executeActions(
+      [{ tool: "fs.delete", args: { path: "~/notes/agent-dir/empty.md" } }],
+      store,
+    );
+    assertEquals(del.results[0].ok, true);
   } finally {
     setDbForTests(undefined);
   }

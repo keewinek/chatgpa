@@ -1698,6 +1698,7 @@ body {
 
 .files-back,
 .files-refresh,
+.files-create,
 .files-tree-toggle {
   appearance: none;
   border: none;
@@ -1719,9 +1720,15 @@ body {
 
 .files-back:hover,
 .files-refresh:hover,
+.files-create:hover,
 .files-tree-toggle:hover {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.08);
+}
+
+.files-create:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .files-tree-toggle--active {
@@ -3529,6 +3536,7 @@ textarea.files-preview-editor {
 .sidebar-toggle,
 .files-back,
 .files-refresh,
+.files-create,
 .files-tree-toggle,
 .gcal-back,
 .gcal-nav-btn,
@@ -3545,6 +3553,7 @@ textarea.files-preview-editor {
 .files-tree-icon .fa-solid,
 .files-back .fa-solid,
 .files-refresh .fa-solid,
+.files-create .fa-solid,
 .files-tree-toggle .fa-solid,
 .gcal-back .fa-solid,
 .gcal-nav-btn .fa-solid,

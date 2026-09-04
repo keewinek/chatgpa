@@ -207,3 +207,13 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** jeden panel plików, `.ui` w folderach domenowych, `groups.json`; metafora Cursor.
 - **Konsekwencje:** nowe funkcje jako format pliku; brak trybu apps/dane w UI; aktualizacja
   `system-plikow.md`, `zasady.md`, `wizja.md`.
+
+## 2026-09-04 — Agent FS-first (Cursor-style tools)
+
+- **Decyzja:** agent runtime widzi tylko `fs.list|read|write|mkdir|delete` + `plan.generate`,
+  `calendar.freeSlots`, `web.search`, `calc.eval`, `file.send`. Domain tools (`todo.*`, `notes.*`,
+  `memory.*`, `grades.*`, CRUD kalendarza, `timetable.*`) nie są w system prompcie. `.ui` seed:
+  wyłącznie calendar + timetable; tworzenie plików/katalogów w UI Files.
+- **Kontekst:** zbyt wiele tools zapychało context window; metafora Cursor/Claude Code = codebase.
+- **Konsekwencje:** krótszy `system-prompt.ts`; slash nadal otwiera panele bez `.ui`; seed v3
+  soft-delete obsolete `.ui`.

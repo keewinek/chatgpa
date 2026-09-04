@@ -6,8 +6,8 @@ mieli wspólne źródło prawdy.
 > **Zasada nr 1:** wszystko ma być **darmowe**. Zero płatności. Zero karty. AI tylko z darmowych
 > tierów / darmowych kluczy API.
 >
-> **Zasada nr 2 (file-first):** dążymy do tego, żeby **wszystko było plikiem** pod `~/` — UI i
-> tools to widoki/skróty. Szczegóły: [system-plikow.md](./system-plikow.md).
+> **Zasada nr 2 (file-first):** szkoła = jeden codebase pod `~/`. Agent jak Cursor: `fs.*`, nie
+> milion toolsów domenowych. Szczegóły: [system-plikow.md](./system-plikow.md).
 
 ## Jak czytać (dla agenta)
 

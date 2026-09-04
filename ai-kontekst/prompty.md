@@ -1,94 +1,46 @@
-# Prompty i packing kontekstu
+# Prompty i lazy context
 
-## Zasada główna (NOWA)
+## Model (Cursor / Claude Code)
 
-**Agent NIE dostaje pełnego kontekstu ucznia na start.**
+Agent nie dostaje całego stanu szkoły w system prompcie. Dostaje:
 
-Zamiast wielkiego `ContextPacket` w system prompcie:
+1. Krótki prompt: **szkoła = codebase `~/`**
+2. Datę/czas (Warszawa) + plan lekcji dnia (wstrzyknięte)
+3. Tools: głównie **`fs.*`** (+ `plan.generate`, `calendar.freeSlots`, `web.search`, …)
 
-- Krótki system prompt z **instrukcją użycia tools**
-- Agent **sam pobiera** dane gdy potrzebuje: oceny, TODO, kalendarz, pamięć, pliki
+Źródło implementacji: `packages/api/ai/system-prompt.ts`.
 
-Powód: mniej tokenów, mniej halucynacji, świeższe dane, skalowalność.
+## Zasady
 
-## System prompt (lazy context — aktualny)
+- Wiedza ogólna (mitoza, wzory) → bez tools.
+- Stan ucznia (TODO, pamięć, oceny, kalendarz) → `fs.read` właściwego pliku.
+- Zmiana stanu → `fs.write` (lub `plan.generate` dla planu dnia).
+- Aktualne fakty z sieci → `web.search`.
 
-Zaimplementowany w `packages/api/ai/system-prompt.ts`:
+## Mapowanie danych → pliki
 
-- Tożsamość: ChatGPA, Cursor-do-szkoły.
-- Język: polski.
-- **Lazy context:** oceny, TODO, kalendarz, pamięć — tylko przez tools (nie w prompcie na start).
-- Wyjątki wstrzykiwane w `withChatContext`: data/czas + plan lekcji 3A.
+| Potrzeba              | Akcja agenta                                      |
+| --------------------- | ------------------------------------------------- |
+| TODO                  | `fs.read` / `fs.write` `~/todo/global.todo`       |
+| Pamięć długa          | `~/memory/long-term.memory` (JSONL)               |
+| Notatki               | `~/notes/**/*.md`                                 |
+| Kalendarz             | `~/calendar/YYYY-MM.cal`                          |
+| Oceny Librus          | `~/school/librus/grades.json`                     |
+| Grupy lekcyjne        | `~/school/groups.json`                            |
+| Profil czasu          | `~/profile/me.profile`                            |
+| Plan nauki na dziś    | **`plan.generate`** (nie składaj ręcznie)         |
+| Wolne okna            | `calendar.freeSlots`                              |
 
-## Docelowy system prompt (lazy context)
+## Tools w prompcie (kontrakt)
 
-```
-Jesteś ChatGPA — osobisty asystent edukacyjny (jak Cursor, ale do szkoły).
+Tylko te nazwy są dokumentowane dla modelu — celowo mało, żeby nie puchł context:
 
-Zasady:
-- Odpowiadaj po polsku, krótko i konkretnie.
-- NIE zgaduj ocen, terminów ani planu lekcji. Użyj narzędzi:
-  - memory.list — fakty o uczniu
-  - todo.list — zadania
-  - calendar.list / calendar.freeSlots — terminy i wolny czas
-  - fs.read — notatki, plany, snapshot Librus (~/school/librus/grades.json)
-  - grades.summary — średnie i oceny per przedmiot (gdy dostępne)
-- Przed planowaniem dnia: zawsze calendar.freeSlots + todo.list.
-- Nie wymyślaj — jeśli tool zwróci pusty wynik, powiedz wprost i zaproponuj sync Librus.
-- Ton: wspierający korepetytor.
+`fs.list`, `fs.read`, `fs.write`, `fs.mkdir`, `fs.delete`, `plan.generate`,
+`calendar.freeSlots`, `web.search`, `calc.eval`, `file.send`.
 
-Masz dostęp do wirtualnego systemu plików ~ (notatki, todo, kalendarz, książki).
-```
+## Checklist testów
 
-## ContextPacket → deprecated
-
-Stary model (XML w prompcie) zastępujemy **on-demand tools**:
-
-| Stare (w prompcie)     | Nowe (tool)                                                   |
-| ---------------------- | ------------------------------------------------------------- |
-| `<profil>`             | `fs.read("~/profile/me.profile")`                             |
-| `<todo_otwarte>`       | `todo.list({ status: "open" })`                               |
-| `<najblizsze_terminy>` | `calendar.list({ from, to })`                                 |
-| `<przedmioty>` / oceny | `fs.read("~/school/librus/grades.json")` lub `grades.summary` |
-| Pamięć                 | `memory.list({ kind })`                                       |
-| Plan lekcji            | `fs.read("~/school/librus/schedule.json")`                    |
-
-### Wyjątki (mały stały kontekst OK)
-
-- Dzisiejsza data (`datetime.now` lub blok w prompcie — **już wstrzykiwane**)
-- **Plan lekcji klasy 3A** — wstrzykiwany w `withMemoryContext` + tools `timetable.*`
-  ([plan-lekcji.md](./plan-lekcji.md))
-- Tryb agenta (`ask` | `plan` | `agent`) jeśli wprowadzimy tryby
-- **Nie** wklejaj listy ocen, całego TODO ani pamięci (pamięć docelowo tylko przez tools)
-
-## Zasady packingu (zaktualizowane)
-
-1. **Lazy first** — dane tylko przez tools w momencie potrzeby.
-2. **Budget tokenów** — dotyczy wyników tools (truncate długich plików, np. 8k znaków).
-3. **Świeżość** — przy ocenach sprawdź `syncedAt` w snapshot; jeśli >24h, ostrzeż użytkownika.
-4. **Prawda** — tylko dane z tools/DB.
-5. **Background jobs** (plan dnia, powiadomienia) — osobny wąski prompt z **pre-zebranymi** danymi z
-   DB, nie pełna historia czatu.
-
-## Akcje strukturalne
-
-Model zwraca bloki `chatgpa-action` (obecny mechanizm):
-
-````
-```chatgpa-action
-{ "type": "todo.add", "title": "Powtórka: kwasy", "estimatedMinutes": 25 }
-```
-````
-
-Rozszerzyć o: `memory.remember`, `fs.write`, `calendar.add`, `notes.write`, itd.
-
-## Szablony użytkownika (slash)
-
-Patrz [komendy.md](./komendy.md) — `/plan`, `/quiz`, `/clear short memory`, itd.
-
-## Ewaluacja jakości
-
-1. „Jaka mam średnia z chemii?” bez sync → agent woła tool, nie zmyśla.
-2. „Ułóż plan na dziś” → agent woła `calendar.freeSlots` + `todo.list` przed odpowiedzią.
-3. Pytanie ogólne (np. „co to jest mitoza”) → **nie** woła tools niepotrzebnie.
-4. Ton PL, fallback modeli nadal użyteczny.
+1. Pytanie o TODO → agent woła `fs.read` na `global.todo`, nie zmyśla.
+2. „Zapamiętaj, że…” → dopisuje do `long-term.memory` przez `fs.write`.
+3. Pytanie ogólne → bez zbędnych tools.
+4. Plan na dziś → `plan.generate`.
