@@ -2,12 +2,10 @@ import { and, eq, isNull, lte, or } from "drizzle-orm";
 import type { MemoryEntry, MemoryKind, MemorySource } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
 import { memoryEntries } from "../db/schema.ts";
-import { fsWrite } from "../fs/service.ts";
-import { USER_ROOT } from "../fs/path.ts";
+import { FsError, fsRead, fsWrite } from "../fs/service.ts";
 
 export const DEFAULT_SHORT_TTL_DAYS = 7;
 export const LONG_TERM_VIRTUAL_PATH = "~/memory/long-term.memory";
-const _LONG_TERM_INTERNAL_PATH = `${USER_ROOT}/memory/long-term.memory`;
 
 export function newMemoryId(): string {
   return `mem-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -35,6 +33,158 @@ function addDays(days: number, from = new Date()): string {
   const d = new Date(from);
   d.setDate(d.getDate() + days);
   return d.toISOString();
+}
+
+function stableContentId(content: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < content.length; i++) {
+    h ^= content.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `mem-file-${(h >>> 0).toString(36)}`;
+}
+
+/** Parse JSONL (or plain-text lines) from ~/memory/long-term.memory. */
+export function parseLongTermFile(content: string): MemoryEntry[] {
+  const now = new Date().toISOString();
+  const entries: MemoryEntry[] = [];
+  const seen = new Set<string>();
+
+  for (const raw of content.split("\n")) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+
+    let entry: MemoryEntry | null = null;
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      if (parsed && typeof parsed.content === "string" && parsed.content.trim()) {
+        const text = parsed.content.trim();
+        const id = typeof parsed.id === "string" && parsed.id
+          ? parsed.id
+          : stableContentId(text);
+        entry = {
+          id,
+          content: text,
+          kind: "long",
+          createdAt: typeof parsed.createdAt === "string" ? parsed.createdAt : now,
+          source: (parsed.source as MemorySource) ?? "user",
+          tags: Array.isArray(parsed.tags)
+            ? parsed.tags.filter((t): t is string => typeof t === "string")
+            : undefined,
+          chatId: typeof parsed.chatId === "string" ? parsed.chatId : undefined,
+        };
+      }
+    } catch {
+      // plain text line
+    }
+
+    if (!entry) {
+      entry = {
+        id: stableContentId(trimmed),
+        content: trimmed,
+        kind: "long",
+        createdAt: now,
+        source: "user",
+      };
+    }
+
+    if (seen.has(entry.id) || seen.has(entry.content.toLowerCase())) continue;
+    seen.add(entry.id);
+    seen.add(entry.content.toLowerCase());
+    entries.push(entry);
+  }
+
+  return entries;
+}
+
+export function serializeLongTermFile(entries: MemoryEntry[]): string {
+  const longTerm = entries.filter((e) => e.kind === "long");
+  if (!longTerm.length) return "";
+  return `${longTerm.map((e) => JSON.stringify(e)).join("\n")}\n`;
+}
+
+async function readLongTermFileContent(db: AppDatabase): Promise<string> {
+  try {
+    const file = await fsRead(db, LONG_TERM_VIRTUAL_PATH, 0, 1_000_000);
+    return file.content;
+  } catch (err) {
+    if (err instanceof FsError && err.status === 404) return "";
+    throw err;
+  }
+}
+
+/**
+ * File is source of truth for long-term memory.
+ * Sync DB rows to match ~/memory/long-term.memory.
+ */
+export async function importLongTermFromFile(db: AppDatabase): Promise<MemoryEntry[]> {
+  const fromFile = parseLongTermFile(await readLongTermFileContent(db));
+  const now = new Date().toISOString();
+
+  const dbLong = await db
+    .select()
+    .from(memoryEntries)
+    .where(and(eq(memoryEntries.kind, "long"), isNull(memoryEntries.deletedAt)));
+
+  const fileById = new Map(fromFile.map((e) => [e.id, e]));
+  const fileContents = new Set(fromFile.map((e) => e.content.toLowerCase()));
+
+  for (const row of dbLong) {
+    const keep = fileById.has(row.id) || fileContents.has(row.content.toLowerCase());
+    if (!keep) {
+      await db
+        .update(memoryEntries)
+        .set({ deletedAt: now, updatedAt: now })
+        .where(eq(memoryEntries.id, row.id));
+    }
+  }
+
+  const activeAfter = await db
+    .select()
+    .from(memoryEntries)
+    .where(and(eq(memoryEntries.kind, "long"), isNull(memoryEntries.deletedAt)));
+  const byId = new Map(activeAfter.map((r) => [r.id, r]));
+  const byContent = new Map(
+    activeAfter.map((r) => [r.content.toLowerCase(), r]),
+  );
+
+  for (const entry of fromFile) {
+    const existing = byId.get(entry.id) ?? byContent.get(entry.content.toLowerCase());
+    if (existing) {
+      if (
+        existing.content !== entry.content ||
+        existing.source !== entry.source ||
+        existing.deletedAt
+      ) {
+        await db
+          .update(memoryEntries)
+          .set({
+            content: entry.content,
+            source: entry.source,
+            tags: entry.tags ?? null,
+            chatId: entry.chatId ?? null,
+            updatedAt: now,
+            deletedAt: null,
+          })
+          .where(eq(memoryEntries.id, existing.id));
+      }
+      continue;
+    }
+
+    await db.insert(memoryEntries).values({
+      id: entry.id,
+      content: entry.content,
+      kind: "long",
+      expiresAt: null,
+      source: entry.source,
+      tags: entry.tags ?? null,
+      chatId: entry.chatId ?? null,
+      createdAt: entry.createdAt,
+      updatedAt: now,
+    });
+  }
+
+  return fromFile;
 }
 
 export async function cleanupExpiredShort(db: AppDatabase): Promise<number> {
@@ -72,6 +222,11 @@ export async function listMemory(
   if (!options.includeExpired && !memoryCleanupDone.has(db as object)) {
     await cleanupExpiredShort(db);
     memoryCleanupDone.set(db as object, true);
+  }
+
+  // Long-term: file wins — pull edits from ~/memory/long-term.memory into DB.
+  if (options.kind !== "short") {
+    await importLongTermFromFile(db);
   }
 
   const rows = await db
@@ -199,11 +354,14 @@ export async function migrateLegacyStrings(
   return count;
 }
 
+/** Write long-term DB rows out to the file (after API mutations). */
 export async function syncLongTermFile(db: AppDatabase): Promise<void> {
-  const longTerm = await listMemory(db, { kind: "long" });
-  const lines = longTerm.map((e) => JSON.stringify(e)).join("\n");
-  const content = lines ? `${lines}\n` : "";
-  await fsWrite(db, LONG_TERM_VIRTUAL_PATH, content);
+  const rows = await db
+    .select()
+    .from(memoryEntries)
+    .where(and(eq(memoryEntries.kind, "long"), isNull(memoryEntries.deletedAt)));
+  const longTerm = rows.map(rowToEntry).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  await fsWrite(db, LONG_TERM_VIRTUAL_PATH, serializeLongTermFile(longTerm));
 }
 
 /** In-memory store for offline / tests when DB is unavailable. */

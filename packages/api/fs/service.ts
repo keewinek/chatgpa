@@ -188,6 +188,7 @@ export async function fsWrite(
       .update(fileNodes)
       .set({ content, mimeType, updatedAt: now, deletedAt: null })
       .where(eq(fileNodes.id, existing.id));
+    await maybeImportLongTermMemory(db, resolved.virtual);
     return { path: resolved.virtual, created: false };
   }
 
@@ -207,6 +208,7 @@ export async function fsWrite(
         deletedAt: null,
       })
       .where(eq(fileNodes.id, tombstone.id));
+    await maybeImportLongTermMemory(db, resolved.virtual);
     return { path: resolved.virtual, created: true };
   }
 
@@ -220,7 +222,14 @@ export async function fsWrite(
     updatedAt: now,
   });
 
+  await maybeImportLongTermMemory(db, resolved.virtual);
   return { path: resolved.virtual, created: true };
+}
+
+async function maybeImportLongTermMemory(db: AppDatabase, virtualPath: string): Promise<void> {
+  if (virtualPath !== "~/memory/long-term.memory") return;
+  const { importLongTermFromFile } = await import("../memory/service.ts");
+  await importLongTermFromFile(db);
 }
 
 export async function fsMkdir(db: AppDatabase, virtualPath: string): Promise<{ path: string }> {

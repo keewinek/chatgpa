@@ -3,6 +3,7 @@ import { assertEquals } from "@std/assert";
 import { setDbForTests } from "../db/client.ts";
 import { memoryEntries } from "../db/schema.ts";
 import { withTestDb } from "../db/test-helpers.ts";
+import { fsRead, fsWrite } from "../fs/service.ts";
 import {
   clearMemory,
   listMemory,
@@ -10,7 +11,6 @@ import {
   rememberMemory,
   syncLongTermFile,
 } from "./service.ts";
-import { fsRead } from "../fs/service.ts";
 
 withTestDb("cleanupExpiredShort removes expired entries", async ({ db }) => {
   setDbForTests(db);
@@ -52,6 +52,29 @@ withTestDb("syncLongTermFile writes JSONL", async ({ db }) => {
     const file = await fsRead(db, "~/memory/long-term.memory");
     assertEquals(file.content.includes("Test fakt"), true);
     assertEquals(file.content.includes('"kind":"long"'), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
+withTestDb("editing long-term.memory removes facts from memory", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    await rememberMemory(db, { content: "Fakt A", kind: "long" });
+    await rememberMemory(db, { content: "Fakt B", kind: "long" });
+    const before = await listMemory(db, { kind: "long" });
+    assertEquals(before.length, 2);
+
+    const file = await fsRead(db, "~/memory/long-term.memory");
+    const kept = file.content
+      .split("\n")
+      .filter((line) => line.includes("Fakt B"))
+      .join("\n") + "\n";
+    await fsWrite(db, "~/memory/long-term.memory", kept);
+
+    const after = await listMemory(db, { kind: "long" });
+    assertEquals(after.length, 1);
+    assertEquals(after[0].content, "Fakt B");
   } finally {
     setDbForTests(undefined);
   }
