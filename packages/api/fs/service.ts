@@ -61,6 +61,16 @@ async function getNode(db: AppDatabase, internalPath: string) {
   return rows[0] ?? null;
 }
 
+/** Includes soft-deleted rows — needed to revive paths under UNIQUE(path). */
+async function getNodeAny(db: AppDatabase, internalPath: string) {
+  const rows = await db
+    .select()
+    .from(fileNodes)
+    .where(eq(fileNodes.path, internalPath))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 /** Immediate children only (one path segment under the directory). */
 async function listChildren(db: AppDatabase, internalDir: string): Promise<FsEntry[]> {
   const prefix = internalDir === USER_ROOT ? `${USER_ROOT}/` : `${internalDir}/`;
@@ -176,9 +186,28 @@ export async function fsWrite(
   if (existing) {
     await db
       .update(fileNodes)
-      .set({ content, mimeType, updatedAt: now })
+      .set({ content, mimeType, updatedAt: now, deletedAt: null })
       .where(eq(fileNodes.id, existing.id));
     return { path: resolved.virtual, created: false };
+  }
+
+  // Soft-deleted row still occupies UNIQUE(path) — revive instead of insert.
+  const tombstone = await getNodeAny(db, resolved.internal);
+  if (tombstone) {
+    if (tombstone.kind === "directory") {
+      throw new FsError("Ścieżka jest zajęta przez usunięty katalog", 409);
+    }
+    await db
+      .update(fileNodes)
+      .set({
+        kind: "file",
+        content,
+        mimeType,
+        updatedAt: now,
+        deletedAt: null,
+      })
+      .where(eq(fileNodes.id, tombstone.id));
+    return { path: resolved.virtual, created: true };
   }
 
   await db.insert(fileNodes).values({
@@ -212,6 +241,24 @@ export async function fsMkdir(db: AppDatabase, virtualPath: string): Promise<{ p
   }
 
   const now = nowIso();
+  const tombstone = await getNodeAny(db, resolved.internal);
+  if (tombstone) {
+    if (tombstone.kind === "file") {
+      throw new FsError("Ścieżka jest zajęta przez usunięty plik", 409);
+    }
+    await db
+      .update(fileNodes)
+      .set({
+        kind: "directory",
+        content: null,
+        mimeType: null,
+        updatedAt: now,
+        deletedAt: null,
+      })
+      .where(eq(fileNodes.id, tombstone.id));
+    return { path: resolved.virtual };
+  }
+
   await db.insert(fileNodes).values({
     id: nodeIdForPath(resolved.internal),
     path: resolved.internal,

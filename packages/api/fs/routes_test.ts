@@ -121,6 +121,39 @@ withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
   assertEquals(missingRes.status, 404);
 });
 
+withTestDb("fs write revives soft-deleted path", async ({ db }) => {
+  const app = new Hono();
+  app.route("/api/fs", createFsRoutes(() => db));
+
+  const path = "~/notes/revive-me.md";
+  const writeRes = await app.request("/api/fs/file", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, content: "v1" }),
+  });
+  assertEquals(writeRes.status, 200);
+
+  const delRes = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent(path),
+    { method: "DELETE" },
+  );
+  assertEquals(delRes.status, 200);
+
+  const rewrite = await app.request("/api/fs/file", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, content: "v2 after delete" }),
+  });
+  assertEquals(rewrite.status, 200);
+  const rewriteBody = await rewrite.json() as { created: boolean };
+  assertEquals(rewriteBody.created, true);
+
+  const readRes = await app.request("/api/fs/file?path=" + encodeURIComponent(path));
+  assertEquals(readRes.status, 200);
+  const readBody = await readRes.json() as { content: string };
+  assertEquals(readBody.content, "v2 after delete");
+});
+
 withTestDb("fs rejects path traversal", async ({ db }) => {
   const app = new Hono();
   app.route("/api/fs", createFsRoutes(() => db));
