@@ -44,6 +44,11 @@ import {
 } from "../calendar/service.ts";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
+import {
+  clampSearchLimit,
+  formatWebSearchOutput,
+  webSearch,
+} from "./web-search.ts";
 
 export interface ToolResult {
   tool: string;
@@ -690,6 +695,46 @@ async function runCalendarAction(
   }
 }
 
+async function runWebAction(action: ChatAction): Promise<ToolResult> {
+  const args = action.args ?? {};
+  switch (action.tool) {
+    case "web.search": {
+      const query = typeof args.query === "string" ? args.query : "";
+      if (!query.trim()) {
+        return { tool: action.tool, ok: false, error: "Brak pola query" };
+      }
+      const limit = clampSearchLimit(args.limit);
+      try {
+        const outcome = await webSearch(query, limit);
+        if (!outcome.ok) {
+          return {
+            tool: action.tool,
+            ok: false,
+            error: outcome.error ?? "Wyszukiwanie nie powiodło się",
+          };
+        }
+        return {
+          tool: action.tool,
+          ok: true,
+          output: formatWebSearchOutput(outcome.provider, query.trim(), outcome.results),
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    default:
+      return {
+        tool: action.tool,
+        ok: false,
+        error: `Nieznane narzędzie web: ${action.tool}`,
+      };
+  }
+}
+
 async function runOne(
   action: ChatAction,
   store: MemoryStore,
@@ -716,6 +761,10 @@ async function runOne(
 
   if (action.tool.startsWith("calendar.")) {
     return await runCalendarAction(action, db, groupPrefs);
+  }
+
+  if (action.tool.startsWith("web.")) {
+    return await runWebAction(action);
   }
 
   switch (action.tool) {
