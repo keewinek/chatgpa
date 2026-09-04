@@ -24,3 +24,4 @@ _fresh/
 node_modules/
 packages/web/_fresh/
 packages/web/node_modules/
+.neon

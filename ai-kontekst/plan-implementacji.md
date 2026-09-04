@@ -4,8 +4,7 @@
 
 ## ▶ AKTUALNY PROMPT
 
-👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez
-`deno task epic:done` po każdym agencie.
+👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez `deno task epic:done` po każdym agencie.
 
 ### ✅ Wszystkie epiki ukończone
 
@@ -13,21 +12,21 @@ Ukończone: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
 
 ## Kolejka promptów (auto)
 
-| #  | Epik                          | Status |
-| -- | ----------------------------- | ------ |
-| 1  | Serwer + PostgreSQL + Drizzle | ✅     |
-| 2  | Wirtualny system plików       | ✅     |
-| 3  | Pamięć short/long             | ✅     |
-| 4  | Globalna TODO                 | ✅     |
-| 5  | Notatki Markdown              | ✅     |
-| 6  | Lazy context + tools          | ✅     |
-| 7  | Kalendarz + profil czasu      | ✅     |
-| 8  | Komendy slash                 | ✅     |
-| 9  | Pomodoro                      | ✅     |
-| 10 | Wtyczka Librus                | ✅     |
-| 11 | Plan nauki + cron             | ✅     |
-| 12 | Powiadomienia                 | ✅     |
-| 13 | Sync czatów multi-device      | ✅     |
+| # | Epik | Status |
+| --- | --- | --- |
+| 1 | Serwer + PostgreSQL + Drizzle | ✅ |
+| 2 | Wirtualny system plików | ✅ |
+| 3 | Pamięć short/long | ✅ |
+| 4 | Globalna TODO | ✅ |
+| 5 | Notatki Markdown | ✅ |
+| 6 | Lazy context + tools | ✅ |
+| 7 | Kalendarz + profil czasu | ✅ |
+| 8 | Komendy slash | ✅ |
+| 9 | Pomodoro | ✅ |
+| 10 | Wtyczka Librus | ✅ |
+| 11 | Plan nauki + cron | ✅ |
+| 12 | Powiadomienia | ✅ |
+| 13 | Sync czatów multi-device | ✅ |
 
 <!-- EPIC_AUTO_END -->
 
