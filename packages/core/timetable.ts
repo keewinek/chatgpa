@@ -289,6 +289,12 @@ function parseTimeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
+/**
+ * Fake Date whose local getHours/getDay match Europe/Warsaw wall clock.
+ * Safe for `.getHours()` / `weekdayFromDate()` only.
+ * Do NOT pass into Intl formatters with `timeZone: "Europe/Warsaw"` — that double-shifts
+ * on UTC hosts (Deno Deploy). Prefer `new Date()` + explicit Warsaw `timeZone` instead.
+ */
 export function getWarsawNow(): Date {
   return new Date(
     new Date().toLocaleString("en-US", { timeZone: "Europe/Warsaw" }),

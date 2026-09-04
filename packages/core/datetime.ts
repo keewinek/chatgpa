@@ -1,8 +1,11 @@
-import { getWarsawNow } from "./timetable.ts";
-
 const WARSAW_TZ = "Europe/Warsaw";
 
-export function formatWarsawDateTime(now: Date = getWarsawNow()): string {
+/**
+ * Format Warsaw wall-clock from a real UTC instant.
+ * Pass `new Date()` (default) — never `getWarsawNow()`, which would double-apply the offset
+ * when the process TZ is UTC (e.g. Deno Deploy).
+ */
+export function formatWarsawDateTime(now: Date = new Date()): string {
   const weekday = new Intl.DateTimeFormat("pl-PL", {
     timeZone: WARSAW_TZ,
     weekday: "long",
@@ -21,7 +24,8 @@ export function formatWarsawDateTime(now: Date = getWarsawNow()): string {
   return `${weekday}, ${date}, ${time}`;
 }
 
-export function formatWarsawDateTimeForAi(now: Date = getWarsawNow()): string {
+/** Datetime block injected into the AI system prompt. */
+export function formatWarsawDateTimeForAi(now: Date = new Date()): string {
   const weekday = new Intl.DateTimeFormat("pl-PL", {
     timeZone: WARSAW_TZ,
     weekday: "long",

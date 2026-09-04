@@ -625,7 +625,7 @@ async function runCalendarAction(
       try {
         const date = typeof args.date === "string" && args.date.trim()
           ? args.date.trim()
-          : formatWarsawIsoDate(getWarsawNow());
+          : formatWarsawIsoDate();
         const result = await computeFreeSlots(db, date, groupPrefs);
         return {
           tool: action.tool,
@@ -758,7 +758,7 @@ async function runPlanAction(
       try {
         const date = typeof args.date === "string" && args.date.trim()
           ? args.date.trim()
-          : formatWarsawIsoDate(getWarsawNow());
+          : formatWarsawIsoDate();
         const plan = await generateDailyPlan(db, date);
         const body = formatPlanMarkdown(plan);
         return {

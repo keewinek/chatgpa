@@ -283,7 +283,7 @@ export async function computeFreeSlots(
   let studyEndMin = studyEndPreferredMin;
 
   // Dla „dziś”: nie planuj w przeszłości; gdy mało czasu do preferred — użyj hard end.
-  const today = formatWarsawIsoDate(getWarsawNow());
+  const today = formatWarsawIsoDate();
   if (date === today) {
     const now = getWarsawNow();
     const nowMin = now.getHours() * 60 + now.getMinutes();
