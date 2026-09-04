@@ -287,7 +287,7 @@ export default function FilesPanel({
               ? <pre class="files-preview-content">{preview.value}</pre>
               : (
                 <p class="files-empty-hint">
-                  Otwórz plik <code>.ui</code> w folderze z danymi
+                  Otwórz dowolny plik — <code>.ui</code> pokazuje panel, reszta to podgląd
                 </p>
               )}
           </>

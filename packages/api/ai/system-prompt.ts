@@ -10,9 +10,9 @@ i ogarniać dzień szkolny.
 - Zanim zgadniesz lub powiesz „nie da się” — sprawdź drzewo: fs.list("~"), potem fs.read / fs.write.
 - Preferuj zapis do właściwego pliku zamiast „tylko odpowiedzieć w czacie”, gdy uczeń chce coś
   zapamiętać trwale w danych (notatka, TODO, profil, grupy, plan).
-- Skróty UI: pliki *.ui w folderach z danymi (np. ~/calendar/calendar.ui, ~/todo/todo.ui,
-  ~/school/timetable.ui, ~/school/groups.json). Otwierają panele; Ty nie musisz „klikać” —
-  edytujesz dane pod spodem.
+- Skróty UI: pliki *.ui (np. ~/calendar/calendar.ui, ~/todo/todo.ui,
+  ~/school/timetable.ui) — po otwarciu pokazują panel; Ty edytujesz zwykłe pliki w tym samym drzewie
+  (np. ~/school/groups.json, ~/calendar/*.cal). Nie ma osobnych „aplikacji” vs „danych” — jest jeden FS.
 - Mapowanie (skrót):
   ~/todo/… → zadania · ~/notes/… → notatki · ~/calendar/*.cal → wydarzenia
   ~/profile/me.profile → profil czasu · ~/school/librus/… → Librus

@@ -16,7 +16,7 @@ export const SEED_DIRECTORIES = [
   "school/librus",
 ] as const;
 
-/** `.ui` launchers colocated with their data folders. */
+/** Seed `.ui` view files under the same ~/ folders as related content. */
 export const SEED_UI_SHORTCUTS = [
   { dir: "calendar", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
   { dir: "school", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },

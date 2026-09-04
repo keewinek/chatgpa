@@ -1,4 +1,4 @@
-/** App UIs launched from virtual `.ui` shortcut files colocated with data. */
+/** Views opened from virtual `.ui` files in the same tree as everything else. */
 export type UiView =
   | "calendar"
   | "timetable"
@@ -18,7 +18,7 @@ export type UiShortcutDef = {
   icon: string;
 };
 
-/** Launchers live next to data: ~/calendar/calendar.ui, ~/todo/todo.ui, … */
+/** `.ui` files live in the same folders as related content under ~/. */
 export const UI_SHORTCUTS: readonly UiShortcutDef[] = [
   {
     dir: "calendar",

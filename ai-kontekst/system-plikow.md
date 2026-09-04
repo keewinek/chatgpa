@@ -10,10 +10,11 @@ domenowy, który i tak zapisuje plik).
 Konsekwencje:
 
 1. Nowe funkcje najpierw projektuj jako **format pliku + katalog**, potem UI i tools.
-2. Skróty paneli to pliki `*.ui` **obok danych** (np. `~/calendar/calendar.ui`).
-3. Preferencje (grupy lekcyjne, profil czasu) żyją w plikach (`~/school/groups.json`,
-   `~/profile/me.profile`), nie tylko w `localStorage`.
-4. Agent w prompcie systemowym ma świadomie eksplorować `~/` zamiast zgadywać.
+2. Pliki `*.ui` to zwykłe pliki w tym samym drzewie (np. `~/calendar/calendar.ui`) — otwierają
+   panel; **nie ma osobnej warstwy „aplikacje” vs „dane”**.
+3. Preferencje (grupy lekcyjne, profil czasu) też są plikami (`~/school/groups.json`,
+   `~/profile/me.profile`), nie tylko `localStorage`.
+4. Agent w prompcie systemowym eksploruje jedno `~/` zamiast zgadywać.
 
 ## Cel
 
@@ -38,7 +39,7 @@ agent mają ten sam widok; agent operuje przez tools `fs.*` oraz skróty domenow
 │   ├── long-term.memory
 │   └── short-term.memory
 ├── todo/
-│   ├── todo.ui                 # launcher panelu TODO
+│   ├── todo.ui
 │   └── global.todo
 ├── notes/
 │   ├── notes.ui
@@ -47,8 +48,8 @@ agent mają ten sam widok; agent operuje przez tools `fs.*` oraz skróty domenow
 │   ├── calendar.ui
 │   └── YYYY-MM.cal
 ├── school/
-│   ├── timetable.ui            # plan lekcji
-│   ├── groups.json             # grupy: language, english, pe, informatics
+│   ├── timetable.ui
+│   ├── groups.json             # language, english, pe, informatics
 │   ├── librus/
 │   │   ├── grades.json
 │   │   ├── schedule.json
@@ -69,7 +70,7 @@ agent mają ten sam widok; agent operuje przez tools `fs.*` oraz skróty domenow
 
 | Rozszerzenie   | Zawartość                                          | Edycja w UI               |
 | -------------- | -------------------------------------------------- | ------------------------- |
-| `.ui`          | Launcher panelu (`{ "view", "title" }`)            | otwiera osadzony panel    |
+| `.ui`          | Deskryptor widoku (`{ "view", "title" }`) — zwykły plik w drzewie | otwiera panel             |
 | `.memory`      | JSONL wpisów pamięci                               | read-only + panel pamięci |
 | `.todo`        | Markdown z checkboxami + metadane YAML frontmatter | edytor TODO               |
 | `.md`          | Notatki Markdown                                   | edytor notatek            |
@@ -150,8 +151,8 @@ operacji na tych plikach / tabelach zsynchronizowanych z FS — agent może też
 
 ## UI
 
-- Panel plików — drzewo (resizable, chowa się po otwarciu `.ui`), podgląd/panel po prawej
-- Pliki `.ui` obok danych otwierają Calendar / TODO / Notes / Timetable / Profile / Pomodoro
+- Jedno drzewo plików (bez trybu „apps / dane”) — resizable, chowa się po otwarciu `.ui`
+- Otwarcie `.ui` renderuje panel; otwarcie innych plików — podgląd / edytor
 - Komenda `/files` i ikona folderu otwierają panel
 
 ## Bezpieczeństwo
@@ -165,7 +166,7 @@ operacji na tych plikach / tabelach zsynchronizowanych z FS — agent może też
 - [x] Wirtualny FS w API + DB
 - [x] Min. katalogi: `memory/`, `todo/`, `notes/`, `calendar/`, `books/`, `school/`, `profile/`
 - [x] Tools `fs.list`, `fs.read`, `fs.write`
-- [x] UI drzewa plików + launchery `.ui`
+- [x] UI jednego drzewa plików + pliki `.ui` jako widoki
 - [x] Globalna TODO jako `~/todo/…`
 - [ ] Pełna zbieżność: każdy panel domenowy = wyłącznie projekcja plików (bez ukrytego stanu)
 - [ ] `fs.append` / `fs.search` / eksport `~/` zip

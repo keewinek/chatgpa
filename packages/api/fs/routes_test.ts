@@ -28,7 +28,7 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
   }
 });
 
-withTestDb("fs seeds .ui shortcuts next to data folders", async ({ db }) => {
+withTestDb("fs seeds .ui files in domain folders", async ({ db }) => {
   const app = new Hono();
   app.route("/api/fs", createFsRoutes(() => db));
 

@@ -196,9 +196,8 @@ Format: data · decyzja · kontekst · konsekwencje.
 ## 2026-09-04 — File-first jako north star produktu
 
 - **Decyzja:** wszystko dąży do postaci plików pod `~/`; panele UI i tools domenowe są widokami /
-  skrótami na FS; prompt runtime (`SYSTEM_PROMPT`) uczy agenta eksplorować `fs.list` / edytować
-  pliki zamiast trzymać stan tylko w czacie.
-- **Kontekst:** skróty `.ui` obok danych, `groups.json`, resizable panel plików; użytkownik chce
-  „Cursor do szkoły” z prawdziwym workspace plików.
-- **Konsekwencje:** nowe funkcje projektować najpierw jako format pliku; ograniczać ukryty stan poza
-  FS; aktualizacja `system-plikow.md`, `zasady.md`, `wizja.md`.
+  skrótami na FS; **bez podziału na „aplikacje” i „dane”** — `.ui` to zwykły typ pliku w tym samym
+  drzewie; prompt runtime uczy agenta używać `fs.*`.
+- **Kontekst:** jeden panel plików, `.ui` w folderach domenowych, `groups.json`; metafora Cursor.
+- **Konsekwencje:** nowe funkcje jako format pliku; brak trybu apps/dane w UI; aktualizacja
+  `system-plikow.md`, `zasady.md`, `wizja.md`.

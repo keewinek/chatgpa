@@ -6,7 +6,7 @@
 2. **Single-user first** — to narzędzie dla właściciela repo, nie produkt szkolny dla 500 uczniów.
 3. **Chat jest centrum** — reszta (kalendarz, TODO, tracker) to panele / narzędzia wokół rozmowy.
 4. **Wszystko dąży do plików** — stan aplikacji żyje pod `~/` (zob. [system-plikow.md](./system-plikow.md));
-   UI i tools to widoki/skróty na pliki; agent ma świadomie używać `fs.*`.
+   UI i tools to widoki/skróty na pliki; **bez podziału na aplikacje vs dane**; agent używa `fs.*`.
 5. **Prawda > zgadywanie** — AI nie wymyśla ocen, terminów ani frekwencji; mówi „nie wiem”.
 6. **Transparentność AI** — zawsze widać który model odpowiedział.
 7. **Język polski** — UI i domyślny ton asystenta po polsku.
