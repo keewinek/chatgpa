@@ -5,10 +5,12 @@
 1. **Darmowe albo nie istnieje** — żadna ścieżka happy-path nie wymaga karty / subskrypcji.
 2. **Single-user first** — to narzędzie dla właściciela repo, nie produkt szkolny dla 500 uczniów.
 3. **Chat jest centrum** — reszta (kalendarz, TODO, tracker) to panele / narzędzia wokół rozmowy.
-4. **Prawda > zgadywanie** — AI nie wymyśla ocen, terminów ani frekwencji; mówi „nie wiem”.
-5. **Transparentność AI** — zawsze widać który model odpowiedział.
-6. **Język polski** — UI i domyślny ton asystenta po polsku.
-7. **Lokalność danych** — dane szkolne zostają u Ciebie (lokalny API / Twoja baza).
+4. **Wszystko dąży do plików** — stan aplikacji żyje pod `~/` (zob. [system-plikow.md](./system-plikow.md));
+   UI i tools to widoki/skróty na pliki; agent ma świadomie używać `fs.*`.
+5. **Prawda > zgadywanie** — AI nie wymyśla ocen, terminów ani frekwencji; mówi „nie wiem”.
+6. **Transparentność AI** — zawsze widać który model odpowiedział.
+7. **Język polski** — UI i domyślny ton asystenta po polsku.
+8. **Lokalność danych** — dane szkolne zostają u Ciebie (lokalny API / Twoja baza).
 
 ## Techniczne
 

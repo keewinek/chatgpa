@@ -1,10 +1,25 @@
 # System plików — metafora OS
 
+## North star: wszystko jest plikiem
+
+ChatGPA dąży do tego, żeby **stan aplikacji był drzewem plików pod `~/`**. Panele UI (kalendarz,
+TODO, notatki, plan lekcji, profil) to **widoki na pliki**, nie osobne silosy. Agent i uczeń mają
+ten sam model mentalny: „żeby coś zmienić — edytuj plik” (`fs.read` / `fs.write` albo tool
+domenowy, który i tak zapisuje plik).
+
+Konsekwencje:
+
+1. Nowe funkcje najpierw projektuj jako **format pliku + katalog**, potem UI i tools.
+2. Skróty paneli to pliki `*.ui` **obok danych** (np. `~/calendar/calendar.ui`).
+3. Preferencje (grupy lekcyjne, profil czasu) żyją w plikach (`~/school/groups.json`,
+   `~/profile/me.profile`), nie tylko w `localStorage`.
+4. Agent w prompcie systemowym ma świadomie eksplorować `~/` zamiast zgadywać.
+
 ## Cel
 
 ChatGPA to nie tylko chat — to **osobisty OS do szkoły**. Dane użytkownika (TODO, notatki, pamięć,
 kalendarz, książki) żyją jako **pliki w katalogach** z rozpoznawalnymi rozszerzeniami. Użytkownik i
-agent mają ten sam widok; agent operuje przez tools `fs.*`.
+agent mają ten sam widok; agent operuje przez tools `fs.*` oraz skróty domenowe.
 
 ## Zasady
 
@@ -12,48 +27,49 @@ agent mają ten sam widok; agent operuje przez tools `fs.*`.
 2. **Wirtualny root** — `~` lub `/home` w UI; fizycznie prefix `user/{userId}/`.
 3. **Rozszerzenia** oznaczają typ — parser wie jak renderować / edytować.
 4. **Katalogi** grupują domeny — nie jeden wielki JSON.
-5. Agent **nie** dostaje listy plików w prompcie — `fs.list`, `fs.read`, `fs.write`.
+5. Agent **nie** dostaje pełnej listy plików w prompcie — `fs.list`, `fs.read`, `fs.write`.
+6. **File-first** — UI i API są projekcją plików; unikaj stanu „tylko w pamięci procesu”.
 
-## Drzewo katalogów (propozycja)
+## Drzewo katalogów (aktualne + docelowe)
 
 ```
 ~/
 ├── memory/
-│   ├── long-term.memory      # pamięć długoterminowa (linie / JSONL)
-│   └── short-term.memory     # opcjonalny eksport short (głównie DB)
+│   ├── long-term.memory
+│   └── short-term.memory
 ├── todo/
-│   └── global.todo           # globalna lista zadań (format poniżej)
+│   ├── todo.ui                 # launcher panelu TODO
+│   └── global.todo
 ├── notes/
-│   ├── chemia/
-│   │   └── kwasy.md
-│   └── matma/
-│       └── funkcje.md
+│   ├── notes.ui
+│   └── …/*.md
 ├── calendar/
-│   ├── 2026-09.cal           # jeden plik na miesiąc
-│   └── 2026-10.cal
+│   ├── calendar.ui
+│   └── YYYY-MM.cal
 ├── school/
+│   ├── timetable.ui            # plan lekcji
+│   ├── groups.json             # grupy: language, english, pe, informatics
 │   ├── librus/
-│   │   ├── grades.json       # ostatni snapshot ocen
-│   │   ├── schedule.json     # plan lekcji
+│   │   ├── grades.json
+│   │   ├── schedule.json
 │   │   └── timetable-changes.json
 │   └── subjects/
-│       └── chemia.subject    # meta przedmiotu
+│       └── *.subject
 ├── books/
-│   ├── chemia/
-│   │   └── podrecznik.pdf    # upload użytkownika
-│   └── matma/
-│       └── zbior-zadan.pdf
 ├── plans/
-│   ├── 2026-09-02.plan       # plan dnia
-│   └── week-2026-36.plan     # plan tygodnia
-└── profile/
-    └── me.profile            # profil ucznia, preferencje czasu
+│   └── YYYY-MM-DD.plan
+├── profile/
+│   ├── profile.ui
+│   └── me.profile
+└── pomodoro/
+    └── pomodoro.ui
 ```
 
 ## Rozszerzenia plików
 
 | Rozszerzenie   | Zawartość                                          | Edycja w UI               |
 | -------------- | -------------------------------------------------- | ------------------------- |
+| `.ui`          | Launcher panelu (`{ "view", "title" }`)            | otwiera osadzony panel    |
 | `.memory`      | JSONL wpisów pamięci                               | read-only + panel pamięci |
 | `.todo`        | Markdown z checkboxami + metadane YAML frontmatter | edytor TODO               |
 | `.md`          | Notatki Markdown                                   | edytor notatek            |
@@ -61,7 +77,7 @@ agent mają ten sam widok; agent operuje przez tools `fs.*`.
 | `.plan`        | Plan dnia/tygodnia (Markdown + bloki czasu)        | widok planu               |
 | `.profile`     | YAML/JSON profilu                                  | formularz ustawień        |
 | `.subject`     | Meta przedmiotu (cel średniej, nauczyciel)         | formularz                 |
-| `.json`        | Snapshoty (Librus)                                 | read-only, sync           |
+| `.json`        | Snapshoty (Librus), grupy lekcyjne                 | read / agent write        |
 | `.pdf`, obrazy | Książki / materiały                                | podgląd + AI read         |
 
 ## Format `.todo` (przykład)
@@ -117,6 +133,10 @@ Agent i API parsują do encji `Task` ([model-danych.md](./model-danych.md)).
 
 Dla PDF/książek: `fs.read` zwraca wyciągnięty tekst (jak obecny pipeline załączników).
 
+Tools domenowe (`todo.*`, `calendar.*`, `notes.*`, `timetable.*`, `memory.*`) są **skrótami** do
+operacji na tych plikach / tabelach zsynchronizowanych z FS — agent może też iść „na surowo” przez
+`fs.*`.
+
 ## API (HTTP)
 
 | Method | Path                    | Opis                    |
@@ -130,10 +150,9 @@ Dla PDF/książek: `fs.read` zwraca wyciągnięty tekst (jak obecny pipeline za�
 
 ## UI
 
-- Panel „Pliki” — drzewo po lewej, podgląd/edycja po prawej
-- Ikony wg rozszerzenia
-- Drag & drop upload do `books/` lub `notes/`
-- Komenda `/files` otwiera panel
+- Panel plików — drzewo (resizable, chowa się po otwarciu `.ui`), podgląd/panel po prawej
+- Pliki `.ui` obok danych otwierają Calendar / TODO / Notes / Timetable / Profile / Pomodoro
+- Komenda `/files` i ikona folderu otwierają panel
 
 ## Bezpieczeństwo
 
@@ -144,7 +163,9 @@ Dla PDF/książek: `fs.read` zwraca wyciągnięty tekst (jak obecny pipeline za�
 ## Definition of Done
 
 - [x] Wirtualny FS w API + DB
-- [x] Min. katalogi: `memory/`, `todo/`, `notes/`, `calendar/`, `books/`
+- [x] Min. katalogi: `memory/`, `todo/`, `notes/`, `calendar/`, `books/`, `school/`, `profile/`
 - [x] Tools `fs.list`, `fs.read`, `fs.write`
-- [x] UI drzewa plików
-- [x] Globalna TODO jako `~/todo/global.todo`
+- [x] UI drzewa plików + launchery `.ui`
+- [x] Globalna TODO jako `~/todo/…`
+- [ ] Pełna zbieżność: każdy panel domenowy = wyłącznie projekcja plików (bez ukrytego stanu)
+- [ ] `fs.append` / `fs.search` / eksport `~/` zip

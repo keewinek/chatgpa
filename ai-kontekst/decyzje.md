@@ -192,3 +192,13 @@ Format: data · decyzja · kontekst · konsekwencje.
   czacie.
 - **Konsekwencje:** `GET/PATCH /api/notifications`, `POST /api/notifications/subscribe`; banner w
   `ChatApp`; push w quiet hours (`studyEndHard`) pomijany, wyjątek T-1 rano 7–8.
+
+## 2026-09-04 — File-first jako north star produktu
+
+- **Decyzja:** wszystko dąży do postaci plików pod `~/`; panele UI i tools domenowe są widokami /
+  skrótami na FS; prompt runtime (`SYSTEM_PROMPT`) uczy agenta eksplorować `fs.list` / edytować
+  pliki zamiast trzymać stan tylko w czacie.
+- **Kontekst:** skróty `.ui` obok danych, `groups.json`, resizable panel plików; użytkownik chce
+  „Cursor do szkoły” z prawdziwym workspace plików.
+- **Konsekwencje:** nowe funkcje projektować najpierw jako format pliku; ograniczać ukryty stan poza
+  FS; aktualizacja `system-plikow.md`, `zasady.md`, `wizja.md`.

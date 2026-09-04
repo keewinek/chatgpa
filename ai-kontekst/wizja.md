@@ -39,13 +39,16 @@ zł**:
 | Cursor (kod)       | ChatGPA (szkoła)                                                                             |
 | ------------------ | -------------------------------------------------------------------------------------------- |
 | Workspace projektu | Profil ucznia + kontekst szkoły                                                              |
-| Pliki / git        | Wirtualny FS: `~/notes`, `~/books`, snapshot Librus ([system-plikow.md](./system-plikow.md)) |
-| Agent / chat       | Chat edukacyjny z narzędziami                                                                |
+| Pliki / git        | **Wirtualny FS `~/`** — single source of truth ([system-plikow.md](./system-plikow.md))       |
+| Agent / chat       | Chat edukacyjny z narzędziami; edycja plików = zmiana stanu OS                               |
 | Autocomplete       | Sugestie planu nauki                                                                         |
 | Background agents  | Automatyzacje w tle (plan dnia, alerty)                                                      |
 | Diff / PR          | Diff wiedzy / zmiana średniej                                                                |
 | Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil                                                           |
-| MCP / tools        | Narzędzia: TODO, kalendarz, Librus sync                                                      |
+| MCP / tools        | `fs.*` + skróty domenowe (TODO, kalendarz, Librus)                                           |
+
+**Kierunek:** im więcej funkcji, tym więcej z nich powinno być „po prostu plikiem” (`.todo`, `.cal`,
+`.plan`, `.profile`, `.ui`, `groups.json`…). Panele UI nie trzymają osobnej prawdy — renderują FS.
 
 ## North-star metrics (osobiste)
 
