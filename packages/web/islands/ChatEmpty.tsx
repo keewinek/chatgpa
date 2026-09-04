@@ -10,7 +10,10 @@ const MINIMAL_PROMPTS = STARTER_PROMPTS.slice(0, 3);
 export default function ChatEmpty({ onPick, disabled }: ChatEmptyProps) {
   return (
     <div class="chat-empty">
-      <p class="chat-empty-title">ChatGPA</p>
+      <div class="chat-empty-copy">
+        <p class="chat-empty-title">Czym mogę pomóc?</p>
+        <p class="chat-empty-hint">Zapytaj o plan nauki, zadania lekcji albo notatki.</p>
+      </div>
       <div class="chat-prompts">
         {MINIMAL_PROMPTS.map((prompt) => (
           <button

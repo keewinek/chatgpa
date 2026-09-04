@@ -149,7 +149,7 @@ export default function ChatComposer({
             ref={textRef}
             class="chat-input"
             rows={1}
-            placeholder="Wyślij wiadomość… (/ komendy, Enter wyślij)"
+            placeholder="Napisz wiadomość"
             value={text}
             onInput={(e) => {
               const el = e.target as HTMLTextAreaElement;
@@ -211,8 +211,10 @@ export default function ChatComposer({
             class="chat-send"
             type="submit"
             disabled={loading || (!text.trim() && !pending.length)}
+            aria-label={loading ? "Wysyłanie" : "Wyślij"}
+            title="Wyślij"
           >
-            {loading ? "…" : "Wyślij"}
+            <Icon name={loading ? "spinner" : "arrow-up"} class={loading ? "fa-spin" : undefined} />
           </button>
         </div>
       </div>

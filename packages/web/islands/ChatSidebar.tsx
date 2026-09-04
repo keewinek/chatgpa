@@ -64,7 +64,7 @@ export default function ChatSidebar({
           </div>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
             <Icon name="plus" class="sidebar-new-icon" />
-            Nowa
+            Nowa rozmowa
           </button>
         </div>
 
