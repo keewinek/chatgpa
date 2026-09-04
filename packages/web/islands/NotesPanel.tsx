@@ -11,6 +11,7 @@ import {
 } from "../lib/notes-api.ts";
 import type { FsEntry } from "../lib/fs-api.ts";
 import Icon from "./Icon.tsx";
+import ResizablePanels from "./ResizablePanels.tsx";
 
 interface NotesPanelProps {
   onBack: () => void;
@@ -302,95 +303,104 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
       )}
 
       <div class="notes-body">
-        <aside class="notes-tree" aria-label="Drzewo notatek">
-          {loading.value && <p class="notes-muted">Ładowanie…</p>}
-          {!loading.value && (
-            <ul class="notes-tree-root">
-              <li>
-                <button
-                  type="button"
-                  class={`notes-tree-item${!selectedPath.value ? " notes-tree-item--active" : ""}`}
-                  onClick={() => {
-                    selectedPath.value = null;
-                    editorContent.value = "";
-                    savedContent.value = "";
-                  }}
-                >
-                  <span class="notes-tree-icon">
-                    <Icon name="note-sticky" />
-                  </span>
-                  <span>notes/</span>
-                </button>
-                <ul class="notes-tree-children">
-                  {tree.value.map((node) => (
-                    <TreeBranch
-                      key={node.entry.path}
-                      node={node}
-                      selectedPath={selectedPath.value}
-                      depth={0}
-                      onClick={(n) => void onEntryClick(n)}
-                    />
-                  ))}
-                </ul>
-              </li>
-            </ul>
-          )}
-        </aside>
-
-        <section class="notes-editor" aria-label="Edytor notatki">
-          {selectedPath.value
-            ? (
-              <>
-                <div class="notes-editor-head">
-                  <span class="notes-editor-path">{selectedPath.value}</span>
-                  <div class="notes-editor-actions">
-                    {dirty() && <span class="notes-dirty">Niezapisane</span>}
-                    <button
-                      type="button"
-                      class="notes-save"
-                      disabled={saving.value || !dirty()}
-                      onClick={() => void handleSave()}
-                    >
-                      {saving.value ? "Zapisuję…" : "Zapisz"}
-                    </button>
-                    <button
-                      type="button"
-                      class="notes-delete"
-                      onClick={() => void handleDelete()}
-                    >
-                      Usuń
-                    </button>
-                  </div>
-                </div>
-                {editorLoading.value
-                  ? <p class="notes-muted">Wczytywanie…</p>
-                  : (
-                    <div class="notes-split">
-                      <textarea
-                        class="notes-textarea"
-                        value={editorContent.value}
-                        spellcheck
-                        onInput={(e) => {
-                          editorContent.value = (e.target as HTMLTextAreaElement).value;
-                        }}
-                        placeholder="Pisz w Markdown…"
+        <ResizablePanels
+          storageKey="notes-tree"
+          class="notes-split-panels"
+          defaultSize={220}
+          minSize={140}
+          maxSize={400}
+          handleLabel="Zmień szerokość listy notatek"
+        >
+          <aside class="notes-tree" aria-label="Drzewo notatek">
+            {loading.value && <p class="notes-muted">Ładowanie…</p>}
+            {!loading.value && (
+              <ul class="notes-tree-root">
+                <li>
+                  <button
+                    type="button"
+                    class={`notes-tree-item${!selectedPath.value ? " notes-tree-item--active" : ""}`}
+                    onClick={() => {
+                      selectedPath.value = null;
+                      editorContent.value = "";
+                      savedContent.value = "";
+                    }}
+                  >
+                    <span class="notes-tree-icon">
+                      <Icon name="note-sticky" />
+                    </span>
+                    <span>notes/</span>
+                  </button>
+                  <ul class="notes-tree-children">
+                    {tree.value.map((node) => (
+                      <TreeBranch
+                        key={node.entry.path}
+                        node={node}
+                        selectedPath={selectedPath.value}
+                        depth={0}
+                        onClick={(n) => void onEntryClick(n)}
                       />
-                      <div class="notes-preview">
-                        <MarkdownBody
-                          content={editorContent.value || "*Podgląd pojawi się tutaj.*"}
-                        />
-                      </div>
-                    </div>
-                  )}
-              </>
-            )
-            : (
-              <div class="notes-empty">
-                <p>Wybierz notatkę z listy lub utwórz nową.</p>
-                <p class="notes-muted">Agent może zapisywać notatki narzędziem notes.write.</p>
-              </div>
+                    ))}
+                  </ul>
+                </li>
+              </ul>
             )}
-        </section>
+          </aside>
+
+          <section class="notes-editor" aria-label="Edytor notatki">
+            {selectedPath.value
+              ? (
+                <>
+                  <div class="notes-editor-head">
+                    <span class="notes-editor-path">{selectedPath.value}</span>
+                    <div class="notes-editor-actions">
+                      {dirty() && <span class="notes-dirty">Niezapisane</span>}
+                      <button
+                        type="button"
+                        class="notes-save"
+                        disabled={saving.value || !dirty()}
+                        onClick={() => void handleSave()}
+                      >
+                        {saving.value ? "Zapisuję…" : "Zapisz"}
+                      </button>
+                      <button
+                        type="button"
+                        class="notes-delete"
+                        onClick={() => void handleDelete()}
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  </div>
+                  {editorLoading.value
+                    ? <p class="notes-muted">Wczytywanie…</p>
+                    : (
+                      <div class="notes-split">
+                        <textarea
+                          class="notes-textarea"
+                          value={editorContent.value}
+                          spellcheck
+                          onInput={(e) => {
+                            editorContent.value = (e.target as HTMLTextAreaElement).value;
+                          }}
+                          placeholder="Pisz w Markdown…"
+                        />
+                        <div class="notes-preview">
+                          <MarkdownBody
+                            content={editorContent.value || "*Podgląd pojawi się tutaj.*"}
+                          />
+                        </div>
+                      </div>
+                    )}
+                </>
+              )
+              : (
+                <div class="notes-empty">
+                  <p>Wybierz notatkę z listy lub utwórz nową.</p>
+                  <p class="notes-muted">Agent może zapisywać notatki narzędziem notes.write.</p>
+                </div>
+              )}
+          </section>
+        </ResizablePanels>
       </div>
     </div>
   );

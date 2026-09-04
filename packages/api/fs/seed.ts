@@ -12,17 +12,18 @@ export const SEED_DIRECTORIES = [
   "books",
   "plans",
   "profile",
+  "pomodoro",
   "school/librus",
 ] as const;
 
-/** Polish app folders with `.ui` launcher shortcuts. */
+/** `.ui` launchers colocated with their data folders. */
 export const SEED_UI_SHORTCUTS = [
-  { dir: "Kalendarz", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
-  { dir: "Plan lekcji", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },
-  { dir: "TODO", file: "todo.ui", view: "todo", title: "TODO" },
-  { dir: "Notatki", file: "notes.ui", view: "notes", title: "Notatki" },
-  { dir: "Profil", file: "profile.ui", view: "profile", title: "Profil czasu" },
-  { dir: "Pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
+  { dir: "calendar", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
+  { dir: "school", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },
+  { dir: "todo", file: "todo.ui", view: "todo", title: "TODO" },
+  { dir: "notes", file: "notes.ui", view: "notes", title: "Notatki" },
+  { dir: "profile", file: "profile.ui", view: "profile", title: "Profil czasu" },
+  { dir: "pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
 ] as const;
 
 export async function isFsSeeded(db: AppDatabase): Promise<boolean> {

@@ -1,4 +1,4 @@
-/** App UIs launched from virtual `.ui` shortcut files. */
+/** App UIs launched from virtual `.ui` shortcut files colocated with data. */
 export type UiView =
   | "calendar"
   | "timetable"
@@ -8,7 +8,7 @@ export type UiView =
   | "pomodoro";
 
 export type UiShortcutDef = {
-  /** Folder under ~/ */
+  /** Folder under ~/ that also holds the related data files. */
   dir: string;
   /** Filename ending in .ui */
   file: string;
@@ -18,33 +18,33 @@ export type UiShortcutDef = {
   icon: string;
 };
 
-/** Polish app folders with launcher shortcuts. */
+/** Launchers live next to data: ~/calendar/calendar.ui, ~/todo/todo.ui, … */
 export const UI_SHORTCUTS: readonly UiShortcutDef[] = [
   {
-    dir: "Kalendarz",
+    dir: "calendar",
     file: "calendar.ui",
     view: "calendar",
     title: "Kalendarz",
     icon: "calendar",
   },
   {
-    dir: "Plan lekcji",
+    dir: "school",
     file: "timetable.ui",
     view: "timetable",
     title: "Plan lekcji",
     icon: "table-columns",
   },
-  { dir: "TODO", file: "todo.ui", view: "todo", title: "TODO", icon: "list-check" },
-  { dir: "Notatki", file: "notes.ui", view: "notes", title: "Notatki", icon: "note-sticky" },
+  { dir: "todo", file: "todo.ui", view: "todo", title: "TODO", icon: "list-check" },
+  { dir: "notes", file: "notes.ui", view: "notes", title: "Notatki", icon: "note-sticky" },
   {
-    dir: "Profil",
+    dir: "profile",
     file: "profile.ui",
     view: "profile",
     title: "Profil czasu",
     icon: "user-clock",
   },
   {
-    dir: "Pomodoro",
+    dir: "pomodoro",
     file: "pomodoro.ui",
     view: "pomodoro",
     title: "Pomodoro",

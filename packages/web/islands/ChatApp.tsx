@@ -10,6 +10,7 @@ import PomodoroPanel from "./PomodoroPanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
 import Icon from "./Icon.tsx";
+import ResizablePanels from "./ResizablePanels.tsx";
 import {
   type ChatSession,
   type ChatStore,
@@ -517,7 +518,15 @@ export default function ChatApp() {
 
   return (
     <div class="chat-app">
-      <ChatSidebar
+      <ResizablePanels
+        storageKey="chat-sidebar"
+        class="chat-app-split"
+        defaultSize={216}
+        minSize={180}
+        maxSize={360}
+        handleLabel="Zmień szerokość listy rozmów"
+      >
+        <ChatSidebar
         sessions={store.value.sessions}
         activeId={store.value.activeSessionId}
         loading={loading.value}
@@ -686,6 +695,8 @@ export default function ChatApp() {
             />
           </div>
         )}
+      </ResizablePanels>
+
       {pomodoroOpen.value && (
         <PomodoroPanel
           onClose={() => {

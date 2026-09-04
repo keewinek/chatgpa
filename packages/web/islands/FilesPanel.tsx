@@ -13,6 +13,7 @@ import TimetablePanel from "./TimetablePanel.tsx";
 import TodoPanel from "./TodoPanel.tsx";
 import NotesPanel from "./NotesPanel.tsx";
 import ProfilePanel from "./ProfilePanel.tsx";
+import ResizablePanels from "./ResizablePanels.tsx";
 import Icon from "./Icon.tsx";
 
 interface FilesPanelProps {
@@ -36,7 +37,10 @@ type ActiveUi = {
   path: string;
 };
 
-const APP_DIRS = new Set(UI_SHORTCUTS.map((s) => s.dir));
+function shortcutIconForName(name: string): string | null {
+  const def = UI_SHORTCUTS.find((s) => s.file === name);
+  return def?.icon ?? null;
+}
 
 export default function FilesPanel({
   onBack,
@@ -53,7 +57,7 @@ export default function FilesPanel({
   const previewLoading = useSignal(false);
   const previewMeta = useSignal<string>("");
   const activeUi = useSignal<ActiveUi | null>(null);
-  const showData = useSignal(false);
+  const treeOpen = useSignal(true);
 
   async function loadRoot() {
     loading.value = true;
@@ -128,12 +132,14 @@ export default function FilesPanel({
       activeUi.value = null;
       preview.value = "";
       previewMeta.value = "";
+      treeOpen.value = false;
       return;
     }
     selectedPath.value = path;
     activeUi.value = { view, title, path };
     preview.value = "";
     previewMeta.value = "";
+    treeOpen.value = false;
   }
 
   async function selectFile(path: string, name: string) {
@@ -153,6 +159,7 @@ export default function FilesPanel({
       }
       preview.value = file.content || "(pusty)";
       previewMeta.value = file.mimeType ?? "text/plain";
+      treeOpen.value = true;
     } catch (err) {
       preview.value = err instanceof Error ? err.message : String(err);
     } finally {
@@ -172,7 +179,7 @@ export default function FilesPanel({
     const def = UI_SHORTCUTS.find((s) => s.view === view);
     if (!def) return;
     const path = uiShortcutPath(def);
-    if (showData.value) await expandPathTo(path);
+    await expandPathTo(path);
     openUi(view, def.title, path);
   }
 
@@ -194,142 +201,156 @@ export default function FilesPanel({
     activeUi.value = null;
     preview.value = "";
     previewMeta.value = "";
+    treeOpen.value = true;
   }
 
   const ui = activeUi.value;
-  const appNodes = tree.value.filter((n) => APP_DIRS.has(n.entry.name));
-  const dataNodes = tree.value.filter((n) => !APP_DIRS.has(n.entry.name));
+  const treeCollapsed = !treeOpen.value;
+
+  const treePane = (
+    <aside class="files-tree" aria-label="Drzewo plików">
+      {loading.value && <p class="files-muted">…</p>}
+      {!loading.value && (
+        <ul class="files-tree-root">
+          <li>
+            <button
+              type="button"
+              class={`files-tree-item${
+                selectedPath.value === "~" && !ui ? " files-tree-item--active" : ""
+              }`}
+              onClick={() => {
+                selectedPath.value = "~";
+                activeUi.value = null;
+                preview.value = "";
+                previewMeta.value = "";
+              }}
+            >
+              <span class="files-tree-icon">
+                <Icon name="house" />
+              </span>
+              <span>~</span>
+            </button>
+            <ul class="files-tree-children">
+              {tree.value.map((node) => (
+                <TreeBranch
+                  key={node.entry.path}
+                  node={node}
+                  selectedPath={selectedPath.value}
+                  depth={0}
+                  onClick={(n) => void onEntryClick(n)}
+                />
+              ))}
+            </ul>
+          </li>
+        </ul>
+      )}
+    </aside>
+  );
+
+  const previewPane = (
+    <section
+      class={`files-preview${ui ? " files-preview--ui" : ""}`}
+      aria-label={ui ? ui.title : "Podgląd"}
+    >
+      {ui
+        ? (
+          <div class="files-ui-host">
+            {ui.view === "calendar" && (
+              <CalendarPanel
+                embedded
+                onBack={closeUi}
+                onOpenProfile={() => void openUiByView("profile")}
+              />
+            )}
+            {ui.view === "timetable" && <TimetablePanel embedded onBack={closeUi} />}
+            {ui.view === "todo" && <TodoPanel embedded onBack={closeUi} />}
+            {ui.view === "notes" && (
+              <NotesPanel
+                embedded
+                initialPath={notesInitialPath}
+                onBack={closeUi}
+              />
+            )}
+            {ui.view === "profile" && <ProfilePanel embedded onBack={closeUi} />}
+          </div>
+        )
+        : (
+          <>
+            {selectedPath.value && previewMeta.value && (
+              <div class="files-preview-head">
+                <span class="files-preview-path">{selectedPath.value}</span>
+              </div>
+            )}
+            {previewLoading.value
+              ? <p class="files-muted">…</p>
+              : preview.value
+              ? <pre class="files-preview-content">{preview.value}</pre>
+              : (
+                <p class="files-empty-hint">
+                  Otwórz plik <code>.ui</code> w folderze z danymi
+                </p>
+              )}
+          </>
+        )}
+    </section>
+  );
 
   return (
-    <div class="files-panel">
+    <div class={`files-panel${treeCollapsed ? " files-panel--tree-collapsed" : ""}`}>
       <header class="files-header">
-        <button type="button" class="files-back" onClick={onBack} title="Czat">
+        <button type="button" class="files-back" onClick={onBack} title="Czat" aria-label="Czat">
           <Icon name="arrow-left" />
         </button>
-        <span class="files-header-label">~/</span>
-        <div class="files-header-spacer" />
         <button
           type="button"
-          class={`files-mode-btn${showData.value ? " files-mode-btn--active" : ""}`}
+          class={`files-tree-toggle${treeOpen.value ? " files-tree-toggle--active" : ""}`}
           onClick={() => {
-            showData.value = !showData.value;
+            treeOpen.value = !treeOpen.value;
           }}
-          title={showData.value ? "Tylko aplikacje" : "Pokaż dane"}
+          title={treeOpen.value ? "Ukryj listę plików" : "Pokaż listę plików"}
+          aria-label={treeOpen.value ? "Ukryj listę plików" : "Pokaż listę plików"}
+          aria-pressed={treeOpen.value}
         >
-          {showData.value ? "dane" : "apps"}
+          <Icon name="folder-tree" />
         </button>
-        <button type="button" class="files-refresh" onClick={() => void loadRoot()} title="Odśwież">
+        <div class="files-header-spacer" />
+        {ui && <span class="files-header-ui">{ui.title}</span>}
+        <button
+          type="button"
+          class="files-refresh"
+          onClick={() => void loadRoot()}
+          title="Odśwież"
+          aria-label="Odśwież"
+        >
           <Icon name="arrows-rotate" />
         </button>
       </header>
 
       {error.value && <p class="files-error">{error.value}</p>}
 
-      <div class="files-body">
-        <aside class="files-tree" aria-label="Drzewo plików">
-          {loading.value && <p class="files-muted">…</p>}
-          {!loading.value && !showData.value && (
-            <ul class="files-tree-root files-apps">
-              {UI_SHORTCUTS.map((def) => {
-                const path = uiShortcutPath(def);
-                const active = selectedPath.value === path || activeUi.value?.view === def.view;
-                return (
-                  <li key={def.view}>
-                    <button
-                      type="button"
-                      class={`files-tree-item files-tree-item--app${
-                        active ? " files-tree-item--active" : ""
-                      }`}
-                      onClick={() => void openUiByView(def.view)}
-                    >
-                      <span class="files-tree-icon">
-                        <Icon name={def.icon} />
-                      </span>
-                      <span>{def.title}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {!loading.value && showData.value && (
-            <ul class="files-tree-root">
-              <li>
-                <button
-                  type="button"
-                  class={`files-tree-item${
-                    selectedPath.value === "~" && !ui ? " files-tree-item--active" : ""
-                  }`}
-                  onClick={() => {
-                    selectedPath.value = "~";
-                    activeUi.value = null;
-                    preview.value = "";
-                    previewMeta.value = "";
-                  }}
-                >
-                  <span class="files-tree-icon">
-                    <Icon name="house" />
-                  </span>
-                  <span>home</span>
-                </button>
-                <ul class="files-tree-children">
-                  {[...appNodes, ...dataNodes].map((node) => (
-                    <TreeBranch
-                      key={node.entry.path}
-                      node={node}
-                      selectedPath={selectedPath.value}
-                      depth={0}
-                      onClick={(n) => void onEntryClick(n)}
-                    />
-                  ))}
-                </ul>
-              </li>
-            </ul>
-          )}
-        </aside>
+      {!treeCollapsed && (
+        <button
+          type="button"
+          class="files-tree-backdrop"
+          aria-label="Zamknij listę plików"
+          onClick={() => {
+            treeOpen.value = false;
+          }}
+        />
+      )}
 
-        <section
-          class={`files-preview${ui ? " files-preview--ui" : ""}`}
-          aria-label={ui ? ui.title : "Podgląd"}
-        >
-          {ui
-            ? (
-              <div class="files-ui-host">
-                {ui.view === "calendar" && (
-                  <CalendarPanel
-                    embedded
-                    onBack={closeUi}
-                    onOpenProfile={() => void openUiByView("profile")}
-                  />
-                )}
-                {ui.view === "timetable" && <TimetablePanel embedded onBack={closeUi} />}
-                {ui.view === "todo" && <TodoPanel embedded onBack={closeUi} />}
-                {ui.view === "notes" && (
-                  <NotesPanel
-                    embedded
-                    initialPath={notesInitialPath}
-                    onBack={closeUi}
-                  />
-                )}
-                {ui.view === "profile" && <ProfilePanel embedded onBack={closeUi} />}
-              </div>
-            )
-            : (
-              <>
-                {selectedPath.value && previewMeta.value && (
-                  <div class="files-preview-head">
-                    <span class="files-preview-path">{selectedPath.value}</span>
-                  </div>
-                )}
-                {previewLoading.value
-                  ? <p class="files-muted">…</p>
-                  : preview.value
-                  ? <pre class="files-preview-content">{preview.value}</pre>
-                  : <p class="files-empty-hint">Wybierz aplikację</p>}
-              </>
-            )}
-        </section>
-      </div>
+      <ResizablePanels
+        storageKey="files-tree"
+        class="files-body"
+        defaultSize={220}
+        minSize={140}
+        maxSize={420}
+        collapsed={treeCollapsed}
+        handleLabel="Zmień szerokość listy plików"
+      >
+        {treePane}
+        {previewPane}
+      </ResizablePanels>
     </div>
   );
 }
@@ -348,6 +369,7 @@ function TreeBranch({
   const isDir = node.entry.kind === "directory";
   const isUi = !isDir && isUiShortcut(node.entry.name);
   const active = selectedPath === node.entry.path;
+  const uiIcon = isUi ? shortcutIconForName(node.entry.name) : null;
 
   return (
     <li>
@@ -356,7 +378,7 @@ function TreeBranch({
         class={`files-tree-item${active ? " files-tree-item--active" : ""}${
           isUi ? " files-tree-item--ui" : ""
         }`}
-        style={{ paddingLeft: `${0.4 + depth * 0.7}rem` }}
+        style={{ paddingLeft: `${0.45 + depth * 0.75}rem` }}
         onClick={() => onClick(node)}
       >
         <span class="files-tree-icon">
@@ -367,7 +389,7 @@ function TreeBranch({
                 class="files-tree-chevron"
               />
             )
-            : <Icon name={isUi ? "window-maximize" : entryIcon(node.entry)} />}
+            : <Icon name={uiIcon ?? (isUi ? "window-maximize" : entryIcon(node.entry))} />}
         </span>
         <span>{node.entry.name}</span>
       </button>

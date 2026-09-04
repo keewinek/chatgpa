@@ -16,36 +16,31 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
   for (const dir of [
     "books",
     "calendar",
-    "Kalendarz",
     "memory",
-    "Notatki",
     "notes",
-    "Plan lekcji",
     "plans",
-    "Pomodoro",
-    "Profil",
+    "pomodoro",
     "profile",
     "school",
-    "TODO",
     "todo",
   ]) {
     assertEquals(names.includes(dir), true, `missing seed dir: ${dir}`);
   }
 });
 
-withTestDb("fs seeds .ui shortcuts in Polish app folders", async ({ db }) => {
+withTestDb("fs seeds .ui shortcuts next to data folders", async ({ db }) => {
   const app = new Hono();
   app.route("/api/fs", createFsRoutes(() => db));
 
   const listRes = await app.request(
-    "/api/fs?path=" + encodeURIComponent("~/Kalendarz"),
+    "/api/fs?path=" + encodeURIComponent("~/calendar"),
   );
   assertEquals(listRes.status, 200);
   const listBody = await listRes.json() as { entries: { name: string; kind: string }[] };
   assertEquals(listBody.entries.some((e) => e.name === "calendar.ui" && e.kind === "file"), true);
 
   const readRes = await app.request(
-    "/api/fs/file?path=" + encodeURIComponent("~/Kalendarz/calendar.ui"),
+    "/api/fs/file?path=" + encodeURIComponent("~/calendar/calendar.ui"),
   );
   assertEquals(readRes.status, 200);
   const readBody = await readRes.json() as { content: string; mimeType: string };
