@@ -183,7 +183,15 @@ interface BusyInterval {
   end: number;
 }
 
+/** Tylko timed personal/study_block zajmują okno nauki. Homework/exam to terminy, nie busy. */
+function isBusyBlockEvent(event: CalEvent): boolean {
+  if (event.kind !== "personal" && event.kind !== "study_block") return false;
+  return event.start.includes("T");
+}
+
 function eventToMinutesOnDate(event: CalEvent, date: string): BusyInterval | null {
+  if (!isBusyBlockEvent(event)) return null;
+
   const eventDay = eventDate(event);
   const endDay = eventEndDate(event);
   if (date < eventDay || date > endDay) return null;

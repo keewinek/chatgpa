@@ -47,6 +47,7 @@ import {
   listEvents,
   updateEvent,
 } from "../calendar/service.ts";
+import { formatPlanMarkdown, generateDailyPlan, PlanError } from "../plan/service.ts";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
 import {
@@ -742,6 +743,54 @@ async function runWebAction(action: ChatAction): Promise<ToolResult> {
   }
 }
 
+async function runPlanAction(
+  action: ChatAction,
+  db: AppDatabase | null,
+): Promise<ToolResult> {
+  if (!db) {
+    return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+  }
+
+  const args = action.args ?? {};
+
+  switch (action.tool) {
+    case "plan.generate": {
+      try {
+        const date = typeof args.date === "string" && args.date.trim()
+          ? args.date.trim()
+          : formatWarsawIsoDate(getWarsawNow());
+        const plan = await generateDailyPlan(db, date);
+        const body = formatPlanMarkdown(plan);
+        return {
+          tool: action.tool,
+          ok: true,
+          output:
+            `Wygenerowano plan na ${plan.date} (${plan.weekdayLabel}).\n` +
+            `Zapisano: ${plan.planFilePath}\n` +
+            `Budżet: ${plan.usedMinutes}/${plan.budgetMinutes} min · bloki: ${plan.blocks.length}\n\n` +
+            `${body}\n\n` +
+            `Przedstaw ten plan uczniowi naturalnie (po polsku). Możesz lekko skrócić, ale zachowaj bloki godzinowe.`,
+        };
+      } catch (err) {
+        if (err instanceof PlanError) {
+          return { tool: action.tool, ok: false, error: err.message };
+        }
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    default:
+      return {
+        tool: action.tool,
+        ok: false,
+        error: `Nieznane narzędzie planu: ${action.tool}`,
+      };
+  }
+}
+
 async function runOne(
   action: ChatAction,
   store: MemoryStore,
@@ -768,6 +817,10 @@ async function runOne(
 
   if (action.tool.startsWith("calendar.")) {
     return await runCalendarAction(action, db, groupPrefs);
+  }
+
+  if (action.tool.startsWith("plan.")) {
+    return await runPlanAction(action, db);
   }
 
   if (action.tool.startsWith("web.")) {

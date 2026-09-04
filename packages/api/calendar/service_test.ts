@@ -87,6 +87,31 @@ withTestDb("freeSlots weekend has morning start", async ({ db }) => {
   }
 });
 
+withTestDb("freeSlots ignores homework date-range without times", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    await addEvent(db, {
+      title: "Przeczytać Wesele",
+      kind: "homework",
+      start: "2026-09-02",
+      end: "2026-09-23",
+      source: "manual",
+    });
+    await addEvent(db, {
+      title: "Sprawdzian chemia",
+      kind: "exam",
+      start: "2026-09-02",
+      source: "manual",
+    });
+
+    const slots = await computeFreeSlots(db, "2026-09-02", DEFAULT_GROUP_PREFS);
+    assertEquals(slots.freeMinutes, slots.totalMinutes);
+    assertEquals(slots.slots.length > 0, true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
 Deno.test("freeSlots uses today's date format", () => {
   const now = getWarsawNow();
   const date = now.toISOString().slice(0, 10);

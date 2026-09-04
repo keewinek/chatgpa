@@ -11,10 +11,23 @@ Deno.test("SYSTEM_PROMPT documents lazy context and grades.get", () => {
   assertEquals(SYSTEM_PROMPT.includes("grades.get"), true);
   assertEquals(SYSTEM_PROMPT.includes("calendar.freeSlots"), true);
   assertEquals(SYSTEM_PROMPT.includes("todo.list"), true);
+  assertEquals(SYSTEM_PROMPT.includes("plan.generate"), true);
   assertEquals(SYSTEM_PROMPT.includes("NIE masz na start ocen"), true);
   assertEquals(SYSTEM_PROMPT.includes("NIE zgaduj"), true);
   assertEquals(SYSTEM_PROMPT.includes("NIE czekaj na „zapamiętaj”"), true);
   assertEquals(SYSTEM_PROMPT.includes("memory.remember"), true);
+});
+
+Deno.test("study plan workflow prefers plan.generate", () => {
+  const mockAiResponse = `Układam plan na dziś.
+
+\`\`\`chatgpa-action
+{ "tool": "plan.generate", "args": {} }
+\`\`\``;
+
+  const actions = parseActions(mockAiResponse);
+  assertEquals(actions.length, 1);
+  assertEquals(actions[0]?.tool, "plan.generate");
 });
 
 Deno.test("withChatContext does not inject memory, todo, grades, or calendar data", () => {
@@ -28,7 +41,8 @@ Deno.test("withChatContext does not inject memory, todo, grades, or calendar dat
   assertEquals(system.includes("Klasa 3A"), false);
   assertEquals(system.includes("Powtórka matma"), false);
   assertEquals(system.includes("syncedAt"), false);
-  assertEquals(system.includes("~/calendar"), false);
+  // Prompt may document ~/calendar paths; real event data must not be injected.
+  assertEquals(system.includes("[homework]"), false);
   assertEquals(system.includes("Plan lekcji ucznia"), true);
   assertEquals(system.includes("2 długich"), true);
 });

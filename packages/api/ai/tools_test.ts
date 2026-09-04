@@ -254,6 +254,42 @@ withTestDb("calendar.freeSlots computes study windows", async ({ db }) => {
   }
 });
 
+withTestDb("plan.generate writes plan file and returns message", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    await executeActions(
+      [{
+        tool: "todo.add",
+        args: {
+          title: "Powtórka chemia: kwasy",
+          dueDate: "2026-09-03",
+          estimatedMinutes: 25,
+          priority: "high",
+        },
+      }],
+      store,
+    );
+
+    const { results } = await executeActions(
+      [{ tool: "plan.generate", args: { date: "2026-09-02" } }],
+      store,
+    );
+    assertEquals(results[0].ok, true);
+    assertEquals(results[0].output?.includes("~/plans/2026-09-02.plan"), true);
+    assertEquals(results[0].output?.includes("Plan — 2026-09-02"), true);
+
+    const file = await executeActions(
+      [{ tool: "fs.read", args: { path: "~/plans/2026-09-02.plan" } }],
+      store,
+    );
+    assertEquals(file.results[0].ok, true);
+    assertEquals(file.results[0].output?.includes("Budżet:"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
 withTestDb("calendar.add creates event", async ({ db }) => {
   setDbForTests(db);
   try {

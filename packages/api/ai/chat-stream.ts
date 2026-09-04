@@ -4,12 +4,25 @@ import { parseActions, stripActions } from "./actions.ts";
 import { runCascadeStream } from "./cascade.ts";
 import { autoRememberFromTurn, formatMemoryContextHint } from "./memory-extract.ts";
 import { withChatContext } from "./providers.ts";
-import { createMemoryStore, executeActions, formatToolResults } from "./tools.ts";
+import { createMemoryStore, executeActions, formatToolResults, type ToolResult } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
 
 const MAX_TOOL_ROUNDS = 3;
+
+function toolContinuePrompt(results: ToolResult[], finalRound: boolean): string {
+  const base = `Wyniki narzędzi:\n${formatToolResults(results)}`;
+  if (finalRound) {
+    return `${base}\n\nTo ostatnia runda narzędzi. NIE wołaj już żadnych tools — odpowiedz uczniowi wyłącznie tekstem na podstawie WSZYSTKICH wyników narzędzi w tej rozmowie (także wcześniejszych rund). Jeśli był plan.generate — przedstaw ten plan.`;
+  }
+  return `${base}\n\nKontynuuj odpowiedź dla ucznia.`;
+}
+
+function shouldFinalize(results: ToolResult[], round: number): boolean {
+  if (round === MAX_TOOL_ROUNDS - 1) return true;
+  return results.some((r) => r.ok && r.tool === "plan.generate");
+}
 
 export type ChatStreamEvent =
   | { type: "delta"; text: string }
@@ -38,7 +51,8 @@ export async function* runChatStream(
   const allAttempts: AiAttempt[] = [];
   const allToolResults: ToolResultPublic[] = [];
   const allAttachments: ChatAttachment[] = [];
-  let conversation = withChatContext(messages, groupPrefs, { memoryHint });
+  let thread: ChatMessage[] = [...messages];
+  let conversation = withChatContext(thread, groupPrefs, { memoryHint });
   let provider = "";
   let model = "";
   let rememberedThisTurn = false;
@@ -96,16 +110,42 @@ export async function* runChatStream(
     }
     yield { type: "tool", results };
 
-    if (round === MAX_TOOL_ROUNDS - 1) {
+    const finalRound = shouldFinalize(results, round);
+    yield { type: "replace", text: stripped || "(wywołano narzędzia)" };
+    thread = [
+      ...thread,
+      { role: "assistant", content: stripped || "(wywołano narzędzia)" },
+      { role: "user", content: toolContinuePrompt(results, finalRound) },
+    ];
+    conversation = withChatContext(thread, groupPrefs, { memoryHint });
+
+    if (finalRound) {
+      const genFinal = runCascadeStream(conversation, options.forceModel, { skipSystemWrap: true });
+      let finalContent = "";
+      let finalResult = await genFinal.next();
+      while (!finalResult.done) {
+        finalContent += finalResult.value;
+        yield { type: "delta", text: finalResult.value };
+        finalResult = await genFinal.next();
+      }
+      const finale = finalResult.value;
+      allAttempts.push(...finale.attempts);
+      if (!finale.ok) {
+        yield { type: "error", error: finale.error, attempts: allAttempts, memory: store.list() };
+        return;
+      }
+      provider = finale.provider;
+      model = finale.model;
+      const text = stripActions(finale.content) ||
+        stripped ||
+        "Gotowe — sprawdziłem dane, ale nie udało się ułożyć odpowiedzi.";
+      if (text !== finalContent) {
+        yield { type: "replace", text };
+      }
       if (!rememberedThisTurn) await autoRememberFromTurn(messages, store);
-      const suffix = results.map((
-        r,
-      ) => (r.ok ? `✓ ${r.tool}: ${r.output}` : `✗ ${r.tool}: ${r.error}`)).join("\n");
-      const content = `${stripped}\n\n${suffix}`.trim();
-      yield { type: "replace", text: content };
       yield {
         type: "done",
-        content,
+        content: text,
         model,
         provider,
         attempts: allAttempts,
@@ -115,22 +155,6 @@ export async function* runChatStream(
       };
       return;
     }
-
-    yield { type: "replace", text: stripped || "(wywołano narzędzia)" };
-    conversation = withChatContext(
-      [
-        ...messages,
-        { role: "assistant", content: stripped || "(wywołano narzędzia)" },
-        {
-          role: "user",
-          content: `Wyniki narzędzi:\n${
-            formatToolResults(results)
-          }\n\nKontynuuj odpowiedź dla ucznia.`,
-        },
-      ],
-      groupPrefs,
-      { memoryHint },
-    );
   }
 
   yield {

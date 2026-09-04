@@ -4,12 +4,25 @@ import { parseActions, stripActions } from "./actions.ts";
 import { runCascade } from "./cascade.ts";
 import { autoRememberFromTurn, formatMemoryContextHint } from "./memory-extract.ts";
 import { withChatContext } from "./providers.ts";
-import { createMemoryStore, executeActions, formatToolResults } from "./tools.ts";
+import { createMemoryStore, executeActions, formatToolResults, type ToolResult } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
 
 const MAX_TOOL_ROUNDS = 3;
+
+function toolContinuePrompt(results: ToolResult[], finalRound: boolean): string {
+  const base = `Wyniki narzędzi:\n${formatToolResults(results)}`;
+  if (finalRound) {
+    return `${base}\n\nTo ostatnia runda narzędzi. NIE wołaj już żadnych tools — odpowiedz uczniowi wyłącznie tekstem na podstawie WSZYSTKICH wyników narzędzi w tej rozmowie (także wcześniejszych rund). Jeśli był plan.generate — przedstaw ten plan.`;
+  }
+  return `${base}\n\nKontynuuj odpowiedź dla ucznia.`;
+}
+
+function shouldFinalize(results: ToolResult[], round: number): boolean {
+  if (round === MAX_TOOL_ROUNDS - 1) return true;
+  return results.some((r) => r.ok && r.tool === "plan.generate");
+}
 
 export interface ChatRunResult {
   ok: true;
@@ -54,7 +67,8 @@ export async function runChat(
   const attempts: AiAttempt[] = [];
   const toolResults: ToolResultPublic[] = [];
   const attachments: ChatAttachment[] = [];
-  let conversation = withChatContext(messages, groupPrefs, { memoryHint });
+  let thread: ChatMessage[] = [...messages];
+  let conversation = withChatContext(thread, groupPrefs, { memoryHint });
   let rememberedThisTurn = false;
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -89,36 +103,33 @@ export async function runChat(
       if (r.groupPrefs) groupPrefs = r.groupPrefs;
     }
 
-    if (round === MAX_TOOL_ROUNDS - 1) {
+    const finalRound = shouldFinalize(results, round);
+    thread = [
+      ...thread,
+      { role: "assistant", content: stripped || "(wywołano narzędzia)" },
+      { role: "user", content: toolContinuePrompt(results, finalRound) },
+    ];
+    conversation = withChatContext(thread, groupPrefs, { memoryHint });
+
+    if (finalRound) {
+      const finale = await runCascade(conversation, options.forceModel, { skipSystemWrap: true });
+      attempts.push(...finale.attempts);
+      if (!finale.ok) {
+        return { ok: false, error: finale.error, attempts, memory: store.list() };
+      }
       if (!rememberedThisTurn) await autoRememberFromTurn(messages, store);
-      const suffix = results.map((
-        r,
-      ) => (r.ok ? `✓ ${r.tool}: ${r.output}` : `✗ ${r.tool}: ${r.error}`)).join("\n");
       return success(
-        `${stripped}\n\n${suffix}`.trim(),
-        result.provider,
-        result.model,
+        stripActions(finale.content) ||
+          stripped ||
+          "Gotowe — sprawdziłem dane, ale nie udało się ułożyć odpowiedzi.",
+        finale.provider,
+        finale.model,
         attempts,
         store.list(),
         toolResults,
         attachments,
       );
     }
-
-    conversation = withChatContext(
-      [
-        ...messages,
-        { role: "assistant", content: stripped || "(wywołano narzędzia)" },
-        {
-          role: "user",
-          content: `Wyniki narzędzi:\n${
-            formatToolResults(results)
-          }\n\nKontynuuj odpowiedź dla ucznia.`,
-        },
-      ],
-      groupPrefs,
-      { memoryHint },
-    );
   }
 
   return { ok: false, error: "Zbyt wiele rund narzędzi", attempts, memory: store.list() };
