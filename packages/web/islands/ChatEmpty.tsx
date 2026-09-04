@@ -5,15 +5,14 @@ interface ChatEmptyProps {
   disabled?: boolean;
 }
 
+const MINIMAL_PROMPTS = STARTER_PROMPTS.slice(0, 3);
+
 export default function ChatEmpty({ onPick, disabled }: ChatEmptyProps) {
   return (
     <div class="chat-empty">
-      <p class="chat-empty-title">Cześć — tu ChatGPA</p>
-      <p class="chat-empty-hint">
-        Osobisty AI do szkoły. Zapytaj o naukę, wyślij zdjęcie zadania albo poproś o plik z quizem.
-      </p>
+      <p class="chat-empty-title">ChatGPA</p>
       <div class="chat-prompts">
-        {STARTER_PROMPTS.map((prompt) => (
+        {MINIMAL_PROMPTS.map((prompt) => (
           <button
             key={prompt}
             type="button"

@@ -32,11 +32,13 @@ export default function ChatSidebar({
   onClearShortMemory,
   onOpenFiles,
 }: ChatSidebarProps) {
+  const memoryOpen = useSignal(false);
   const memoryTab = useSignal<"short" | "long">("long");
 
   const shortEntries = memory.filter((e) => e.kind === "short");
   const longEntries = memory.filter((e) => e.kind === "long");
   const visible = memoryTab.value === "short" ? shortEntries : longEntries;
+  const memoryCount = memory.length;
 
   return (
     <>
@@ -47,21 +49,20 @@ export default function ChatSidebar({
       />
       <aside class={`sidebar${open ? " sidebar--open" : ""}`} aria-label="Historia rozmów">
         <div class="sidebar-top">
-          <span class="sidebar-logo">ChatGPA</span>
-          <nav class="sidebar-nav" aria-label="Nawigacja">
+          <div class="sidebar-brand-row">
+            <span class="sidebar-logo">ChatGPA</span>
             <button
               type="button"
-              class={`sidebar-nav-btn sidebar-nav-btn--files${
-                filesActive ? " sidebar-nav-btn--active" : ""
-              }`}
+              class={`sidebar-icon-btn${filesActive ? " sidebar-icon-btn--active" : ""}`}
               onClick={onOpenFiles}
+              title="Pliki"
+              aria-label="Pliki"
             >
-              <span class="sidebar-nav-btn-icon" aria-hidden="true">◇</span>
-              Pliki
+              ◇
             </button>
-          </nav>
+          </div>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
-            + Nowa rozmowa
+            Nowa
           </button>
         </div>
 
@@ -81,7 +82,6 @@ export default function ChatSidebar({
                 disabled={loading}
               >
                 <span class="sidebar-item-title">{session.title}</span>
-                <span class="sidebar-item-date">{formatSessionDate(session.updatedAt)}</span>
               </button>
               <button
                 type="button"
@@ -100,81 +100,79 @@ export default function ChatSidebar({
           ))}
         </nav>
 
-        <div class="sidebar-memory">
-          <div class="sidebar-memory-head">
-            <span class="sidebar-memory-title">Pamięć</span>
-            {memoryTab.value === "short" && shortEntries.length > 0 && (
-              <button
-                type="button"
-                class="sidebar-memory-clear"
-                disabled={loading}
-                onClick={onClearShortMemory}
-              >
-                Wyczyść krótką
-              </button>
-            )}
-          </div>
-          <div class="sidebar-memory-tabs" role="tablist" aria-label="Rodzaj pamięci">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={memoryTab.value === "short"}
-              class={`sidebar-memory-tab${
-                memoryTab.value === "short" ? " sidebar-memory-tab--active" : ""
-              }`}
-              onClick={() => {
-                memoryTab.value = "short";
-              }}
-            >
-              Krótka ({shortEntries.length})
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={memoryTab.value === "long"}
-              class={`sidebar-memory-tab${
-                memoryTab.value === "long" ? " sidebar-memory-tab--active" : ""
-              }`}
-              onClick={() => {
-                memoryTab.value = "long";
-              }}
-            >
-              Długa ({longEntries.length})
-            </button>
-          </div>
-          {visible.length === 0
-            ? (
-              <p class="sidebar-memory-empty">
-                {memoryTab.value === "short" ? "Brak krótkiej pamięci" : "Brak długiej pamięci"}
-              </p>
-            )
-            : (
-              <ul class="sidebar-memory-list">
-                {visible.map((entry) => (
-                  <li key={entry.id} class="sidebar-memory-item">
-                    <span class="sidebar-memory-content">{entry.content}</span>
-                    {entry.expiresAt && (
-                      <span class="sidebar-memory-expiry">
-                        wygasa: {formatExpiry(entry.expiresAt)}
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-        </div>
+        <div class={`sidebar-memory${memoryOpen.value ? " sidebar-memory--open" : ""}`}>
+          <button
+            type="button"
+            class="sidebar-memory-toggle"
+            aria-expanded={memoryOpen.value}
+            onClick={() => {
+              memoryOpen.value = !memoryOpen.value;
+            }}
+          >
+            <span>Pamięć</span>
+            <span class="sidebar-memory-count">{memoryCount || "—"}</span>
+          </button>
 
-        <p class="sidebar-foot">Cursor do szkoły · darmowe AI</p>
+          {memoryOpen.value && (
+            <>
+              <div class="sidebar-memory-tabs" role="tablist" aria-label="Rodzaj pamięci">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={memoryTab.value === "short"}
+                  class={`sidebar-memory-tab${
+                    memoryTab.value === "short" ? " sidebar-memory-tab--active" : ""
+                  }`}
+                  onClick={() => {
+                    memoryTab.value = "short";
+                  }}
+                >
+                  Krótka
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={memoryTab.value === "long"}
+                  class={`sidebar-memory-tab${
+                    memoryTab.value === "long" ? " sidebar-memory-tab--active" : ""
+                  }`}
+                  onClick={() => {
+                    memoryTab.value = "long";
+                  }}
+                >
+                  Długa
+                </button>
+                {memoryTab.value === "short" && shortEntries.length > 0 && (
+                  <button
+                    type="button"
+                    class="sidebar-memory-clear"
+                    disabled={loading}
+                    onClick={onClearShortMemory}
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
+              {visible.length === 0
+                ? <p class="sidebar-memory-empty">Pusto</p>
+                : (
+                  <ul class="sidebar-memory-list">
+                    {visible.map((entry) => (
+                      <li key={entry.id} class="sidebar-memory-item">
+                        <span class="sidebar-memory-content">{entry.content}</span>
+                        {entry.expiresAt && (
+                          <span class="sidebar-memory-expiry">
+                            {formatExpiry(entry.expiresAt)}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+            </>
+          )}
+        </div>
       </aside>
     </>
   );
-}
-
-function formatSessionDate(ts: number): string {
-  const d = new Date(ts);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
-  }
-  return d.toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 }

@@ -573,14 +573,13 @@ export default function ChatApp() {
               </button>
               <div class="chat-header-text">
                 <h1 class="chat-title">{session().title}</h1>
-                <p class="chat-status">{status.value}</p>
               </div>
               <div class="chat-header-actions">
                 <button
                   type="button"
-                  class="chat-timetable-btn"
+                  class="chat-icon-btn"
                   aria-label="Pliki"
-                  title="Pliki — skróty .ui"
+                  title="Pliki"
                   onClick={() => {
                     filesUi.value = null;
                     notesInitialPath.value = null;
@@ -591,7 +590,7 @@ export default function ChatApp() {
                 </button>
                 <button
                   type="button"
-                  class="chat-timetable-btn"
+                  class="chat-icon-btn"
                   aria-label="Powiadomienia"
                   title="Powiadomienia"
                   onClick={() => {
@@ -600,31 +599,33 @@ export default function ChatApp() {
                     }
                   }}
                 >
-                  🔔{unreadNotifications.value.length ? ` ${unreadNotifications.value.length}` : ""}
+                  {unreadNotifications.value.length
+                    ? String(unreadNotifications.value.length)
+                    : "·"}
                 </button>
                 <button
                   type="button"
-                  class={`chat-librus-sync${librusStale.value ? " chat-librus-sync--stale" : ""}`}
+                  class={`chat-icon-btn${librusStale.value ? " chat-icon-btn--warn" : ""}`}
                   aria-label="Sync Librus"
                   title={librusSyncError.value ??
                     (librusSyncedAt.value
-                      ? `Ostatni sync: ${formatLibrusSyncTime(librusSyncedAt.value)}`
-                      : "Sync Librus — wymaga wtyczki i otwartej karty Librus")}
+                      ? `Librus: ${formatLibrusSyncTime(librusSyncedAt.value)}`
+                      : "Sync Librus")}
                   disabled={loading.value || librusSyncing.value}
                   onClick={() => void handleLibrusSync()}
                 >
-                  {librusSyncing.value ? "…" : "↻ Librus"}
+                  {librusSyncing.value ? "…" : "↻"}
                 </button>
                 <button
                   type="button"
-                  class="chat-timetable-btn"
+                  class="chat-icon-btn"
                   aria-label="Pomodoro"
-                  title="Pomodoro (25/5)"
+                  title="Pomodoro"
                   onClick={() => {
                     pomodoroOpen.value = true;
                   }}
                 >
-                  🍅
+                  ◐
                 </button>
               </div>
             </header>

@@ -1,7 +1,13 @@
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { entryIcon, type FsEntry, fsList, fsRead } from "../lib/fs-api.ts";
-import { isUiShortcut, parseUiShortcut, UI_SHORTCUTS, type UiView } from "../lib/ui-shortcuts.ts";
+import {
+  isUiShortcut,
+  parseUiShortcut,
+  UI_SHORTCUTS,
+  uiShortcutPath,
+  type UiView,
+} from "../lib/ui-shortcuts.ts";
 import CalendarPanel from "./CalendarPanel.tsx";
 import TimetablePanel from "./TimetablePanel.tsx";
 import TodoPanel from "./TodoPanel.tsx";
@@ -29,6 +35,8 @@ type ActiveUi = {
   path: string;
 };
 
+const APP_DIRS = new Set(UI_SHORTCUTS.map((s) => s.dir));
+
 export default function FilesPanel({
   onBack,
   initialUi,
@@ -44,6 +52,7 @@ export default function FilesPanel({
   const previewLoading = useSignal(false);
   const previewMeta = useSignal<string>("");
   const activeUi = useSignal<ActiveUi | null>(null);
+  const showData = useSignal(false);
 
   async function loadRoot() {
     loading.value = true;
@@ -116,14 +125,14 @@ export default function FilesPanel({
       onOpenPomodoro?.();
       selectedPath.value = path;
       activeUi.value = null;
-      preview.value = "Pomodoro otwarte w oknie nakładki.";
-      previewMeta.value = "application/x-chatgpa-ui";
+      preview.value = "";
+      previewMeta.value = "";
       return;
     }
     selectedPath.value = path;
     activeUi.value = { view, title, path };
     preview.value = "";
-    previewMeta.value = "application/x-chatgpa-ui";
+    previewMeta.value = "";
   }
 
   async function selectFile(path: string, name: string) {
@@ -141,7 +150,7 @@ export default function FilesPanel({
           return;
         }
       }
-      preview.value = file.content || "(pusty plik)";
+      preview.value = file.content || "(pusty)";
       previewMeta.value = file.mimeType ?? "text/plain";
     } catch (err) {
       preview.value = err instanceof Error ? err.message : String(err);
@@ -161,8 +170,8 @@ export default function FilesPanel({
   async function openUiByView(view: UiView) {
     const def = UI_SHORTCUTS.find((s) => s.view === view);
     if (!def) return;
-    const path = `~/${def.dir}/${def.file}`;
-    await expandPathTo(path);
+    const path = uiShortcutPath(def);
+    if (showData.value) await expandPathTo(path);
     openUi(view, def.title, path);
   }
 
@@ -174,9 +183,7 @@ export default function FilesPanel({
     if (!initialUi) return;
     const view = initialUi;
     void (async () => {
-      if (loading.value || tree.value.length === 0) {
-        await loadRoot();
-      }
+      if (loading.value || tree.value.length === 0) await loadRoot();
       await openUiByView(view);
       onInitialUiConsumed?.();
     })();
@@ -184,25 +191,32 @@ export default function FilesPanel({
 
   function closeUi() {
     activeUi.value = null;
-    preview.value = "Wybierz skrót .ui lub plik z drzewa.";
+    preview.value = "";
     previewMeta.value = "";
   }
 
   const ui = activeUi.value;
+  const appNodes = tree.value.filter((n) => APP_DIRS.has(n.entry.name));
+  const dataNodes = tree.value.filter((n) => !APP_DIRS.has(n.entry.name));
 
   return (
     <div class="files-panel">
       <header class="files-header">
-        <button type="button" class="files-back" onClick={onBack}>
-          ← Czat
+        <button type="button" class="files-back" onClick={onBack} title="Czat">
+          ←
         </button>
-        <div class="files-header-text">
-          <h1 class="files-title">Pliki</h1>
-          <p class="files-subtitle">
-            Skróty <code class="files-code">.ui</code> otwierają aplikacje · dane w{" "}
-            <code class="files-code">~/</code>
-          </p>
-        </div>
+        <span class="files-header-label">~/</span>
+        <div class="files-header-spacer" />
+        <button
+          type="button"
+          class={`files-mode-btn${showData.value ? " files-mode-btn--active" : ""}`}
+          onClick={() => {
+            showData.value = !showData.value;
+          }}
+          title={showData.value ? "Tylko aplikacje" : "Pokaż dane"}
+        >
+          {showData.value ? "dane" : "apps"}
+        </button>
         <button type="button" class="files-refresh" onClick={() => void loadRoot()} title="Odśwież">
           ↻
         </button>
@@ -212,8 +226,30 @@ export default function FilesPanel({
 
       <div class="files-body">
         <aside class="files-tree" aria-label="Drzewo plików">
-          {loading.value && <p class="files-muted">Ładowanie…</p>}
-          {!loading.value && (
+          {loading.value && <p class="files-muted">…</p>}
+          {!loading.value && !showData.value && (
+            <ul class="files-tree-root files-apps">
+              {UI_SHORTCUTS.map((def) => {
+                const path = uiShortcutPath(def);
+                const active = selectedPath.value === path || activeUi.value?.view === def.view;
+                return (
+                  <li key={def.view}>
+                    <button
+                      type="button"
+                      class={`files-tree-item files-tree-item--app${
+                        active ? " files-tree-item--active" : ""
+                      }`}
+                      onClick={() => void openUiByView(def.view)}
+                    >
+                      <span class="files-tree-icon">◇</span>
+                      <span>{def.title}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {!loading.value && showData.value && (
             <ul class="files-tree-root">
               <li>
                 <button
@@ -224,15 +260,15 @@ export default function FilesPanel({
                   onClick={() => {
                     selectedPath.value = "~";
                     activeUi.value = null;
-                    preview.value = "Wybierz skrót .ui (Kalendarz, TODO, …) lub plik.";
+                    preview.value = "";
                     previewMeta.value = "";
                   }}
                 >
-                  <span class="files-tree-icon">⌂</span>
-                  <span>~</span>
+                  <span class="files-tree-icon">~</span>
+                  <span>home</span>
                 </button>
                 <ul class="files-tree-children">
-                  {tree.value.map((node) => (
+                  {[...appNodes, ...dataNodes].map((node) => (
                     <TreeBranch
                       key={node.entry.path}
                       node={node}
@@ -249,7 +285,7 @@ export default function FilesPanel({
 
         <section
           class={`files-preview${ui ? " files-preview--ui" : ""}`}
-          aria-label={ui ? ui.title : "Podgląd pliku"}
+          aria-label={ui ? ui.title : "Podgląd"}
         >
           {ui
             ? (
@@ -275,22 +311,16 @@ export default function FilesPanel({
             )
             : (
               <>
-                {selectedPath.value && (
+                {selectedPath.value && previewMeta.value && (
                   <div class="files-preview-head">
                     <span class="files-preview-path">{selectedPath.value}</span>
-                    {previewMeta.value && (
-                      <span class="files-preview-meta">{previewMeta.value}</span>
-                    )}
                   </div>
                 )}
                 {previewLoading.value
-                  ? <p class="files-muted">Wczytywanie…</p>
-                  : (
-                    <pre class="files-preview-content">
-                      {preview.value ||
-                        "Wybierz skrót .ui z folderu (np. Kalendarz/calendar.ui), aby otworzyć aplikację."}
-                    </pre>
-                  )}
+                  ? <p class="files-muted">…</p>
+                  : preview.value
+                  ? <pre class="files-preview-content">{preview.value}</pre>
+                  : <p class="files-empty-hint">Wybierz aplikację</p>}
               </>
             )}
         </section>
@@ -321,14 +351,13 @@ function TreeBranch({
         class={`files-tree-item${active ? " files-tree-item--active" : ""}${
           isUi ? " files-tree-item--ui" : ""
         }`}
-        style={{ paddingLeft: `${0.5 + depth * 0.85}rem` }}
+        style={{ paddingLeft: `${0.4 + depth * 0.7}rem` }}
         onClick={() => onClick(node)}
       >
         <span class="files-tree-icon">
-          {isDir ? (node.expanded ? "▾" : "▸") : entryIcon(node.entry)}
+          {isDir ? (node.expanded ? "▾" : "▸") : isUi ? "◇" : entryIcon(node.entry)}
         </span>
         <span>{node.entry.name}</span>
-        {isUi && <span class="files-tree-ui-badge">UI</span>}
       </button>
       {isDir && node.expanded && node.children && (
         <ul class="files-tree-children">
