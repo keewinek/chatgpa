@@ -32,7 +32,7 @@ export async function* runChatStream(
   options: { forceModel?: string; memory?: string[]; groupPrefs?: GroupPrefs } = {},
 ): AsyncGenerator<ChatStreamEvent> {
   const store = await createMemoryStore(options.memory);
-  const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
+  let groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
   const memoryHint = formatMemoryContextHint(store.list());
   await hydrateMessageFiles(messages);
   const allAttempts: AiAttempt[] = [];
@@ -92,6 +92,7 @@ export async function* runChatStream(
       if (r.ok && r.attachment && !allAttachments.some((a) => a.id === r.attachment!.id)) {
         allAttachments.push(r.attachment);
       }
+      if (r.groupPrefs) groupPrefs = r.groupPrefs;
     }
     yield { type: "tool", results };
 

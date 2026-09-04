@@ -97,6 +97,20 @@ export async function seedUiShortcuts(db: AppDatabase): Promise<void> {
     ) + "\n";
     await ensureFile(db, filePath, content, "application/x-chatgpa-ui", now);
   }
+
+  const schoolPath = `${USER_ROOT}/school`;
+  await ensureDirectory(db, schoolPath, now);
+  await ensureFile(
+    db,
+    `${schoolPath}/groups.json`,
+    JSON.stringify(
+      { language: 1, english: 1, pe: 1, informatics: 1 },
+      null,
+      2,
+    ) + "\n",
+    "application/json",
+    now,
+  );
 }
 
 /** Ensure virtual FS exists — idempotent, safe on every request. */

@@ -48,7 +48,7 @@ export async function runChat(
   options: { forceModel?: string; memory?: string[]; groupPrefs?: GroupPrefs } = {},
 ): Promise<ChatRunOutcome> {
   const store = await createMemoryStore(options.memory);
-  const groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
+  let groupPrefs = options.groupPrefs ?? DEFAULT_GROUP_PREFS;
   const memoryHint = formatMemoryContextHint(store.list());
   await hydrateMessageFiles(messages);
   const attempts: AiAttempt[] = [];
@@ -86,6 +86,7 @@ export async function runChat(
       if (r.ok && r.attachment && !attachments.some((a) => a.id === r.attachment!.id)) {
         attachments.push(r.attachment);
       }
+      if (r.groupPrefs) groupPrefs = r.groupPrefs;
     }
 
     if (round === MAX_TOOL_ROUNDS - 1) {

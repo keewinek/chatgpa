@@ -38,7 +38,7 @@ import {
   uploadFile,
 } from "../lib/chat-api.ts";
 import { clearShortMemory, fetchMemory, migrateLegacyMemory } from "../lib/memory-api.ts";
-import { loadGroupPrefs } from "../lib/timetable-storage.ts";
+import { loadGroupPrefs, loadGroupPrefsAsync } from "../lib/timetable-storage.ts";
 import { parseSlashCommand } from "../lib/commands.ts";
 import type { ChatAttachment } from "@chatgpa/core";
 import {
@@ -205,6 +205,7 @@ export default function ChatApp() {
           .catch(() => clearNotificationUrl());
       }
     });
+    void loadGroupPrefsAsync();
     void refreshLibrusStatus();
     void refreshNotifications();
     void registerWebPush().catch(() => undefined);

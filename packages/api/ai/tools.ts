@@ -17,6 +17,11 @@ import type { AppDatabase } from "../db/client.ts";
 import { getDb } from "../db/client.ts";
 import { formatWarsawIsoDate } from "../plan/distribute.ts";
 import { FsError, fsList, fsRead, fsWrite } from "../fs/service.ts";
+import {
+  formatGroupsSummary,
+  loadStoredGroupPrefs,
+  saveStoredGroupPrefs,
+} from "../fs/groups.ts";
 import { notesAppend, notesList, notesRead, notesWrite } from "../notes/service.ts";
 import {
   clearMemory,
@@ -56,6 +61,8 @@ export interface ToolResult {
   output?: string;
   error?: string;
   attachment?: ChatAttachment;
+  /** Updated group prefs after timetable.setGroups. */
+  groupPrefs?: GroupPrefs;
 }
 
 export interface ToolRunSummary {
@@ -838,6 +845,43 @@ async function runOne(
     case "timetable.full": {
       return { tool: action.tool, ok: true, output: formatTimetableForAi(groupPrefs) };
     }
+    case "timetable.getGroups": {
+      const prefs = db ? (await loadStoredGroupPrefs(db)) ?? groupPrefs : groupPrefs;
+      return {
+        tool: action.tool,
+        ok: true,
+        output: `Grupy lekcyjne: ${formatGroupsSummary(prefs)}`,
+        groupPrefs: prefs,
+      };
+    }
+    case "timetable.setGroups": {
+      if (!db) {
+        return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+      }
+      const pick = (v: unknown, fallback: 1 | 2): 1 | 2 =>
+        v === 1 || v === 2 ? v : fallback;
+      const next: GroupPrefs = {
+        language: pick(args.language, groupPrefs.language),
+        english: pick(args.english, groupPrefs.english),
+        pe: pick(args.pe, groupPrefs.pe),
+        informatics: pick(args.informatics, groupPrefs.informatics),
+      };
+      try {
+        await saveStoredGroupPrefs(db, next);
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `Zapisano grupy (~/school/groups.json): ${formatGroupsSummary(next)}`,
+          groupPrefs: next,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
     case "fs.list": {
       if (!db) {
         return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
@@ -933,8 +977,11 @@ export async function executeActions(
   groupPrefs: GroupPrefs = DEFAULT_GROUP_PREFS,
 ): Promise<ToolRunSummary> {
   const results: ToolResult[] = [];
+  let prefs = groupPrefs;
   for (const action of actions) {
-    results.push(await runOne(action, store, groupPrefs));
+    const result = await runOne(action, store, prefs);
+    if (result.groupPrefs) prefs = result.groupPrefs;
+    results.push(result);
   }
 
   const db = getDb();

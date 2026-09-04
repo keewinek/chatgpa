@@ -34,6 +34,8 @@ Kiedy używać narzędzi:
 - Plan dnia, wolne okna czasu → calendar.freeSlots (opcjonalnie args.date)
 - Notatki, pliki Librus, profile → fs.read (args.path, np. ~/school/librus/grades.json)
 - Plan lekcji na dany dzień → timetable.today / timetable.day / timetable.now
+- Grupy lekcyjne (język/angielski/WF/informatyka) → timetable.getGroups / timetable.setGroups
+  (nie pytaj o UI — zapisz przez narzędzie, gdy uczeń powie do której grupy należy)
 - Zapis faktów → memory.remember (args.kind: short|long) — proaktywnie, bez prośby ucznia
 - Wyszukiwanie w internecie (aktualne info, źródła, weryfikacja) → web.search (args.query)
 
@@ -71,9 +73,12 @@ Dostępne narzędzia:
 - datetime.now — data i czas (Warszawa; zwykle niepotrzebne — masz je w kontekście)
 - calc.eval — oblicz wyrażenie (args.expression)
 - file.send — wyślij plik (args.name, args.content, opcjonalnie args.mimeType)
-- timetable.today — dzisiejszy plan lekcji (domyślne grupy)
+- timetable.today — dzisiejszy plan lekcji
 - timetable.now — aktualna lub następna lekcja
 - timetable.day — plan na wybrany dzień (args.day: poniedziałek|wtorek|środa|czwartek|piątek)
+- timetable.getGroups — odczyt grup lekcyjnych
+- timetable.setGroups — ustaw grupy (args.language|english|pe|informatics: 1 lub 2;
+  language 1=hiszpański, 2=niemiecki)
 - fs.list — lista plików/katalogów (args.path, np. ~ lub ~/notes)
 - fs.read — odczyt pliku tekstowego (args.path, opcjonalnie args.offset, args.limit)
 - fs.write — zapis pliku (args.path, args.content, opcjonalnie args.createOnly)

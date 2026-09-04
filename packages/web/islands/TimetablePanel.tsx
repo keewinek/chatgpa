@@ -13,7 +13,7 @@ import {
   WEEKDAY_SHORT,
   weekdayFromDate,
 } from "@chatgpa/core";
-import { loadGroupPrefs, saveGroupPrefs } from "../lib/timetable-storage.ts";
+import { loadGroupPrefsAsync } from "../lib/timetable-storage.ts";
 import Icon from "./Icon.tsx";
 
 const WEEKDAYS: Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
@@ -24,195 +24,144 @@ interface TimetablePanelProps {
 }
 
 export default function TimetablePanel({ onBack, embedded = false }: TimetablePanelProps) {
-  const prefs = useSignal<GroupPrefs>(loadGroupPrefs());
-  const selectedDay = useSignal<Weekday>(weekdayFromDate(getWarsawNow()) ?? "mon");
+  const prefs = useSignal<GroupPrefs | null>(null);
   const nowTick = useSignal(0);
 
   useEffect(() => {
+    void loadGroupPrefsAsync().then((p) => {
+      prefs.value = p;
+    });
     const id = setInterval(() => {
       nowTick.value++;
-    }, 60_000);
+    }, 30_000);
     return () => clearInterval(id);
   }, []);
 
-  const current = () => getCurrentLesson(prefs.value);
-  const today = () => weekdayFromDate(getWarsawNow());
-  const now = () => getWarsawNow();
-
-  function setPref<K extends keyof GroupPrefs>(key: K, value: GroupPrefs[K]) {
-    const next = { ...prefs.value, [key]: value };
-    prefs.value = next;
-    saveGroupPrefs(next);
-  }
+  const current = () => prefs.value ? getCurrentLesson(prefs.value) : null;
+  const today = () => {
+    void nowTick.value;
+    return weekdayFromDate(getWarsawNow());
+  };
 
   function isCurrentSlot(day: Weekday, slot: number): boolean {
     void nowTick.value;
     const info = current();
-    return info.status === "during" && info.day === day && info.slot === slot;
+    return Boolean(info && info.status === "during" && info.day === day && info.slot === slot);
   }
 
-  function isToday(day: Weekday): boolean {
-    void nowTick.value;
-    return today() === day;
-  }
+  const todayKey = today();
 
   return (
-    <div class={`timetable${embedded ? " timetable--embedded" : ""}`}>
-      <header class="timetable-header">
+    <div class={`tt${embedded ? " tt--embedded" : ""}`}>
+      <header class="tt-toolbar">
         {!embedded && (
-          <button type="button" class="timetable-back" onClick={onBack} aria-label="Wróć do czatu">
-            <Icon name="arrow-left" /> Czat
+          <button type="button" class="tt-icon-btn" onClick={onBack} aria-label="Wróć" title="Wróć">
+            <Icon name="arrow-left" />
           </button>
         )}
-        <div class="timetable-header-text">
-          <h1 class="timetable-title">Plan lekcji</h1>
-          <p class="timetable-subtitle">
+        <div class="tt-toolbar-text">
+          <h1 class="tt-title">Plan lekcji</h1>
+          <p class="tt-meta">
             {TIMETABLE_META.className} · {TIMETABLE_META.school}
           </p>
         </div>
       </header>
 
-      <CurrentLessonCard info={current()} now={now()} />
+      <NowStrip info={current()} />
 
-      <section class="timetable-groups" aria-label="Grupy lekcyjne">
-        <h2 class="timetable-section-title">Twoje grupy</h2>
-        <div class="timetable-group-grid">
-          <GroupToggle
-            label="Język obcy"
-            options={["Hiszpański (1)", "Niemiecki (2)"]}
-            value={prefs.value.language}
-            onChange={(v) => setPref("language", v as 1 | 2)}
-          />
-          <GroupToggle
-            label="Angielski"
-            options={["Grupa 1", "Grupa 2"]}
-            value={prefs.value.english}
-            onChange={(v) => setPref("english", v as 1 | 2)}
-          />
-          <GroupToggle
-            label="WF"
-            options={["Grupa 1", "Grupa 2"]}
-            value={prefs.value.pe}
-            onChange={(v) => setPref("pe", v as 1 | 2)}
-          />
-          <GroupToggle
-            label="Informatyka"
-            options={["Grupa 1", "Grupa 2"]}
-            value={prefs.value.informatics}
-            onChange={(v) => setPref("informatics", v as 1 | 2)}
-          />
-        </div>
-      </section>
-
-      <nav class="timetable-days" aria-label="Dni tygodnia">
-        {WEEKDAYS.map((day) => (
-          <button
-            key={day}
-            type="button"
-            class={`timetable-day-tab${
-              selectedDay.value === day ? " timetable-day-tab--active" : ""
-            }${isToday(day) ? " timetable-day-tab--today" : ""}`}
-            onClick={() => {
-              selectedDay.value = day;
-            }}
-          >
-            <span class="timetable-day-short">{WEEKDAY_SHORT[day]}</span>
-            <span class="timetable-day-full">{WEEKDAY_LABELS[day]}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div class="timetable-lessons">
-        {getDayLessons(selectedDay.value, prefs.value).map((entry) => (
-          <LessonCard
-            key={entry.slot}
-            slot={entry.slot}
-            time={entry.time}
-            lesson={entry.lesson}
-            active={isCurrentSlot(selectedDay.value, entry.slot)}
-            today={isToday(selectedDay.value)}
-          />
-        ))}
-      </div>
-
-      <details class="timetable-week-overview">
-        <summary>Pełny tydzień</summary>
-        <div class="timetable-grid-wrap">
-          <table class="timetable-grid">
-            <thead>
-              <tr>
-                <th>Godz.</th>
-                {WEEKDAYS.map((day) => (
-                  <th
-                    key={day}
-                    class={isToday(day) ? "timetable-grid-th--today" : ""}
-                  >
-                    {WEEKDAY_SHORT[day]}
+      {!prefs.value
+        ? <p class="tt-loading">Ładowanie…</p>
+        : (
+          <div class="tt-grid-wrap" role="region" aria-label="Tydzień">
+            <table class="tt-grid">
+              <thead>
+                <tr>
+                  <th class="tt-grid-corner" scope="col">
+                    <span class="tt-sr">Godzina</span>
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {LESSON_SLOTS.map((time, i) => {
-                const slot = i + 1;
-                return (
-                  <tr key={slot}>
-                    <td class="timetable-grid-time">
-                      {time.start}
-                    </td>
-                    {WEEKDAYS.map((day) => {
-                      const entry = getDayLessons(day, prefs.value).find((e) => e.slot === slot);
-                      const lesson = entry?.lesson;
-                      const active = isCurrentSlot(day, slot);
-                      const color = lesson ? SUBJECT_COLORS[lesson.subject] ?? "var(--muted)" : "";
-                      return (
-                        <td
-                          key={day}
-                          class={`timetable-grid-cell${
-                            active ? " timetable-grid-cell--active" : ""
-                          }${isToday(day) ? " timetable-grid-cell--today" : ""}${
-                            !lesson ? " timetable-grid-cell--empty" : ""
-                          }`}
-                          style={lesson
-                            ? { "--subject-color": color } as Record<string, string>
-                            : undefined}
-                        >
-                          {lesson
-                            ? (
-                              <>
-                                <span class="timetable-grid-subject">{lesson.short}</span>
-                                <span class="timetable-grid-room">{lesson.room}</span>
-                              </>
-                            )
-                            : "—"}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </details>
+                  {WEEKDAYS.map((day) => (
+                    <th
+                      key={day}
+                      scope="col"
+                      class={`tt-grid-day${todayKey === day ? " tt-grid-day--today" : ""}`}
+                    >
+                      <span class="tt-grid-day-short">{WEEKDAY_SHORT[day]}</span>
+                      <span class="tt-grid-day-full">{WEEKDAY_LABELS[day]}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {LESSON_SLOTS.map((time, i) => {
+                  const slot = i + 1;
+                  return (
+                    <tr key={slot}>
+                      <th class="tt-grid-time" scope="row">
+                        <span class="tt-grid-time-start">{time.start}</span>
+                        <span class="tt-grid-time-end">{time.end}</span>
+                      </th>
+                      {WEEKDAYS.map((day) => {
+                        const entry = getDayLessons(day, prefs.value!).find((e) => e.slot === slot);
+                        const lesson = entry?.lesson ?? null;
+                        const active = isCurrentSlot(day, slot);
+                        const color = lesson
+                          ? SUBJECT_COLORS[lesson.subject] ?? "var(--accent)"
+                          : undefined;
+                        return (
+                          <td
+                            key={day}
+                            class={[
+                              "tt-cell",
+                              lesson ? "tt-cell--lesson" : "tt-cell--empty",
+                              active ? "tt-cell--now" : "",
+                              todayKey === day ? "tt-cell--today" : "",
+                            ].filter(Boolean).join(" ")}
+                            style={color
+                              ? { "--subject-color": color } as Record<string, string>
+                              : undefined}
+                            title={lesson
+                              ? `${lesson.subject} · ${lesson.teacher} · sala ${lesson.room}`
+                              : undefined}
+                          >
+                            {lesson
+                              ? (
+                                <>
+                                  <span class="tt-cell-subject">{lesson.short}</span>
+                                  <span class="tt-cell-room">{lesson.room}</span>
+                                </>
+                              )
+                              : <span class="tt-cell-dash">·</span>}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
     </div>
   );
 }
 
-function CurrentLessonCard({
+function NowStrip({
   info,
-  now,
 }: {
-  info: ReturnType<typeof getCurrentLesson>;
-  now: Date;
+  info: ReturnType<typeof getCurrentLesson> | null;
 }) {
-  const timeStr = now.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+  if (!info) return null;
+
+  const timeStr = getWarsawNow().toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   if (info.status === "weekend") {
     return (
-      <div class="timetable-now timetable-now--weekend">
-        <span class="timetable-now-label">Weekend</span>
-        <p class="timetable-now-text">Brak lekcji — odpocznij!</p>
+      <div class="tt-now tt-now--muted">
+        <span class="tt-now-time">{timeStr}</span>
+        <span class="tt-now-text">Weekend — brak lekcji</span>
       </div>
     );
   }
@@ -220,119 +169,37 @@ function CurrentLessonCard({
   if (info.status === "during" && info.lesson && info.time) {
     const color = SUBJECT_COLORS[info.lesson.subject] ?? "var(--accent)";
     return (
-      <div
-        class="timetable-now timetable-now--live"
-        style={{ "--subject-color": color } as Record<string, string>}
-      >
-        <div class="timetable-now-badge">Teraz trwa</div>
-        <h2 class="timetable-now-subject">{info.lesson.subject}</h2>
-        <p class="timetable-now-meta">
-          {info.time.start}–{info.time.end} · sala {info.lesson.room} · {info.lesson.teacher}
-        </p>
+      <div class="tt-now tt-now--live" style={{ "--subject-color": color } as Record<string, string>}>
+        <span class="tt-now-time">{timeStr}</span>
+        <span class="tt-now-text">
+          <strong>{info.lesson.subject}</strong>
+          {" · "}
+          {info.time.start}–{info.time.end}
+          {" · sala "}
+          {info.lesson.room}
+        </span>
       </div>
     );
   }
 
   if (info.nextLesson) {
-    const { lesson, time, slot } = info.nextLesson;
-    const dayLabel = WEEKDAY_LABELS[info.nextLesson.day];
-    const color = SUBJECT_COLORS[lesson.subject] ?? "var(--accent)";
+    const { lesson, time, slot, day } = info.nextLesson;
     return (
-      <div class="timetable-now" style={{ "--subject-color": color } as Record<string, string>}>
-        <span class="timetable-now-label">Teraz {timeStr}</span>
-        <h2 class="timetable-now-subject">Następna: {lesson.subject}</h2>
-        <p class="timetable-now-meta">
-          {dayLabel}, lekcja {slot} · {time.start}–{time.end} · sala {lesson.room}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div class="timetable-now timetable-now--done">
-      <span class="timetable-now-label">Teraz {timeStr}</span>
-      <p class="timetable-now-text">Koniec lekcji na ten tydzień</p>
-    </div>
-  );
-}
-
-function GroupToggle({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: [string, string];
-  value: 1 | 2;
-  onChange: (v: 1 | 2) => void;
-}) {
-  return (
-    <div class="timetable-group">
-      <span class="timetable-group-label">{label}</span>
-      <div class="timetable-group-btns">
-        {([1, 2] as const).map((n) => (
-          <button
-            key={n}
-            type="button"
-            class={`timetable-group-btn${value === n ? " timetable-group-btn--active" : ""}`}
-            onClick={() => onChange(n)}
-          >
-            {options[n - 1]}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LessonCard({
-  slot,
-  time,
-  lesson,
-  active,
-  today,
-}: {
-  slot: number;
-  time: { start: string; end: string };
-  lesson: { subject: string; short: string; teacher: string; room: string } | null;
-  active: boolean;
-  today: boolean;
-}) {
-  if (!lesson) {
-    return (
-      <div
-        class={`timetable-lesson timetable-lesson--empty${today ? " timetable-lesson--today" : ""}`}
-      >
-        <div class="timetable-lesson-time">
-          <span class="timetable-lesson-slot">{slot}</span>
-          <span>{time.start}–{time.end}</span>
-        </div>
-        <span class="timetable-lesson-empty-label">Wolne</span>
-      </div>
-    );
-  }
-
-  const color = SUBJECT_COLORS[lesson.subject] ?? "var(--accent)";
-
-  return (
-    <div
-      class={`timetable-lesson${active ? " timetable-lesson--active" : ""}${
-        today ? " timetable-lesson--today" : ""
-      }`}
-      style={{ "--subject-color": color } as Record<string, string>}
-    >
-      <div class="timetable-lesson-time">
-        <span class="timetable-lesson-slot">{slot}</span>
-        <span>{time.start}–{time.end}</span>
-      </div>
-      <div class="timetable-lesson-body">
-        <span class="timetable-lesson-subject">{lesson.subject}</span>
-        <span class="timetable-lesson-meta">
-          {lesson.teacher} · sala {lesson.room}
+      <div class="tt-now">
+        <span class="tt-now-time">{timeStr}</span>
+        <span class="tt-now-text">
+          Następna: <strong>{lesson.subject}</strong>
+          {" · "}
+          {WEEKDAY_LABELS[day]}, lekcja {slot}, {time.start}–{time.end}
         </span>
       </div>
-      {active && <span class="timetable-lesson-live">Na żywo</span>}
+    );
+  }
+
+  return (
+    <div class="tt-now tt-now--muted">
+      <span class="tt-now-time">{timeStr}</span>
+      <span class="tt-now-text">Koniec lekcji na ten tydzień</span>
     </div>
   );
 }

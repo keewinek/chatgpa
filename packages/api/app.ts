@@ -22,6 +22,7 @@ import { createNotificationRoutes } from "./notifications/routes.ts";
 import { createThreadRoutes } from "./threads/routes.ts";
 import { createMigrateRoutes } from "./migrate/routes.ts";
 import { isChatMessage, sanitizeGroupPrefs, sanitizeMemory } from "./validate.ts";
+import { resolveGroupPrefs } from "./fs/groups.ts";
 
 export function createApp() {
   const app = new Hono();
@@ -100,7 +101,8 @@ export function createApp() {
     }
 
     const memory = sanitizeMemory(body.memory);
-    const groupPrefs = sanitizeGroupPrefs(body.groupPrefs);
+    const fallbackPrefs = sanitizeGroupPrefs(body.groupPrefs);
+    const groupPrefs = await resolveGroupPrefs(getDb(), fallbackPrefs);
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -155,7 +157,7 @@ export function createApp() {
     const result = await runChat(body.messages, {
       forceModel: body.model,
       memory: sanitizeMemory(body.memory),
-      groupPrefs: sanitizeGroupPrefs(body.groupPrefs),
+      groupPrefs: await resolveGroupPrefs(getDb(), sanitizeGroupPrefs(body.groupPrefs)),
     });
 
     if (!result.ok) {

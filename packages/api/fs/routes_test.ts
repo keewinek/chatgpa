@@ -48,6 +48,14 @@ withTestDb("fs seeds .ui shortcuts next to data folders", async ({ db }) => {
   const parsed = JSON.parse(readBody.content) as { view: string; title: string };
   assertEquals(parsed.view, "calendar");
   assertEquals(parsed.title, "Kalendarz");
+
+  const groupsRes = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent("~/school/groups.json"),
+  );
+  assertEquals(groupsRes.status, 200);
+  const groupsBody = await groupsRes.json() as { content: string };
+  const groups = JSON.parse(groupsBody.content) as { language: number };
+  assertEquals(groups.language, 1);
 });
 
 withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {
