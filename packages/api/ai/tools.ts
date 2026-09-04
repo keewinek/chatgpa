@@ -769,7 +769,8 @@ async function runPlanAction(
             `Zapisano: ${plan.planFilePath}\n` +
             `Budżet: ${plan.usedMinutes}/${plan.budgetMinutes} min · bloki: ${plan.blocks.length}\n\n` +
             `${body}\n\n` +
-            `Przedstaw ten plan uczniowi naturalnie (po polsku). Możesz lekko skrócić, ale zachowaj bloki godzinowe.`,
+            `WAŻNE: przedstaw uczniowi DOKŁADNIE te godziny bloków (nie wymyślaj innych). ` +
+            `Możesz lekko skrócić tekst, ale zachowaj listę godzin 1:1.`,
         };
       } catch (err) {
         if (err instanceof PlanError) {

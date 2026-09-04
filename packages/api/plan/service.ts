@@ -274,6 +274,9 @@ export async function generateDailyPlan(
 
   await ensureFsSeeded(db);
 
+  // Usuń stare bloki AI zanim policzysz wolne okna — inaczej regeneracja widzi własne busy.
+  await removeStudyBlocksForDate(db, date);
+
   const horizonEnd = addDaysIso(date, 14);
   const events = await listEvents(db, date, horizonEnd);
   const exams = examsFromCalendar(events);

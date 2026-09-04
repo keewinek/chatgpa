@@ -13,6 +13,7 @@ import {
   DEFAULT_GROUP_PREFS,
   formatMinutesToTime,
   getDayLessons,
+  getWarsawNow,
   type GroupPrefs,
   monthFromDate,
   newEventId,
@@ -21,6 +22,7 @@ import {
   weekdayFromDate,
 } from "@chatgpa/core";
 import { getProfile } from "../profile/service.ts";
+import { formatWarsawIsoDate } from "../plan/distribute.ts";
 
 export const CALENDAR_VIRTUAL_ROOT = "~/calendar";
 
@@ -276,8 +278,25 @@ export async function computeFreeSlots(
     studyStartMin = parseTimeToMinutes("09:00");
   }
 
-  const studyEndMin = parseTimeToMinutes(profile.studyEndPreferred);
+  const studyEndPreferredMin = parseTimeToMinutes(profile.studyEndPreferred);
   const studyEndHardMin = parseTimeToMinutes(profile.studyEndHard);
+  let studyEndMin = studyEndPreferredMin;
+
+  // Dla „dziś”: nie planuj w przeszłości; gdy mało czasu do preferred — użyj hard end.
+  const today = formatWarsawIsoDate(getWarsawNow());
+  if (date === today) {
+    const now = getWarsawNow();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const soonBuffer = 5;
+    studyStartMin = Math.max(studyStartMin, nowMin + soonBuffer);
+    if (studyEndPreferredMin - studyStartMin < 30 && studyEndHardMin > studyStartMin) {
+      studyEndMin = studyEndHardMin;
+    }
+    if (studyStartMin >= studyEndMin) {
+      // Po oknie nauki — brak slotów dziś.
+      studyStartMin = studyEndMin;
+    }
+  }
 
   const events = await listEvents(db, date, date);
   const busy: BusyInterval[] = [];

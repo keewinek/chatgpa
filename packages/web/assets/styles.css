@@ -1310,11 +1310,59 @@ body {
   .chat-header {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
+    gap: 0.35rem;
+  }
+
+  .chat-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+  }
+
+  .chat-header-actions {
+    gap: 0.15rem;
+    flex-wrap: nowrap;
+  }
+
+  .chat-header-actions .chat-icon-btn {
+    width: 2.1rem;
+    height: 2.1rem;
   }
 
   .chat-header-actions .chat-librus-sync {
     padding: 0 0.4rem;
     font-size: 0.68rem;
+  }
+
+  .chat-prompts {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 22rem;
+    padding: 0 0.25rem;
+  }
+
+  .chat-prompt {
+    width: 100%;
+    text-align: left;
+    border-radius: 0.85rem;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .chat-composer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .chat-empty {
+    padding: 1.5rem 0.75rem 1rem;
+    gap: 1.25rem;
+    justify-content: flex-start;
+    padding-top: 2rem;
+  }
+
+  .chat-empty-title {
+    font-size: clamp(1.45rem, 7vw, 1.85rem);
   }
 }
 
@@ -1935,14 +1983,15 @@ body {
   height: 100%;
 }
 
-.chat-app-split.split-panels--narrow .split-panels__primary {
+/* Only collapse the chat sidebar primary — not nested splits (files tree). */
+.chat-app-split.split-panels--narrow > .split-panels__primary {
   position: absolute;
   width: 0;
   height: 0;
   overflow: visible;
 }
 
-.chat-app-split.split-panels--narrow .split-panels__secondary {
+.chat-app-split.split-panels--narrow > .split-panels__secondary {
   height: 100%;
 }
 
@@ -1977,18 +2026,25 @@ body {
 @media (max-width: 768px) {
   .files-panel:not(.files-panel--tree-collapsed) .files-body.split-panels--narrow {
     display: block;
+    position: relative;
   }
 
-  .files-panel:not(.files-panel--tree-collapsed) .files-body.split-panels--narrow .split-panels__primary {
+  .files-panel:not(.files-panel--tree-collapsed) .files-body.split-panels--narrow > .split-panels__primary {
     position: absolute;
     z-index: 30;
-    top: 2.75rem;
+    top: 0;
     left: 0;
     bottom: 0;
     width: min(18rem, 86vw);
+    height: auto;
+    overflow: hidden;
     background: var(--bg-sidebar);
     border-right: 1px solid var(--line);
     box-shadow: var(--shadow-md);
+  }
+
+  .files-panel:not(.files-panel--tree-collapsed) .files-body.split-panels--narrow > .split-panels__secondary {
+    height: 100%;
   }
 
   .files-panel:not(.files-panel--tree-collapsed) .files-tree-backdrop {

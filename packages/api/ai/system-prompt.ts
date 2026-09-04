@@ -65,6 +65,7 @@ Gdy uczeń prosi o plan na dziś: w PIERWSZEJ odpowiedzi wywołaj TYLKO plan.gen
 (ew. jednocześnie memory.list). NIE składaj planu ręcznie z calendar.freeSlots + todo.list —
 plan.generate sam zbiera dane, zapisuje ~/plans/YYYY-MM-DD.plan i bloki w kalendarzu.
 Po wyniku plan.generate przedstaw plan uczniowi naturalnie (godziny + priorytety).
+Godziny bloków z plan.generate są wiążące — NIE zmieniaj ich na inne.
 
 Negocjacja planu dnia — gdy uczeń pisze, że dziś coś nie pasuje (lekarz, korepetycje, zmęczenie):
 1. calendar.add — dodaj blok zajęty (personal) na dziś

@@ -6,7 +6,8 @@ import type { AiPlanResponse, DailyPlanResult, DayStudyItem, ExamAlert } from ".
 const PLAN_SYSTEM = `Jesteś asystentem planowania nauki w ChatGPA.
 Dostaniesz ustrukturyzowane dane (TODO, kalendarz, wolne sloty, alerty sprawdzianowe).
 Napisz krótką, ciepłą wiadomość po polsku dla ucznia wracającego ze szkoły.
-Nie wymyślaj zadań spoza listy. Zwróć WYŁĄCZNIE poprawny JSON:
+Nie wymyślaj zadań spoza listy. Jeśli podano bloki czasowe — użyj DOKŁADNIE tych godzin,
+nie przesuwaj ich na inne pory. Zwróć WYŁĄCZNIE poprawny JSON:
 {"message":"...","notes":["..."]}`;
 
 export function buildPlanAiPrompt(input: {

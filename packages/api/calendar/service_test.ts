@@ -112,6 +112,25 @@ withTestDb("freeSlots ignores homework date-range without times", async ({ db })
   }
 });
 
+withTestDb("freeSlots for today starts near now, not in the past", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const warsawDate = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Warsaw" }).format(
+      new Date(),
+    );
+    const now = getWarsawNow();
+    const slots = await computeFreeSlots(db, warsawDate, DEFAULT_GROUP_PREFS);
+    assertEquals(slots.date, warsawDate);
+    const [h, m] = slots.studyWindowStart.split(":").map(Number);
+    const start = h! * 60 + m!;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    // Start should be at/after "now" (with the +5 buffer baked into computeFreeSlots).
+    assertEquals(start >= nowMin, true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
 Deno.test("freeSlots uses today's date format", () => {
   const now = getWarsawNow();
   const date = now.toISOString().slice(0, 10);
