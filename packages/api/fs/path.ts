@@ -63,6 +63,7 @@ export function guessMimeType(filename: string): string | null {
     profile: "application/yaml",
     subject: "application/json",
     json: "application/json",
+    ui: "application/x-chatgpa-ui",
     txt: "text/plain",
     pdf: "application/pdf",
   };

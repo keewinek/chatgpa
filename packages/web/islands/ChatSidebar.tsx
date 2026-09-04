@@ -9,15 +9,13 @@ interface ChatSidebarProps {
   loading: boolean;
   open: boolean;
   memory: MemoryEntry[];
-  view: "chat" | "timetable" | "files" | "todo" | "notes" | "calendar" | "profile";
+  filesActive: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
   onClearShortMemory: () => void;
-  onViewChange: (
-    view: "chat" | "timetable" | "files" | "todo" | "notes" | "calendar" | "profile",
-  ) => void;
+  onOpenFiles: () => void;
 }
 
 export default function ChatSidebar({
@@ -26,13 +24,13 @@ export default function ChatSidebar({
   loading,
   open,
   memory,
-  view,
+  filesActive,
   onSelect,
   onNew,
   onDelete,
   onClose,
   onClearShortMemory,
-  onViewChange,
+  onOpenFiles,
 }: ChatSidebarProps) {
   const memoryTab = useSignal<"short" | "long">("long");
 
@@ -53,52 +51,13 @@ export default function ChatSidebar({
           <nav class="sidebar-nav" aria-label="Nawigacja">
             <button
               type="button"
-              class={`sidebar-nav-btn${view === "chat" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("chat")}
+              class={`sidebar-nav-btn sidebar-nav-btn--files${
+                filesActive ? " sidebar-nav-btn--active" : ""
+              }`}
+              onClick={onOpenFiles}
             >
-              💬 Czat
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "timetable" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("timetable")}
-            >
-              📅 Plan lekcji
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "calendar" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("calendar")}
-            >
-              🗓 Kalendarz
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "profile" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("profile")}
-            >
-              ⏱ Profil czasu
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "todo" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("todo")}
-            >
-              ✅ TODO
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "notes" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("notes")}
-            >
-              📝 Notatki
-            </button>
-            <button
-              type="button"
-              class={`sidebar-nav-btn${view === "files" ? " sidebar-nav-btn--active" : ""}`}
-              onClick={() => onViewChange("files")}
-            >
-              📁 Pliki
+              <span class="sidebar-nav-btn-icon" aria-hidden="true">◇</span>
+              Pliki
             </button>
           </nav>
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
@@ -111,7 +70,9 @@ export default function ChatSidebar({
           {sessions.map((session) => (
             <div
               key={session.id}
-              class={`sidebar-item${session.id === activeId ? " sidebar-item--active" : ""}`}
+              class={`sidebar-item${
+                !filesActive && session.id === activeId ? " sidebar-item--active" : ""
+              }`}
             >
               <button
                 type="button"

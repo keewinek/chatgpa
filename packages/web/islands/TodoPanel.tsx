@@ -13,6 +13,7 @@ import {
 
 interface TodoPanelProps {
   onBack: () => void;
+  embedded?: boolean;
 }
 
 const FILTERS: { id: TodoFilter; label: string }[] = [
@@ -23,7 +24,7 @@ const FILTERS: { id: TodoFilter; label: string }[] = [
   { id: "all", label: "Wszystkie" },
 ];
 
-export default function TodoPanel({ onBack }: TodoPanelProps) {
+export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) {
   const loading = useSignal(true);
   const error = useSignal<string | null>(null);
   const tasks = useSignal<Task[]>([]);
@@ -86,14 +87,16 @@ export default function TodoPanel({ onBack }: TodoPanelProps) {
   }
 
   return (
-    <div class="todo-panel">
+    <div class={`todo-panel${embedded ? " todo-panel--embedded" : ""}`}>
       <header class="todo-header">
-        <button type="button" class="todo-back" onClick={onBack}>
-          ← Czat
-        </button>
+        {!embedded && (
+          <button type="button" class="todo-back" onClick={onBack}>
+            ← Czat
+          </button>
+        )}
         <div class="todo-header-text">
-          <h2 class="todo-title">Globalna TODO</h2>
-          <p class="todo-subtitle">~/todo/global.todo · sync z serwerem</p>
+          <h2 class="todo-title">TODO</h2>
+          <p class="todo-subtitle">~/todo/global.todo</p>
         </div>
         <button
           type="button"

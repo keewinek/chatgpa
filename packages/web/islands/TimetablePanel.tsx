@@ -19,9 +19,10 @@ const WEEKDAYS: Weekday[] = ["mon", "tue", "wed", "thu", "fri"];
 
 interface TimetablePanelProps {
   onBack: () => void;
+  embedded?: boolean;
 }
 
-export default function TimetablePanel({ onBack }: TimetablePanelProps) {
+export default function TimetablePanel({ onBack, embedded = false }: TimetablePanelProps) {
   const prefs = useSignal<GroupPrefs>(loadGroupPrefs());
   const selectedDay = useSignal<Weekday>(weekdayFromDate(getWarsawNow()) ?? "mon");
   const nowTick = useSignal(0);
@@ -55,11 +56,13 @@ export default function TimetablePanel({ onBack }: TimetablePanelProps) {
   }
 
   return (
-    <div class="timetable">
+    <div class={`timetable${embedded ? " timetable--embedded" : ""}`}>
       <header class="timetable-header">
-        <button type="button" class="timetable-back" onClick={onBack} aria-label="Wróć do czatu">
-          ← Czat
-        </button>
+        {!embedded && (
+          <button type="button" class="timetable-back" onClick={onBack} aria-label="Wróć do czatu">
+            ← Czat
+          </button>
+        )}
         <div class="timetable-header-text">
           <h1 class="timetable-title">Plan lekcji</h1>
           <p class="timetable-subtitle">

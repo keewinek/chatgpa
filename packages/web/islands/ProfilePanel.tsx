@@ -6,9 +6,10 @@ import { fetchProfile, formatStudyExample, saveProfile } from "../lib/profile-ap
 
 interface ProfilePanelProps {
   onBack: () => void;
+  embedded?: boolean;
 }
 
-export default function ProfilePanel({ onBack }: ProfilePanelProps) {
+export default function ProfilePanel({ onBack, embedded = false }: ProfilePanelProps) {
   const profile = useSignal<TimeProfile>({ ...DEFAULT_TIME_PROFILE });
   const loading = useSignal(true);
   const saving = useSignal(false);
@@ -52,11 +53,13 @@ export default function ProfilePanel({ onBack }: ProfilePanelProps) {
   }
 
   return (
-    <div class="profile-panel">
+    <div class={`profile-panel${embedded ? " profile-panel--embedded" : ""}`}>
       <header class="profile-header">
-        <button type="button" class="profile-back" onClick={onBack}>
-          ← Czat
-        </button>
+        {!embedded && (
+          <button type="button" class="profile-back" onClick={onBack}>
+            ← Czat
+          </button>
+        )}
         <div class="profile-header-text">
           <h2 class="profile-title">Profil czasu</h2>
           <p class="profile-subtitle">~/profile/me.profile</p>

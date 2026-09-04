@@ -15,6 +15,16 @@ export const SEED_DIRECTORIES = [
   "school/librus",
 ] as const;
 
+/** Polish app folders with `.ui` launcher shortcuts. */
+export const SEED_UI_SHORTCUTS = [
+  { dir: "Kalendarz", file: "calendar.ui", view: "calendar", title: "Kalendarz" },
+  { dir: "Plan lekcji", file: "timetable.ui", view: "timetable", title: "Plan lekcji" },
+  { dir: "TODO", file: "todo.ui", view: "todo", title: "TODO" },
+  { dir: "Notatki", file: "notes.ui", view: "notes", title: "Notatki" },
+  { dir: "Profil", file: "profile.ui", view: "profile", title: "Profil czasu" },
+  { dir: "Pomodoro", file: "pomodoro.ui", view: "pomodoro", title: "Pomodoro" },
+] as const;
+
 export async function isFsSeeded(db: AppDatabase): Promise<boolean> {
   const rows = await db
     .select({ id: fileNodes.id })
@@ -24,26 +34,74 @@ export async function isFsSeeded(db: AppDatabase): Promise<boolean> {
   return rows.length > 0;
 }
 
+async function ensureDirectory(db: AppDatabase, internalPath: string, now: string): Promise<void> {
+  await db
+    .insert(fileNodes)
+    .values({
+      id: nodeIdForPath(internalPath),
+      path: internalPath,
+      kind: "directory",
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing();
+}
+
+async function ensureFile(
+  db: AppDatabase,
+  internalPath: string,
+  content: string,
+  mimeType: string,
+  now: string,
+): Promise<void> {
+  await db
+    .insert(fileNodes)
+    .values({
+      id: nodeIdForPath(internalPath),
+      path: internalPath,
+      kind: "file",
+      content,
+      mimeType,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoNothing();
+}
+
 export async function seedFs(db: AppDatabase): Promise<void> {
   const now = new Date().toISOString();
 
   for (const rel of SEED_DIRECTORIES) {
-    const path = `${USER_ROOT}/${rel}`;
-    await db
-      .insert(fileNodes)
-      .values({
-        id: nodeIdForPath(path),
-        path,
-        kind: "directory",
-        createdAt: now,
-        updatedAt: now,
-      })
-      .onConflictDoNothing();
+    const segments = rel.split("/");
+    let path = USER_ROOT;
+    for (const segment of segments) {
+      path = `${path}/${segment}`;
+      await ensureDirectory(db, path, now);
+    }
+  }
+}
+
+/** Idempotent — safe on every request so existing DBs get new shortcuts. */
+export async function seedUiShortcuts(db: AppDatabase): Promise<void> {
+  const now = new Date().toISOString();
+
+  for (const shortcut of SEED_UI_SHORTCUTS) {
+    const dirPath = `${USER_ROOT}/${shortcut.dir}`;
+    await ensureDirectory(db, dirPath, now);
+    const filePath = `${dirPath}/${shortcut.file}`;
+    const content = JSON.stringify(
+      { view: shortcut.view, title: shortcut.title },
+      null,
+      2,
+    ) + "\n";
+    await ensureFile(db, filePath, content, "application/x-chatgpa-ui", now);
   }
 }
 
 /** Ensure virtual FS exists — idempotent, safe on every request. */
 export async function ensureFsSeeded(db: AppDatabase): Promise<void> {
-  if (await isFsSeeded(db)) return;
-  await seedFs(db);
+  if (!(await isFsSeeded(db))) {
+    await seedFs(db);
+  }
+  await seedUiShortcuts(db);
 }

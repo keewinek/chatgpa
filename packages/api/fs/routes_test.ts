@@ -1,7 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { Hono } from "hono";
 import { createFsRoutes } from "./routes.ts";
-import { SEED_DIRECTORIES } from "./seed.ts";
 import { withTestDb } from "../db/test-helpers.ts";
 
 withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
@@ -12,19 +11,48 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
   assertEquals(res.status, 200);
   const body = await res.json() as { path: string; entries: { name: string; kind: string }[] };
   assertEquals(body.path, "~");
-  assertEquals(body.entries.length, SEED_DIRECTORIES.length);
   assertEquals(body.entries.every((e) => e.kind === "directory"), true);
-  const names = body.entries.map((e) => e.name).sort();
-  assertEquals(names, [
+  const names = body.entries.map((e) => e.name).sort((a, b) => a.localeCompare(b, "pl"));
+  for (const dir of [
     "books",
     "calendar",
+    "Kalendarz",
     "memory",
+    "Notatki",
     "notes",
+    "Plan lekcji",
     "plans",
+    "Pomodoro",
+    "Profil",
     "profile",
     "school",
+    "TODO",
     "todo",
-  ]);
+  ]) {
+    assertEquals(names.includes(dir), true, `missing seed dir: ${dir}`);
+  }
+});
+
+withTestDb("fs seeds .ui shortcuts in Polish app folders", async ({ db }) => {
+  const app = new Hono();
+  app.route("/api/fs", createFsRoutes(() => db));
+
+  const listRes = await app.request(
+    "/api/fs?path=" + encodeURIComponent("~/Kalendarz"),
+  );
+  assertEquals(listRes.status, 200);
+  const listBody = await listRes.json() as { entries: { name: string; kind: string }[] };
+  assertEquals(listBody.entries.some((e) => e.name === "calendar.ui" && e.kind === "file"), true);
+
+  const readRes = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent("~/Kalendarz/calendar.ui"),
+  );
+  assertEquals(readRes.status, 200);
+  const readBody = await readRes.json() as { content: string; mimeType: string };
+  assertEquals(readBody.mimeType, "application/x-chatgpa-ui");
+  const parsed = JSON.parse(readBody.content) as { view: string; title: string };
+  assertEquals(parsed.view, "calendar");
+  assertEquals(parsed.title, "Kalendarz");
 });
 
 withTestDb("fs write, read, mkdir, delete flow", async ({ db }) => {

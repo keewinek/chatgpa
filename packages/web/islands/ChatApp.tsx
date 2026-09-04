@@ -5,13 +5,8 @@ import ChatBubble from "./ChatBubble.tsx";
 import ChatComposer from "./ChatComposer.tsx";
 import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
-import TimetablePanel from "./TimetablePanel.tsx";
 import FilesPanel from "./FilesPanel.tsx";
-import NotesPanel from "./NotesPanel.tsx";
-import TodoPanel from "./TodoPanel.tsx";
 import PomodoroPanel from "./PomodoroPanel.tsx";
-import CalendarPanel from "./CalendarPanel.tsx";
-import ProfilePanel from "./ProfilePanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
 import {
@@ -58,6 +53,7 @@ import {
   registerWebPush,
 } from "../lib/notifications-api.ts";
 import type { AppNotification } from "@chatgpa/core";
+import { type UiView, viewFromSlash } from "../lib/ui-shortcuts.ts";
 
 function msgId() {
   return sessionId();
@@ -86,9 +82,8 @@ export default function ChatApp() {
   const loading = useSignal(false);
   const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
-  const view = useSignal<
-    "chat" | "timetable" | "files" | "todo" | "notes" | "calendar" | "profile"
-  >("chat");
+  const view = useSignal<"chat" | "files">("chat");
+  const filesUi = useSignal<UiView | null>(null);
   const notesInitialPath = useSignal<string | null>(null);
   const pomodoroOpen = useSignal(false);
   const pending = useSignal<PendingFile[]>([]);
@@ -305,16 +300,20 @@ export default function ChatApp() {
         pomodoroOpen.value = true;
         return;
       }
-      if (slash.command === "todo") {
-        view.value = "todo";
-        return;
-      }
-      if (slash.command === "notes") {
-        notesInitialPath.value = slash.notesPath ?? null;
-        view.value = "notes";
-        return;
-      }
       if (slash.command === "files") {
+        filesUi.value = null;
+        notesInitialPath.value = null;
+        view.value = "files";
+        return;
+      }
+      const ui = viewFromSlash(slash.command);
+      if (ui) {
+        if (slash.command === "notes") {
+          notesInitialPath.value = slash.notesPath ?? null;
+        } else {
+          notesInitialPath.value = null;
+        }
+        filesUi.value = ui;
         view.value = "files";
         return;
       }
@@ -345,14 +344,27 @@ export default function ChatApp() {
     const displayText = slash?.type === "prompt" ? slash.display : text;
 
     if (text === "/calendar" || text.startsWith("/calendar ")) {
-      view.value = "calendar";
+      filesUi.value = "calendar";
+      notesInitialPath.value = null;
+      view.value = "files";
       input.value = "";
       sidebarOpen.value = false;
       return;
     }
 
     if (text === "/profile" || text.startsWith("/profile ")) {
-      view.value = "profile";
+      filesUi.value = "profile";
+      notesInitialPath.value = null;
+      view.value = "files";
+      input.value = "";
+      sidebarOpen.value = false;
+      return;
+    }
+
+    if (text === "/timetable" || text.startsWith("/timetable ")) {
+      filesUi.value = "timetable";
+      notesInitialPath.value = null;
+      view.value = "files";
       input.value = "";
       sidebarOpen.value = false;
       return;
@@ -510,7 +522,7 @@ export default function ChatApp() {
         loading={loading.value}
         open={sidebarOpen.value}
         memory={memoryEntries.value}
-        view={view.value}
+        filesActive={view.value === "files"}
         onSelect={switchSession}
         onNew={newChat}
         onDelete={deleteChat}
@@ -518,74 +530,30 @@ export default function ChatApp() {
           sidebarOpen.value = false;
         }}
         onClearShortMemory={() => void handleClearShortMemory()}
-        onViewChange={(v) => {
-          view.value = v;
-          if (v !== "notes") notesInitialPath.value = null;
+        onOpenFiles={() => {
+          filesUi.value = null;
+          notesInitialPath.value = null;
+          view.value = "files";
           sidebarOpen.value = false;
         }}
       />
 
-      {view.value === "timetable"
-        ? (
-          <div class="chat-main">
-            <TimetablePanel
-              onBack={() => {
-                view.value = "chat";
-              }}
-            />
-          </div>
-        )
-        : view.value === "files"
+      {view.value === "files"
         ? (
           <div class="chat-main">
             <FilesPanel
-              onBack={() => {
-                view.value = "chat";
+              initialUi={filesUi.value}
+              notesInitialPath={notesInitialPath.value}
+              onInitialUiConsumed={() => {
+                filesUi.value = null;
               }}
-            />
-          </div>
-        )
-        : view.value === "todo"
-        ? (
-          <div class="chat-main">
-            <TodoPanel
-              onBack={() => {
-                view.value = "chat";
+              onOpenPomodoro={() => {
+                pomodoroOpen.value = true;
               }}
-            />
-          </div>
-        )
-        : view.value === "notes"
-        ? (
-          <div class="chat-main">
-            <NotesPanel
-              initialPath={notesInitialPath.value}
               onBack={() => {
                 view.value = "chat";
+                filesUi.value = null;
                 notesInitialPath.value = null;
-              }}
-            />
-          </div>
-        )
-        : view.value === "calendar"
-        ? (
-          <div class="chat-main">
-            <CalendarPanel
-              onBack={() => {
-                view.value = "chat";
-              }}
-              onOpenProfile={() => {
-                view.value = "profile";
-              }}
-            />
-          </div>
-        )
-        : view.value === "profile"
-        ? (
-          <div class="chat-main">
-            <ProfilePanel
-              onBack={() => {
-                view.value = "chat";
               }}
             />
           </div>
@@ -608,6 +576,19 @@ export default function ChatApp() {
                 <p class="chat-status">{status.value}</p>
               </div>
               <div class="chat-header-actions">
+                <button
+                  type="button"
+                  class="chat-timetable-btn"
+                  aria-label="Pliki"
+                  title="Pliki — skróty .ui"
+                  onClick={() => {
+                    filesUi.value = null;
+                    notesInitialPath.value = null;
+                    view.value = "files";
+                  }}
+                >
+                  ◇
+                </button>
                 <button
                   type="button"
                   class="chat-timetable-btn"

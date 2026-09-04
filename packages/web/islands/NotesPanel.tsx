@@ -14,6 +14,7 @@ import type { FsEntry } from "../lib/fs-api.ts";
 interface NotesPanelProps {
   onBack: () => void;
   initialPath?: string | null;
+  embedded?: boolean;
 }
 
 type TreeNode = {
@@ -23,7 +24,7 @@ type TreeNode = {
   loaded: boolean;
 };
 
-export default function NotesPanel({ onBack, initialPath }: NotesPanelProps) {
+export default function NotesPanel({ onBack, initialPath, embedded = false }: NotesPanelProps) {
   const loading = useSignal(true);
   const error = useSignal<string | null>(null);
   const tree = useSignal<TreeNode[]>([]);
@@ -221,14 +222,16 @@ export default function NotesPanel({ onBack, initialPath }: NotesPanelProps) {
   }, []);
 
   return (
-    <div class="notes-panel">
+    <div class={`notes-panel${embedded ? " notes-panel--embedded" : ""}`}>
       <header class="notes-header">
-        <button type="button" class="notes-back" onClick={onBack}>
-          ← Czat
-        </button>
+        {!embedded && (
+          <button type="button" class="notes-back" onClick={onBack}>
+            ← Czat
+          </button>
+        )}
         <div class="notes-header-text">
           <h1 class="notes-title">Notatki</h1>
-          <p class="notes-subtitle">~/notes/ · Markdown</p>
+          <p class="notes-subtitle">~/notes/</p>
         </div>
         <div class="notes-header-actions">
           <button

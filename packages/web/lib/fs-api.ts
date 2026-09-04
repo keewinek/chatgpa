@@ -62,6 +62,7 @@ export function entryIcon(entry: FsEntry): string {
     cal: "📅",
     plan: "📋",
     profile: "👤",
+    ui: "◇",
     json: "📊",
     pdf: "📕",
   };
