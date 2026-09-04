@@ -15,7 +15,7 @@ interface ChatComposerProps {
 
 function resizeTextarea(el: HTMLTextAreaElement) {
   el.style.height = "auto";
-  el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
 }
 
 export default function ChatComposer({
@@ -32,6 +32,7 @@ export default function ChatComposer({
   const [suggestions, setSuggestions] = useState<CommandEntry[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const showSuggestions = suggestions.length > 0 && text.startsWith("/") && !text.includes("\n");
+  const canSend = !loading && (Boolean(text.trim()) || pending.length > 0);
 
   useEffect(() => {
     if (textRef.current) resizeTextarea(textRef.current);
@@ -78,34 +79,35 @@ export default function ChatComposer({
       }}
       onDrop={onDrop}
     >
-      {pending.length > 0 && (
-        <div class="composer-attachments">
-          {pending.map((p) => (
-            <div key={p.id} class="composer-attachment">
-              {p.preview
-                ? <img class="composer-attachment-thumb" src={p.preview} alt={p.file.name} />
-                : (
-                  <span class="composer-attachment-icon">
-                    <Icon name="file" />
-                  </span>
-                )}
-              <span class="composer-attachment-name">{p.file.name}</span>
-              <button
-                type="button"
-                class="composer-attachment-remove"
-                aria-label="Usuń plik"
-                onClick={() => {
-                  releasePending(p);
-                  onRemovePending(p.id);
-                }}
-              >
-                <Icon name="xmark" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      <div class="composer-input-wrap">
+      <div class={`composer-shell${canSend ? " composer-shell--ready" : ""}`}>
+        {pending.length > 0 && (
+          <div class="composer-attachments">
+            {pending.map((p) => (
+              <div key={p.id} class="composer-attachment">
+                {p.preview
+                  ? <img class="composer-attachment-thumb" src={p.preview} alt={p.file.name} />
+                  : (
+                    <span class="composer-attachment-icon">
+                      <Icon name="file" />
+                    </span>
+                  )}
+                <span class="composer-attachment-name">{p.file.name}</span>
+                <button
+                  type="button"
+                  class="composer-attachment-remove"
+                  aria-label="Usuń plik"
+                  onClick={() => {
+                    releasePending(p);
+                    onRemovePending(p.id);
+                  }}
+                >
+                  <Icon name="xmark" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {showSuggestions && (
           <ul class="command-autocomplete" role="listbox" aria-label="Komendy slash">
             {suggestions.map((entry, i) => (
@@ -127,7 +129,71 @@ export default function ChatComposer({
             ))}
           </ul>
         )}
-        <div class="composer-row">
+
+        <textarea
+          ref={textRef}
+          class="chat-input"
+          rows={1}
+          placeholder="Zapytaj agenta…"
+          value={text}
+          onInput={(e) => {
+            const el = e.target as HTMLTextAreaElement;
+            onText(el.value);
+            resizeTextarea(el);
+          }}
+          onKeyDown={(e) => {
+            if (showSuggestions) {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setSelectedIdx((i) => Math.min(i + 1, suggestions.length - 1));
+                return;
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setSelectedIdx((i) => Math.max(i - 1, 0));
+                return;
+              }
+              if (e.key === "Tab" && suggestions[selectedIdx]) {
+                e.preventDefault();
+                applySuggestion(suggestions[selectedIdx]);
+                return;
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setSuggestions([]);
+                return;
+              }
+            }
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (showSuggestions && suggestions[selectedIdx]) {
+                applySuggestion(suggestions[selectedIdx]);
+                return;
+              }
+              onSend();
+            }
+          }}
+          onPaste={(e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            const files: File[] = [];
+            for (const item of items) {
+              if (item.kind === "file") {
+                const f = item.getAsFile();
+                if (f) files.push(f);
+              }
+            }
+            if (files.length) {
+              e.preventDefault();
+              const dt = new DataTransfer();
+              for (const f of files) dt.items.add(f);
+              onFiles(dt.files);
+            }
+          }}
+          disabled={loading}
+        />
+
+        <div class="composer-toolbar">
           <input
             ref={fileRef}
             type="file"
@@ -140,77 +206,21 @@ export default function ChatComposer({
             type="button"
             class="composer-file-btn"
             aria-label="Dodaj plik"
+            title="Dodaj plik"
             disabled={loading}
             onClick={() => fileRef.current?.click()}
           >
-            <Icon name="paperclip" />
+            <Icon name="plus" />
           </button>
-          <textarea
-            ref={textRef}
-            class="chat-input"
-            rows={1}
-            placeholder="Napisz wiadomość"
-            value={text}
-            onInput={(e) => {
-              const el = e.target as HTMLTextAreaElement;
-              onText(el.value);
-              resizeTextarea(el);
-            }}
-            onKeyDown={(e) => {
-              if (showSuggestions) {
-                if (e.key === "ArrowDown") {
-                  e.preventDefault();
-                  setSelectedIdx((i) => Math.min(i + 1, suggestions.length - 1));
-                  return;
-                }
-                if (e.key === "ArrowUp") {
-                  e.preventDefault();
-                  setSelectedIdx((i) => Math.max(i - 1, 0));
-                  return;
-                }
-                if (e.key === "Tab" && suggestions[selectedIdx]) {
-                  e.preventDefault();
-                  applySuggestion(suggestions[selectedIdx]);
-                  return;
-                }
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  setSuggestions([]);
-                  return;
-                }
-              }
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (showSuggestions && suggestions[selectedIdx]) {
-                  applySuggestion(suggestions[selectedIdx]);
-                  return;
-                }
-                onSend();
-              }
-            }}
-            onPaste={(e) => {
-              const items = e.clipboardData?.items;
-              if (!items) return;
-              const files: File[] = [];
-              for (const item of items) {
-                if (item.kind === "file") {
-                  const f = item.getAsFile();
-                  if (f) files.push(f);
-                }
-              }
-              if (files.length) {
-                e.preventDefault();
-                const dt = new DataTransfer();
-                for (const f of files) dt.items.add(f);
-                onFiles(dt.files);
-              }
-            }}
-            disabled={loading}
-          />
+          <span class="composer-hint">
+            <kbd>/</kbd> komendy
+            <span class="composer-hint-sep">·</span>
+            Enter wyślij
+          </span>
           <button
-            class="chat-send"
+            class={`chat-send${canSend ? " chat-send--ready" : ""}`}
             type="submit"
-            disabled={loading || (!text.trim() && !pending.length)}
+            disabled={!canSend}
             aria-label={loading ? "Wysyłanie" : "Wyślij"}
             title="Wyślij"
           >
