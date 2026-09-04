@@ -1,0 +1,9 @@
+# Working agreement
+
+After completing and verifying any change in this project, create a focused Git
+commit and push the current branch to its configured remote.
+
+- Include only files changed for the current request; do not include unrelated
+  working-tree changes.
+- Run relevant verification before committing when practical.
+- Report the commit hash and push result to the user.
