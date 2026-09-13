@@ -165,6 +165,29 @@ withTestDb("fs.grep via tools finds matches and reports misses", async ({ db }) 
   }
 });
 
+withTestDb("fs.write includes a diff summary in its output on overwrite", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    const created = await executeActions(
+      [{ tool: "fs.write", args: { path: "~/notes/a.md", content: "wersja 1" } }],
+      store,
+    );
+    assertEquals(created.results[0].output?.includes("Utworzono"), true);
+    assertEquals(created.results[0].output?.includes("wersja 1"), false);
+
+    const overwritten = await executeActions(
+      [{ tool: "fs.write", args: { path: "~/notes/a.md", content: "wersja 2" } }],
+      store,
+    );
+    assertEquals(overwritten.results[0].output?.includes("Zaktualizowano"), true);
+    assertEquals(overwritten.results[0].output?.includes("- wersja 1"), true);
+    assertEquals(overwritten.results[0].output?.includes("+ wersja 2"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
 withTestDb("memory.remember syncs long-term.memory file", async ({ db }) => {
   setDbForTests(db);
   try {

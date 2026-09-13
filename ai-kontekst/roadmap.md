@@ -52,7 +52,7 @@ Szczegóły promptów: [plan-implementacji.md](./plan-implementacji.md), epiki 1
 - [x] `fs.grep` / pełnotekstowe wyszukiwanie po `~/` (agent znajduje fakty bez zgadywania ścieżki)
 - [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` (most FS ↔ Claude Code)
 - [x] Fix: reanimacja soft-deleted wątków czatu (crash na duplicate-key przy migracji/tworzeniu)
-- [ ] Bezpieczne edycje: diff przed/po przy `fs.write`, prosty undo/historia wersji pliku
+- [x] Bezpieczne edycje: diff przed/po przy `fs.write`, prosty undo/historia wersji pliku
 - [ ] Polish do codziennego użytku: kosmetyczny 404 z GET-then-create przy tworzeniu wątków (patrz
       [decyzje.md](./decyzje.md), wpis 2026-09-13), pełny manualny przegląd paneli
 
@@ -82,7 +82,7 @@ solidne:
 - [x] Powiadomienie po szkole z planem na dziś
 - [x] Librus: oceny + plan lekcji
 - [x] `/clear short memory`, `/plan`, `/pomodoro` działają
-- [ ] Agent pracuje jak Cursor/Claude Code: długie rundy narzędzi, szuka po całym `~/`, pokazuje
+- [x] Agent pracuje jak Cursor/Claude Code: długie rundy narzędzi, szuka po całym `~/`, pokazuje
       diff i pozwala cofnąć zmianę pliku (Faza 4)
 
 ## Kontekst (wrzesień 2026)

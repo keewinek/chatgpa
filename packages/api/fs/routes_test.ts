@@ -165,6 +165,50 @@ withTestDb("fs write revives soft-deleted path", async ({ db }) => {
   assertEquals(readBody.content, "v2 after delete");
 });
 
+withTestDb("fs history + restore flow (diff, undo)", async ({ db }) => {
+  const app = new Hono();
+  app.route("/api/fs", createFsRoutes(() => db));
+  const path = "~/notes/undo-me.md";
+
+  const created = await app.request("/api/fs/file", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, content: "wersja 1" }),
+  });
+  const createdBody = await created.json() as { diff: string | null };
+  assertEquals(createdBody.diff, null);
+
+  const overwritten = await app.request("/api/fs/file", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, content: "wersja 2" }),
+  });
+  const overwrittenBody = await overwritten.json() as { diff: string | null };
+  assertEquals(overwrittenBody.diff?.includes("- wersja 1"), true);
+  assertEquals(overwrittenBody.diff?.includes("+ wersja 2"), true);
+
+  const historyRes = await app.request(
+    "/api/fs/file/history?path=" + encodeURIComponent(path),
+  );
+  assertEquals(historyRes.status, 200);
+  const historyBody = await historyRes.json() as { versions: { preview: string }[] };
+  assertEquals(historyBody.versions.length, 1);
+  assertEquals(historyBody.versions[0].preview, "wersja 1");
+
+  const restoreRes = await app.request("/api/fs/file/restore", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  assertEquals(restoreRes.status, 200);
+
+  const readAfterUndo = await app.request(
+    "/api/fs/file?path=" + encodeURIComponent(path),
+  );
+  const readAfterUndoBody = await readAfterUndo.json() as { content: string };
+  assertEquals(readAfterUndoBody.content, "wersja 1");
+});
+
 withTestDb("fs rejects path traversal", async ({ db }) => {
   const app = new Hono();
   app.route("/api/fs", createFsRoutes(() => db));

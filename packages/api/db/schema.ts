@@ -1,5 +1,5 @@
 import type { NotificationChatPrefill, NotificationKind, NotificationPayload } from "@chatgpa/core";
-import { date, integer, jsonb, pgTable, real, text, timestamp } from "drizzle-orm/pg-core";
+import { date, integer, jsonb, pgTable, real, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 /** Shared sync columns — updatedAt is the pull cursor. */
 const syncMeta = {
@@ -91,6 +91,20 @@ export const fileNodes = pgTable("file_nodes", {
   ...syncMeta,
 });
 
+/**
+ * Last few snapshots of a file's previous content, for fs.write diff + undo.
+ * Ordered by `seq` (not `createdAt`) — writes in a tight loop can share the same
+ * millisecond timestamp, which would make ordering/pruning ambiguous.
+ */
+export const fileVersions = pgTable("file_versions", {
+  id: text("id").primaryKey(),
+  seq: serial("seq").notNull(),
+  path: text("path").notNull(),
+  content: text("content"),
+  mimeType: text("mime_type"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }).notNull().defaultNow(),
+});
+
 export const notifications = pgTable("notifications", {
   id: text("id").primaryKey(),
   kind: text("kind").$type<NotificationKind>().notNull(),
@@ -117,6 +131,7 @@ export const schema = {
   memoryEntries,
   tasks,
   fileNodes,
+  fileVersions,
   notifications,
   pushSubscriptions,
 };
@@ -127,5 +142,6 @@ export type ChatMessageRow = typeof chatMessages.$inferSelect;
 export type MemoryEntryRow = typeof memoryEntries.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type FileNodeRow = typeof fileNodes.$inferSelect;
+export type FileVersionRow = typeof fileVersions.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;

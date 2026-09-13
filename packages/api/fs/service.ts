@@ -1,6 +1,6 @@
-import { and, eq, ilike, isNull, like, not, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, isNull, like, not, or, sql } from "drizzle-orm";
 import type { AppDatabase } from "../db/client.ts";
-import { fileNodes } from "../db/schema.ts";
+import { fileNodes, fileVersions } from "../db/schema.ts";
 import { ensureFsSeeded } from "./seed.ts";
 import {
   guessMimeType,
@@ -238,12 +238,103 @@ export async function fsGrep(
   return { query: trimmedQuery, matches, truncated };
 }
 
+export type FsDiffLine = { type: "same" | "add" | "remove"; text: string };
+
+const DIFF_CELL_BUDGET = 250_000;
+
+/** Simple LCS-based line diff. Skipped (returns null) for pathologically large files. */
+export function computeLineDiff(oldContent: string, newContent: string): FsDiffLine[] | null {
+  if (oldContent === newContent) return [];
+  const oldLines = oldContent.split("\n");
+  const newLines = newContent.split("\n");
+  const n = oldLines.length;
+  const m = newLines.length;
+  if (n * m > DIFF_CELL_BUDGET) return null;
+
+  const dp: number[][] = Array.from({ length: n + 1 }, () => new Array<number>(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) {
+    for (let j = m - 1; j >= 0; j--) {
+      dp[i][j] = oldLines[i] === newLines[j]
+        ? dp[i + 1][j + 1] + 1
+        : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+
+  const result: FsDiffLine[] = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (oldLines[i] === newLines[j]) {
+      result.push({ type: "same", text: oldLines[i] });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      result.push({ type: "remove", text: oldLines[i] });
+      i++;
+    } else {
+      result.push({ type: "add", text: newLines[j] });
+      j++;
+    }
+  }
+  while (i < n) result.push({ type: "remove", text: oldLines[i++] });
+  while (j < m) result.push({ type: "add", text: newLines[j++] });
+  return result;
+}
+
+const DIFF_SUMMARY_MAX_LINES = 30;
+
+/** Compact +/- summary of a diff (changed lines only) for tool output / chat bubbles. */
+export function formatDiffSummary(diff: FsDiffLine[] | null): string {
+  if (diff === null) return "(plik zbyt duży na podgląd diffu)";
+  const changed = diff.filter((l) => l.type !== "same");
+  if (changed.length === 0) return "(bez zmian w treści)";
+
+  const added = changed.filter((l) => l.type === "add").length;
+  const removed = changed.filter((l) => l.type === "remove").length;
+  const shown = changed.slice(0, DIFF_SUMMARY_MAX_LINES);
+  const lines = shown.map((l) => `${l.type === "add" ? "+" : "-"} ${l.text}`);
+  const more = changed.length - shown.length;
+
+  return `+${added} -${removed} linii\n${lines.join("\n")}${
+    more > 0 ? `\n… (+${more} więcej)` : ""
+  }`;
+}
+
+const MAX_FILE_VERSIONS = 5;
+
+/** Snapshot the previous content before an overwrite, pruning to the last N versions. */
+async function pushVersion(
+  db: AppDatabase,
+  internalPath: string,
+  content: string | null,
+  mimeType: string | null,
+  createdAt: string,
+): Promise<void> {
+  await db.insert(fileVersions).values({
+    id: crypto.randomUUID(),
+    path: internalPath,
+    content,
+    mimeType,
+    createdAt,
+  });
+
+  const rows = await db
+    .select({ id: fileVersions.id })
+    .from(fileVersions)
+    .where(eq(fileVersions.path, internalPath))
+    .orderBy(desc(fileVersions.seq));
+
+  const stale = rows.slice(MAX_FILE_VERSIONS).map((r) => r.id);
+  if (stale.length) {
+    await db.delete(fileVersions).where(inArray(fileVersions.id, stale));
+  }
+}
+
 export async function fsWrite(
   db: AppDatabase,
   virtualPath: string,
   content: string,
   createOnly = false,
-): Promise<{ path: string; created: boolean }> {
+): Promise<{ path: string; created: boolean; diff: string | null }> {
   await ensureFsSeeded(db);
   const resolved = resolveVirtualPath(virtualPath);
   if (!resolved.ok) throw new FsError(resolved.error, 400);
@@ -269,12 +360,16 @@ export async function fsWrite(
   const mimeType = guessMimeType(name);
 
   if (existing) {
+    const diffLines = computeLineDiff(existing.content ?? "", content);
+    if (diffLines === null || diffLines.some((l) => l.type !== "same")) {
+      await pushVersion(db, resolved.internal, existing.content, existing.mimeType, now);
+    }
     await db
       .update(fileNodes)
       .set({ content, mimeType, updatedAt: now, deletedAt: null })
       .where(eq(fileNodes.id, existing.id));
     await maybeReconcileDomainFiles(db, resolved.virtual);
-    return { path: resolved.virtual, created: false };
+    return { path: resolved.virtual, created: false, diff: formatDiffSummary(diffLines) };
   }
 
   // Soft-deleted row still occupies UNIQUE(path) — revive instead of insert.
@@ -294,7 +389,7 @@ export async function fsWrite(
       })
       .where(eq(fileNodes.id, tombstone.id));
     await maybeReconcileDomainFiles(db, resolved.virtual);
-    return { path: resolved.virtual, created: true };
+    return { path: resolved.virtual, created: true, diff: null };
   }
 
   await db.insert(fileNodes).values({
@@ -308,7 +403,67 @@ export async function fsWrite(
   });
 
   await maybeReconcileDomainFiles(db, resolved.virtual);
-  return { path: resolved.virtual, created: true };
+  return { path: resolved.virtual, created: true, diff: null };
+}
+
+export type FsVersion = {
+  id: string;
+  createdAt: string;
+  preview: string;
+};
+
+/** Version history for a file, newest first — for the "Cofnij" (undo) UI. */
+export async function fsHistory(db: AppDatabase, virtualPath: string): Promise<FsVersion[]> {
+  const resolved = resolveVirtualPath(virtualPath);
+  if (!resolved.ok) throw new FsError(resolved.error, 400);
+
+  const rows = await db
+    .select()
+    .from(fileVersions)
+    .where(eq(fileVersions.path, resolved.internal))
+    .orderBy(desc(fileVersions.seq));
+
+  return rows.map((r) => ({
+    id: r.id,
+    createdAt: r.createdAt,
+    preview: (r.content ?? "").slice(0, 120),
+  }));
+}
+
+/** Restore a version (defaults to the most recent) — swaps current content back. */
+export async function fsRestore(
+  db: AppDatabase,
+  virtualPath: string,
+  versionId?: string,
+): Promise<{ path: string; restoredFrom: string }> {
+  const resolved = resolveVirtualPath(virtualPath);
+  if (!resolved.ok) throw new FsError(resolved.error, 400);
+
+  const node = await getNode(db, resolved.internal);
+  if (!node) throw new FsError("Plik nie istnieje", 404);
+  if (node.kind === "directory") throw new FsError("To jest katalog, nie plik", 400);
+
+  const versionRows = await db
+    .select()
+    .from(fileVersions)
+    .where(eq(fileVersions.path, resolved.internal))
+    .orderBy(desc(fileVersions.seq));
+  if (versionRows.length === 0) throw new FsError("Brak historii do cofnięcia", 404);
+
+  const version = versionId ? versionRows.find((v) => v.id === versionId) : versionRows[0];
+  if (!version) throw new FsError("Nie znaleziono tej wersji", 404);
+
+  const now = nowIso();
+  // Current state becomes a version too, so undo is reversible by redoing the same action.
+  await pushVersion(db, resolved.internal, node.content, node.mimeType, now);
+  await db
+    .update(fileNodes)
+    .set({ content: version.content, mimeType: version.mimeType, updatedAt: now })
+    .where(eq(fileNodes.id, node.id));
+  await db.delete(fileVersions).where(eq(fileVersions.id, version.id));
+
+  await maybeReconcileDomainFiles(db, resolved.virtual);
+  return { path: resolved.virtual, restoredFrom: version.createdAt };
 }
 
 /** Domain tables mirror virtual files — file wins on Save / fs.write. */

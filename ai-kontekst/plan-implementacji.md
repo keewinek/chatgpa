@@ -8,10 +8,10 @@
 
 | | |
 | --- | --- |
-| **Epik** | Prompt 15 — Bezpieczne edycje plików: diff + undo |
-| **Faza** | 4B |
+| **Epik** | Prompt 16 — Polish do codziennego użytku |
+| **Faza** | 4C |
 | **Status** | ⏳ **DO ZROBIENIA** |
-| **Następny po tym** | Prompt 16 — Polish do codziennego użytku |
+| **Następny po tym** | ✅ koniec kolejki |
 
 > Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
 
@@ -39,8 +39,8 @@
 | 12 | Powiadomienia | ✅ |
 | 13 | Sync czatów multi-device | ✅ |
 | 14 | Agent core: dłuższa pętla narzędzi + fs.grep | ✅ |
-| 15 | Bezpieczne edycje plików: diff + undo | ⏳ **TERAZ** |
-| 16 | Polish do codziennego użytku | ⬜ |
+| 15 | Bezpieczne edycje plików: diff + undo | ✅ |
+| 16 | Polish do codziennego użytku | ⏳ **TERAZ** |
 
 <!-- EPIC_AUTO_END -->
 

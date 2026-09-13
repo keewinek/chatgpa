@@ -1,6 +1,15 @@
 import { Hono } from "hono";
 import type { AppDatabase } from "../db/client.ts";
-import { fsDelete, FsError, fsList, fsMkdir, fsRead, fsWrite } from "./service.ts";
+import {
+  fsDelete,
+  FsError,
+  fsHistory,
+  fsList,
+  fsMkdir,
+  fsRead,
+  fsRestore,
+  fsWrite,
+} from "./service.ts";
 
 export function createFsRoutes(getDatabase: () => AppDatabase | null) {
   const fs = new Hono();
@@ -48,6 +57,36 @@ export function createFsRoutes(getDatabase: () => AppDatabase | null) {
 
     try {
       const result = await fsWrite(db, body.path, body.content, body.createOnly === true);
+      return c.json(result);
+    } catch (err) {
+      return fsErrorResponse(c, err);
+    }
+  });
+
+  fs.get("/file/history", async (c) => {
+    const db = getDatabase();
+    if (!db) return c.json({ error: "DATABASE_URL nie jest skonfigurowane" }, 503);
+
+    const path = c.req.query("path");
+    if (!path) return c.json({ error: "Parametr path jest wymagany" }, 400);
+
+    try {
+      const versions = await fsHistory(db, path);
+      return c.json({ path, versions });
+    } catch (err) {
+      return fsErrorResponse(c, err);
+    }
+  });
+
+  fs.post("/file/restore", async (c) => {
+    const db = getDatabase();
+    if (!db) return c.json({ error: "DATABASE_URL nie jest skonfigurowane" }, 503);
+
+    const body = await c.req.json<{ path?: string; versionId?: string }>().catch(() => null);
+    if (!body?.path) return c.json({ error: "Pole path jest wymagane" }, 400);
+
+    try {
+      const result = await fsRestore(db, body.path, body.versionId);
       return c.json(result);
     } catch (err) {
       return fsErrorResponse(c, err);

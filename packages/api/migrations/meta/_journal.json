@@ -29,6 +29,13 @@
       "when": 1757083200000,
       "tag": "0003_chat_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1757169600000,
+      "tag": "0004_file_versions",
+      "breakpoints": true
     }
   ]
 }

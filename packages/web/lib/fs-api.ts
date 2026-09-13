@@ -49,13 +49,37 @@ export function fsRead(path: string): Promise<FsReadResponse> {
 export async function fsWrite(
   path: string,
   content: string,
-): Promise<{ path: string; created: boolean }> {
+): Promise<{ path: string; created: boolean; diff: string | null }> {
   const res = await fetch("/api/fs/file", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path, content }),
   });
-  const result = await parseJson<{ path: string; created: boolean }>(res);
+  const result = await parseJson<{ path: string; created: boolean; diff: string | null }>(res);
+  invalidateCache("fs:");
+  if (path.includes("long-term.memory")) invalidateCache("memory:");
+  if (path.includes("global.todo")) invalidateCache("todo:");
+  return result;
+}
+
+export type FsVersion = { id: string; createdAt: string; preview: string };
+
+export function fsHistory(path: string): Promise<{ path: string; versions: FsVersion[] }> {
+  return fetch(`/api/fs/file/history?path=${encodeURIComponent(path)}`).then((res) =>
+    parseJson<{ path: string; versions: FsVersion[] }>(res)
+  );
+}
+
+export async function fsRestore(
+  path: string,
+  versionId?: string,
+): Promise<{ path: string; restoredFrom: string }> {
+  const res = await fetch("/api/fs/file/restore", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, versionId }),
+  });
+  const result = await parseJson<{ path: string; restoredFrom: string }>(res);
   invalidateCache("fs:");
   if (path.includes("long-term.memory")) invalidateCache("memory:");
   if (path.includes("global.todo")) invalidateCache("todo:");

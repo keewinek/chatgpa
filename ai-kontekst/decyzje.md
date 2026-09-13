@@ -208,6 +208,29 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Konsekwencje:** nowe funkcje jako format pliku; brak trybu apps/dane w UI; aktualizacja
   `system-plikow.md`, `zasady.md`, `wizja.md`.
 
+## 2026-09-13 — Epik 15: diff + undo dla fs.write
+
+- **Decyzja:** `fs.write` na istniejącym pliku liczy prosty diff linia-po-linii (LCS,
+  `computeLineDiff` w `fs/service.ts`) i zwraca go w wyniku (`diff: string | null` — `null` przy
+  tworzeniu/reanimacji, tekst `+`/`-` przy nadpisaniu, pominięty przy no-op save). Widoczny w dymku
+  narzędzia w czacie (agent i tak dostaje go automatycznie) oraz w panelu Plików nad edytorem po
+  Save.
+- **Historia wersji:** nowa tabela `file_versions` (migracja `0004_file_versions.sql`) — max 5
+  ostatnich wersji na ścieżkę, kolejność po kolumnie `seq` (`serial`), **nie** po `created_at` —
+  kilka zapisów w tej samej milisekundzie (typowe w pętli testów / szybkich edycjach) miałyby
+  niejednoznaczną kolejność przy sortowaniu po znaczniku czasu.
+- **Undo:** `fsRestore` przywraca najnowszą wersję i odkłada bieżącą treść jako nową wersję —
+  cofnięcie jest więc odwracalne (drugie „Cofnij” = redo). Przycisk „Cofnij” w panelu Plików
+  (`FilesPanel.tsx`), endpointy `GET /api/fs/file/history` i `POST /api/fs/file/restore`.
+- **Kontekst:** świadomie **nie** dodano `fs.history`/`fs.restore` jako narzędzi agenta w
+  `SYSTEM_PROMPT` — to bezpiecznik dla człowieka w UI, nie kolejny tool zapychający context window
+  (zgodnie z decyzją „Agent FS-first” z 2026-09-04). Agent i tak widzi diff automatycznie przy
+  każdym `fs.write`.
+- **Test:** 174/174 (`deno task test`) — nowe testy w `fs/service_test.ts` (diff, historia, undo,
+  redo, brak wersjonowania przy no-op), `fs/routes_test.ts` (HTTP flow), `ai/tools_test.ts` (diff w
+  wyjściu narzędzia `fs.write`).
+- **Konsekwencje:** `deno task epic:done` przesuwa kolejkę na epik 16 (polish — ostatni w Fazie 4).
+
 ## 2026-09-13 — Bez Ollama / lokalnego modelu
 
 - **Decyzja:** usunięto Ollama i „offline slot” / „privacy mode” z roadmapy i dokumentów

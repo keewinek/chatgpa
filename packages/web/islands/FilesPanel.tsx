@@ -3,9 +3,11 @@ import { useSignal } from "@preact/signals";
 import {
   entryIcon,
   type FsEntry,
+  fsHistory,
   fsList,
   fsMkdir,
   fsRead,
+  fsRestore,
   fsWrite,
 } from "../lib/fs-api.ts";
 import {
@@ -81,6 +83,9 @@ export default function FilesPanel({
   const previewMeta = useSignal<string>("");
   const saving = useSignal(false);
   const saveStatus = useSignal<string | null>(null);
+  const lastDiff = useSignal<string | null>(null);
+  const versionCount = useSignal(0);
+  const undoing = useSignal(false);
   const activeUi = useSignal<ActiveUi | null>(null);
   const treeOpen = useSignal(true);
   const creating = useSignal(false);
@@ -195,6 +200,15 @@ export default function FilesPanel({
     treeOpen.value = false;
   }
 
+  async function refreshVersionCount(path: string) {
+    try {
+      const result = await fsHistory(path);
+      versionCount.value = result.versions.length;
+    } catch {
+      versionCount.value = 0;
+    }
+  }
+
   async function selectFile(path: string, name: string) {
     selectedPath.value = path;
     previewLoading.value = true;
@@ -202,6 +216,8 @@ export default function FilesPanel({
     savedContent.value = "";
     previewMeta.value = "";
     saveStatus.value = null;
+    lastDiff.value = null;
+    versionCount.value = 0;
     activeUi.value = null;
     try {
       const file = await fsRead(path);
@@ -217,6 +233,7 @@ export default function FilesPanel({
       savedContent.value = content;
       previewMeta.value = file.mimeType ?? "text/plain";
       treeOpen.value = true;
+      void refreshVersionCount(path);
     } catch (err) {
       preview.value = err instanceof Error ? err.message : String(err);
       savedContent.value = preview.value;
@@ -231,13 +248,36 @@ export default function FilesPanel({
     saving.value = true;
     saveStatus.value = null;
     try {
-      await fsWrite(path, preview.value);
+      const result = await fsWrite(path, preview.value);
       savedContent.value = preview.value;
       saveStatus.value = "Zapisano";
+      lastDiff.value = result.diff;
+      void refreshVersionCount(path);
     } catch (err) {
       saveStatus.value = err instanceof Error ? err.message : String(err);
     } finally {
       saving.value = false;
+    }
+  }
+
+  async function undoFile() {
+    const path = selectedPath.value;
+    if (!path || !previewMeta.value || activeUi.value || undoing.value) return;
+    undoing.value = true;
+    saveStatus.value = null;
+    try {
+      await fsRestore(path);
+      const file = await fsRead(path);
+      const content = file.content ?? "";
+      preview.value = content;
+      savedContent.value = content;
+      lastDiff.value = null;
+      saveStatus.value = "Cofnięto";
+      void refreshVersionCount(path);
+    } catch (err) {
+      saveStatus.value = err instanceof Error ? err.message : String(err);
+    } finally {
+      undoing.value = false;
     }
   }
 
@@ -249,6 +289,8 @@ export default function FilesPanel({
       savedContent.value = "";
       previewMeta.value = "";
       saveStatus.value = null;
+      lastDiff.value = null;
+      versionCount.value = 0;
       await toggleDir(node);
     } else {
       await selectFile(node.entry.path, node.entry.name);
@@ -430,12 +472,25 @@ export default function FilesPanel({
                   {saveStatus.value && (
                     <span
                       class={`files-save-status${
-                        saveStatus.value === "Zapisano" ? "" : " files-save-status--error"
+                        saveStatus.value === "Zapisano" || saveStatus.value === "Cofnięto"
+                          ? ""
+                          : " files-save-status--error"
                       }`}
                     >
                       {saveStatus.value}
                     </span>
                   )}
+                  <button
+                    type="button"
+                    class="files-undo-btn"
+                    disabled={versionCount.value === 0 || undoing.value || saving.value}
+                    title={versionCount.value > 0
+                      ? `Cofnij do poprzedniej wersji (${versionCount.value})`
+                      : "Brak historii do cofnięcia"}
+                    onClick={() => void undoFile()}
+                  >
+                    {undoing.value ? "Cofanie…" : "Cofnij"}
+                  </button>
                   <button
                     type="button"
                     class="files-save-btn"
@@ -447,6 +502,7 @@ export default function FilesPanel({
                 </span>
               </div>
             )}
+            {editorOpen && lastDiff.value && <pre class="files-diff">{lastDiff.value}</pre>}
             {previewLoading.value ? <p class="files-muted">…</p> : editorOpen
               ? (
                 <textarea
@@ -463,8 +519,7 @@ export default function FilesPanel({
               : (
                 <p class="files-empty-hint">
                   Otwórz plik albo utwórz nowy — szkoła to jeden codebase pod{" "}
-                  <code>~</code>. Kalendarz i plan lekcji: pliki{" "}
-                  <code>.ui</code>.
+                  <code>~</code>. Kalendarz i plan lekcji: pliki <code>.ui</code>.
                 </p>
               )}
           </>

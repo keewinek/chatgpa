@@ -1021,10 +1021,13 @@ async function runOne(
       const createOnly = args.createOnly === true;
       try {
         const result = await fsWrite(db, path, content, createOnly);
+        const header = result.created
+          ? `Utworzono ${result.path}`
+          : `Zaktualizowano ${result.path}`;
         return {
           tool: action.tool,
           ok: true,
-          output: result.created ? `Utworzono ${result.path}` : `Zaktualizowano ${result.path}`,
+          output: result.diff ? `${header}\n${result.diff}` : header,
         };
       } catch (err) {
         return {

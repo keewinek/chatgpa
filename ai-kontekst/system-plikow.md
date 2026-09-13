@@ -126,6 +126,28 @@ może więc czytać `~/dev/dla-claude-code.md` (i każdy inny plik) bez odpalani
 deno task fs read ~/dev/dla-claude-code.md
 ```
 
+## Diff + undo (`fs.write`, epik 15)
+
+Każdy `fs.write`, który **nadpisuje** istniejący plik (nie: tworzenie nowego, nie: reanimacja
+usuniętego), robi dwie rzeczy więcej:
+
+1. **Diff w wyniku narzędzia** — `fsWrite` zwraca `diff: string | null` (prosty tekst `+`/`-` per
+   linia, licznik `+N -M`, ucięty przy dużych zmianach). Widoczny w dymku narzędzia w czacie i w
+   panelu Plików (blok nad edytorem po Save).
+2. **Wersja poprzedniej treści** — tabela `file_versions` (`packages/api/db/schema.ts`), max 5
+   ostatnich wersji na ścieżkę, kolejność po `seq` (nie po `created_at` — kilka zapisów w tej samej
+   milisekundzie miałoby niejednoznaczną kolejność). Bez zmiany treści → brak nowej wersji (no-op
+   save nie zaśmieca historii).
+
+**Cofnij:** przycisk „Cofnij” w panelu Plików (aktywny gdy `versionCount > 0`) woła
+`POST /api/fs/file/restore` — przywraca najnowszą wersję, a **bieżącą** treść odkłada jako nową
+wersję, więc cofnięcie samo jest odwracalne (ponowne „Cofnij” = redo). `GET /api/fs/file/history`
+zwraca listę wersji (id, data, podgląd) do UI.
+
+Funkcje: `computeLineDiff`, `formatDiffSummary`, `fsHistory`, `fsRestore` w `fs/service.ts`. **Nie**
+są to narzędzia agenta w system prompcie — to bezpiecznik dla człowieka w panelu Plików, zgodnie z
+minimalnym zestawem `fs.*` dla modelu (agent i tak dostaje diff automatycznie w wyniku `fs.write`).
+
 ## Definition of Done
 
 - [x] Wirtualny FS w API + DB
@@ -135,5 +157,6 @@ deno task fs read ~/dev/dla-claude-code.md
 - [x] TODO / memory jako SoT plików
 - [x] `fs.grep` — pełnotekstowe wyszukiwanie po `~/`
 - [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` most dla Claude Code
+- [x] Diff + undo przy `fs.write` (`file_versions`, panel Plików „Cofnij”)
 - [ ] Pełna zbieżność: każdy panel = wyłącznie projekcja plików
-- [ ] Diff + undo przy `fs.write`, eksport `~/` zip
+- [ ] Eksport `~/` zip
