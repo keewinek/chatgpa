@@ -17,6 +17,7 @@ withTestDb("GET /api/fs seeds and lists home directories", async ({ db }) => {
     const dir of [
       "books",
       "calendar",
+      "dev",
       "memory",
       "notes",
       "plans",

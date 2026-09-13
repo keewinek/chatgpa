@@ -16,12 +16,8 @@ import {
 import type { AppDatabase } from "../db/client.ts";
 import { getDb } from "../db/client.ts";
 import { formatWarsawIsoDate } from "../plan/distribute.ts";
-import { FsError, fsDelete, fsList, fsMkdir, fsRead, fsWrite } from "../fs/service.ts";
-import {
-  formatGroupsSummary,
-  loadStoredGroupPrefs,
-  saveStoredGroupPrefs,
-} from "../fs/groups.ts";
+import { fsDelete, FsError, fsGrep, fsList, fsMkdir, fsRead, fsWrite } from "../fs/service.ts";
+import { formatGroupsSummary, loadStoredGroupPrefs, saveStoredGroupPrefs } from "../fs/groups.ts";
 import { notesAppend, notesList, notesRead, notesWrite } from "../notes/service.ts";
 import {
   clearMemory,
@@ -50,11 +46,7 @@ import {
 import { formatPlanMarkdown, generateDailyPlan, PlanError } from "../plan/service.ts";
 import { putFile, toAttachment } from "../files/store.ts";
 import { normalizeMimeType, sanitizeFilename } from "../files/mime.ts";
-import {
-  clampSearchLimit,
-  formatWebSearchOutput,
-  webSearch,
-} from "./web-search.ts";
+import { clampSearchLimit, formatWebSearchOutput, webSearch } from "./web-search.ts";
 
 export interface ToolResult {
   tool: string;
@@ -764,8 +756,7 @@ async function runPlanAction(
         return {
           tool: action.tool,
           ok: true,
-          output:
-            `Wygenerowano plan na ${plan.date} (${plan.weekdayLabel}).\n` +
+          output: `Wygenerowano plan na ${plan.date} (${plan.weekdayLabel}).\n` +
             `Zapisano: ${plan.planFilePath}\n` +
             `Budżet: ${plan.usedMinutes}/${plan.budgetMinutes} min · bloki: ${plan.blocks.length}\n\n` +
             `${body}\n\n` +
@@ -912,8 +903,7 @@ async function runOne(
       if (!db) {
         return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
       }
-      const pick = (v: unknown, fallback: 1 | 2): 1 | 2 =>
-        v === 1 || v === 2 ? v : fallback;
+      const pick = (v: unknown, fallback: 1 | 2): 1 | 2 => v === 1 || v === 2 ? v : fallback;
       const next: GroupPrefs = {
         language: pick(args.language, groupPrefs.language),
         english: pick(args.english, groupPrefs.english),
@@ -977,6 +967,38 @@ async function runOne(
           tool: action.tool,
           ok: true,
           output: `${result.path}:\n${header}${result.content}`,
+        };
+      } catch (err) {
+        return {
+          tool: action.tool,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        };
+      }
+    }
+    case "fs.grep": {
+      if (!db) {
+        return { tool: action.tool, ok: false, error: "Baza danych nie jest skonfigurowana" };
+      }
+      const query = typeof args.query === "string" ? args.query : "";
+      if (!query.trim()) return { tool: action.tool, ok: false, error: "Brak pola query" };
+      const path = typeof args.path === "string" ? args.path : undefined;
+      const limit = typeof args.limit === "number" ? args.limit : undefined;
+      try {
+        const result = await fsGrep(db, query, { path, limit });
+        if (result.matches.length === 0) {
+          return {
+            tool: action.tool,
+            ok: true,
+            output: `Brak wyników dla „${result.query}”${path ? ` w ${path}` : ""}.`,
+          };
+        }
+        const lines = result.matches.map((m) => `${m.path}:${m.line}: ${m.snippet}`);
+        const footer = result.truncated ? "\n(więcej wyników — zawęź query albo path)" : "";
+        return {
+          tool: action.tool,
+          ok: true,
+          output: `Wyniki dla „${result.query}”:\n${lines.join("\n")}${footer}`,
         };
       } catch (err) {
         return {

@@ -243,6 +243,71 @@ Format: data · decyzja · kontekst · konsekwencje.
   niżej priorytet niż FS.
 - **Konsekwencje:** epiki 1–13 uznane za faktycznie zweryfikowane działające, nie tylko odhaczone w
   roadmapie.
+- **Aktualizacja tego samego dnia:** problem okazał się poważniejszy niż „tylko szum” — patrz „Fix:
+  reanimacja wątków czatu” niżej. Sam 404 przy check-then-create nadal kosmetyczny i zostaje w
+  epiku 16.
+
+## 2026-09-13 — Epik 14: dłuższa pętla narzędzi + fs.grep
+
+- **Decyzja:** `MAX_TOOL_ROUNDS` 3 → 8 w `chat.ts` i `chat-stream.ts`; `shouldFinalize` już nie ma
+  specjalnego przypadku dla `plan.generate` — jedyny twardy limit to ostatnia runda. Model sam
+  decyduje kiedy skończyć (brak kolejnych `chatgpa-action` = koniec).
+- **Kontekst:** epik 14 z Fazy 4 (`ai-kontekst/plan-implementacji.md`) — agent miał za krótką smycz
+  na realne wieloetapowe zadania (czytanie kilku plików, potem decyzja).
+- **Nowe narzędzie `fs.grep`:** pełnotekstowe wyszukiwanie po treści plików pod `~/` (ILIKE po
+  `file_nodes.content`, opcjonalnie `path` i `limit` 1–50, snippet ±60 znaków wokół trafienia).
+  Zaimplementowane w `packages/api/fs/service.ts`, podłączone w `tools.ts` i udokumentowane w
+  `system-prompt.ts` — agent ma teraz używać `fs.grep` zamiast zgadywać ścieżkę.
+- **Test manualny:** pytanie „znajdź notatkę o fotosyntezie” wykonało `fs.grep` → `fs.list` →
+  `fs.grep` (zawężone) → `fs.read` w jednej turze (4 rundy narzędzi) i poprawnie zgłosiło brak
+  danych zamiast zmyślać. `deno task test` → 160/160 (dodano `fs/service_test.ts` i test `fs.grep` w
+  `tools_test.ts`).
+- **Konsekwencje:** `deno task epic:done` po tym wpisie przesuwa kolejkę na epik 15 (diff + undo).
+
+## 2026-09-13 — Samodoskonalenie: ChatGPA → Claude Code
+
+- **Decyzja:** ChatGPA (agent w apce) nie zmienia własnego kodu — zamiast tego dopisuje gotowe do
+  wklejenia prompty inżynierskie do `~/dev/dla-claude-code.md` (append, nie nadpisanie), gdy uczeń o
+  to poprosi albo agent sam zauważy konkretny błąd/brak w samej aplikacji. Uczeń kopiuje wpis do
+  Claude Code w repo.
+- **Kontekst:** prośba użytkownika — chce zamkniętą pętlę „ChatGPA zauważa problem w sobie →
+  człowiek jednym kopiuj-wklej przekazuje to Claude Code”, bez dawania agentowi w czacie uprawnień
+  do edycji kodu repo (poza zakresem produktu, ryzyko).
+- **Implementacja:** `~/dev/` w `SEED_DIRECTORIES` (`packages/api/fs/seed.ts`, `SEED_VERSION` 3→4),
+  `seedDevPrompt` tworzy plik ze wstępem jeśli brak; konwencja formatu (nagłówek z datą, Kontekst /
+  Problem / Propozycja zmiany, `---` między wpisami) w `SYSTEM_PROMPT`.
+- **Most Claude Code ↔ wirtualny FS:** `scripts/fs-cli.ts`
+  (`deno task fs list|read|write|grep|mkdir|delete`) łączy się do tego samego Postgresa co apka —
+  Claude Code czyta/edytuje `~/…` bez `deno task dev`. Dodane do `dla-agenta.md` jako krok 2a:
+  sprawdź `~/dev/dla-claude-code.md` na starcie sesji.
+- **Test manualny:** wiadomość „zauważyłem brak podglądu Markdown w Notatkach, zapisz to dla Claude
+  Code” → agent zrobił `fs.read` + `fs.write` i dopisał poprawnie sformatowany wpis; wpis usunięty
+  po teście (był danymi testowymi, nie realnym zgłoszeniem).
+- **Konsekwencje:** nowy plik nie jest jeszcze ubrany w panel UI — na razie tylko przez panel Plików
+  (edytor tekstu) i `deno task fs read`. Ewentualny dedykowany widok/kopiuj-przycisk to
+  nice-to-have.
+
+## 2026-09-13 — Fix: reanimacja wątków czatu (duplicate-key crash)
+
+- **Problem:** ręczny test w przeglądarce ujawnił, że strona czatu wisiała na „Ładowanie historii
+  czatów…” z pętlą 404/500 w konsoli. Realna przyczyna: `createThread`/`createMessage`
+  (`packages/api/threads/service.ts`) robiły ślepy `INSERT`, a soft-deleted wiersz (np. wątek
+  usunięty na innym urządzeniu) nadal zajmuje `id` w kluczu głównym — klient robi `GET` (404, bo
+  filtr `isNull(deletedAt)`), więc próbuje `POST` z tym samym id → `duplicate key` → 500 → migracja
+  nigdy się nie kończy, retry w kółko przy każdym odświeżeniu.
+- **Decyzja:** `createThread` i `createMessage` używają teraz `onConflictDoUpdate` na PK zamiast
+  `insert` — reanimują (revive) wiersz przy konflikcie (czyszczą `deletedAt`), tak samo jak
+  `fsWrite` już robi dla wirtualnego FS (`fs/service.ts`, decyzja z 2026-09-04). `migrateLocalStore`
+  dodatkowo sprawdza istnienie przed insertem, żeby retry po sieciowym błędzie nie był kosztowny ani
+  nie zawyżał liczników `threads`/`messages`.
+- **Kontekst:** to ta sama klasa buga, którą już raz naprawiono dla `file_nodes` (commit „Revive
+  soft-deleted file paths…”) — nie została wtedy przeniesiona na `chat_threads`/`chat_messages`.
+- **Test:** nowe testy `createThread revives a soft-deleted id instead of crashing` i
+  `migrateLocalStore is retry-safe` w `threads/service_test.ts`; ręcznie potwierdzone w przeglądarce
+  — strona ładuje się natychmiast, żadnych 404/500 w konsoli po restarcie serwera. `deno task test`
+  → 162/162.
+- **Konsekwencje:** cosmetyczny 404 z GET-then-create (osobny, opisany wyżej) zostaje jako
+  niżej-priorytetowy polish w epiku 16 — już nie crashuje, tylko trochę zaśmieca konsolę.
 
 ## 2026-09-04 — Agent FS-first (Cursor-style tools)
 

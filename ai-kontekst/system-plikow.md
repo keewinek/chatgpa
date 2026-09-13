@@ -2,9 +2,9 @@
 
 ## North star: szkoła = jeden codebase
 
-ChatGPA traktuje szkołę ucznia jak **repozytorium plików pod `~/`**. Agent i uczeń widzą to
-samo drzewo. Zmiana stanu = edycja pliku (`fs.read` / `fs.write` / `fs.mkdir` / `fs.delete`) —
-jak w Cursorze / Claude Code, **bez miliona narzędzi domenowych w context window**.
+ChatGPA traktuje szkołę ucznia jak **repozytorium plików pod `~/`**. Agent i uczeń widzą to samo
+drzewo. Zmiana stanu = edycja pliku (`fs.read` / `fs.write` / `fs.mkdir` / `fs.delete`) — jak w
+Cursorze / Claude Code, **bez miliona narzędzi domenowych w context window**.
 
 Konsekwencje:
 
@@ -54,41 +54,44 @@ Dane użytkownika żyją jako pliki z rozpoznawalnymi rozszerzeniami. UI paneli 
 │   └── YYYY-MM-DD.plan
 ├── profile/
 │   └── me.profile
-└── pomodoro/                     # katalog (panel przez /pomodoro, bez .ui)
+├── pomodoro/                     # katalog (panel przez /pomodoro, bez .ui)
+└── dev/
+    └── dla-claude-code.md        # samodoskonalenie — patrz sekcja niżej
 ```
 
 ## Rozszerzenia plików
 
-| Rozszerzenie | Zawartość                            | UI                                      |
-| ------------ | ------------------------------------ | --------------------------------------- |
-| `.ui`        | `{ "view", "title" }`                | panel (tylko calendar / timetable)      |
-| `.memory`    | JSONL pamięci                        | edytor pliku + import do indeksu        |
-| `.todo`      | Markdown checkboxy                   | edytor pliku / panel `/todo`            |
-| `.md`        | Notatki                              | edytor / panel `/notes`                 |
-| `.cal`       | Wydarzenia miesiąca (JSON)           | panel kalendarza                        |
-| `.plan`      | Plan dnia                            | edytor                                  |
-| `.profile`   | Profil czasu                         | panel `/profile`                        |
-| `.json`      | Snapshoty Librus, grupy              | edytor                                  |
+| Rozszerzenie | Zawartość                  | UI                                 |
+| ------------ | -------------------------- | ---------------------------------- |
+| `.ui`        | `{ "view", "title" }`      | panel (tylko calendar / timetable) |
+| `.memory`    | JSONL pamięci              | edytor pliku + import do indeksu   |
+| `.todo`      | Markdown checkboxy         | edytor pliku / panel `/todo`       |
+| `.md`        | Notatki                    | edytor / panel `/notes`            |
+| `.cal`       | Wydarzenia miesiąca (JSON) | panel kalendarza                   |
+| `.plan`      | Plan dnia                  | edytor                             |
+| `.profile`   | Profil czasu               | panel `/profile`                   |
+| `.json`      | Snapshoty Librus, grupy    | edytor                             |
 
 ## Tools agenta (runtime)
 
 **Dokumentowane w system prompt** (jedyny kontrakt dla modelu):
 
-| Tool               | Rola                                              |
-| ------------------ | ------------------------------------------------- |
-| `fs.list`          | lista katalogu                                    |
-| `fs.read`          | treść pliku                                       |
-| `fs.write`         | utwórz / nadpisz (w tym puste pliki)              |
-| `fs.mkdir`         | katalog                                           |
-| `fs.delete`        | usuń plik / pusty katalog                         |
-| `plan.generate`    | plan nauki na dzień (zapisuje `.plan` + bloki)    |
-| `calendar.freeSlots` | wolne okna                                      |
-| `web.search`       | internet                                          |
-| `calc.eval`        | kalkulator                                        |
-| `file.send`        | plik do pobrania                                  |
+| Tool                 | Rola                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| `fs.list`            | lista katalogu                                               |
+| `fs.read`            | treść pliku                                                  |
+| `fs.grep`            | pełnotekstowe wyszukiwanie po `~/` (opcjonalnie path, limit) |
+| `fs.write`           | utwórz / nadpisz (w tym puste pliki)                         |
+| `fs.mkdir`           | katalog                                                      |
+| `fs.delete`          | usuń plik / pusty katalog                                    |
+| `plan.generate`      | plan nauki na dzień (zapisuje `.plan` + bloki)               |
+| `calendar.freeSlots` | wolne okna                                                   |
+| `web.search`         | internet                                                     |
+| `calc.eval`          | kalkulator                                                   |
+| `file.send`          | plik do pobrania                                             |
 
-Handlery legacy (`todo.*`, `notes.*`, …) mogą istnieć w kodzie dla kompatybilności testów / API,
-ale **nie są reklamowane agentowi** — unikamy zapychania context window.
+Handlery legacy (`todo.*`, `notes.*`, …) mogą istnieć w kodzie dla kompatybilności testów / API, ale
+**nie są reklamowane agentowi** — unikamy zapychania context window.
 
 ## API (HTTP)
 
@@ -107,12 +110,30 @@ ale **nie są reklamowane agentowi** — unikamy zapychania context window.
 - `.ui` (calendar, timetable) → panel; slash (`/todo`, `/notes`, …) otwiera panele bez `.ui`
 - Komenda `/files` i ikona folderu
 
+## Samodoskonalenie (`~/dev/dla-claude-code.md`)
+
+ChatGPA (agent w apce) nie zmienia własnego kodu. Zamiast tego dopisuje do
+`~/dev/dla-claude-code.md` gotowe do wklejenia prompty inżynierskie dla **Claude Code** — patrz
+[dla-agenta.md](./dla-agenta.md) i [decyzje.md](./decyzje.md) (2026-09-13, „Samodoskonalenie”).
+Uczeń kopiuje wpis stamtąd do Claude Code w repo. Zawsze append (fs.read + fs.write całości), nigdy
+nadpisanie — historia wpisów ma zostać.
+
+**Claude Code ↔ wirtualny FS:** ten sam Postgres, te same ścieżki `~/…`, co widzi apka i agent w
+czacie — most to `scripts/fs-cli.ts` (`deno task fs list|read|write|grep|mkdir|delete`). Claude Code
+może więc czytać `~/dev/dla-claude-code.md` (i każdy inny plik) bez odpalania `deno task dev`, np.:
+
+```bash
+deno task fs read ~/dev/dla-claude-code.md
+```
+
 ## Definition of Done
 
 - [x] Wirtualny FS w API + DB
 - [x] Seed katalogów + tylko `calendar.ui` / `timetable.ui`
-- [x] Tools `fs.list|read|write|mkdir|delete` w prompcie
+- [x] Tools `fs.list|read|write|mkdir|delete|grep` w prompcie
 - [x] UI: drzewo + edytor + tworzenie plików/katalogów
 - [x] TODO / memory jako SoT plików
+- [x] `fs.grep` — pełnotekstowe wyszukiwanie po `~/`
+- [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` most dla Claude Code
 - [ ] Pełna zbieżność: każdy panel = wyłącznie projekcja plików
-- [ ] `fs.search` / eksport `~/` zip
+- [ ] Diff + undo przy `fs.write`, eksport `~/` zip

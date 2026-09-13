@@ -6,11 +6,13 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 
 1. Trzymaj **koszt = 0 zł**. Nie proponuj płatnych API, SaaS ani „pro” planów jako wymaganych.
 2. Czytaj `ai-kontekst/` przed większą zmianą — to źródło prawdy ponad luźną rozmową.
-3. Kod w Deno monorepo: `packages/core`, `packages/api`, `packages/web`.
-4. Po zmianach: `deno task test` (i sensowny check pakietu, którego dotyczy zmiana).
-5. Branch: pracuj na `main`; **nigdy nie pushuj na `prod`** bez wyraźnej prośby.
-6. Commit + push po zmianach (reguła użytkownika), message po angielsku, konkretny.
-7. **Po zakończeniu epiku z plan-implementacji:** `deno task epic:done` — **obowiązkowe**, przed
+3. Sprawdź `~/dev/dla-claude-code.md` (`deno task fs read ~/dev/dla-claude-code.md`) — ChatGPA
+   (agent w apce) mógł tam zostawić prompt z prośbą użytkownika o konkretną zmianę.
+4. Kod w Deno monorepo: `packages/core`, `packages/api`, `packages/web`.
+5. Po zmianach: `deno task test` (i sensowny check pakietu, którego dotyczy zmiana).
+6. Branch: pracuj na `main`; **nigdy nie pushuj na `prod`** bez wyraźnej prośby.
+7. Commit + push po zmianach (reguła użytkownika), message po angielsku, konkretny.
+8. **Po zakończeniu epiku z plan-implementacji:** `deno task epic:done` — **obowiązkowe**, przed
    końcem sesji. Nie edytuj ręcznie `aktualny-prompt.md`.
 
 ## Priorytety produktowe
@@ -32,19 +34,21 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 
 ## Gdzie co jest w kodzie
 
-| Temat            | Ścieżka                                                                 |
-| ---------------- | ----------------------------------------------------------------------- |
-| Kaskada AI       | `packages/api/ai/`                                                      |
-| Narzędzia / chat | `packages/api/ai/chat.ts`, `tools.ts`                                   |
-| Endpointy chat   | `packages/api/app.ts`                                                   |
-| UI chatu         | `packages/web/islands/ChatApp.tsx`                                      |
-| Markdown         | `packages/web/islands/MarkdownBody.tsx`                                 |
-| Historia/pamięć  | `packages/web/lib/chat-storage.ts`                                      |
-| Plan lekcji      | `packages/core/timetable.ts`, `packages/web/islands/TimetablePanel.tsx` |
-| Grupy lekcyjne   | `packages/web/lib/timetable-storage.ts`                                 |
-| Style            | `packages/web/assets/styles.css`                                        |
-| Typy shared      | `packages/core/types.ts`                                                |
-| Env przykładowy  | `.env.example`                                                          |
+| Temat            | Ścieżka                                                                           |
+| ---------------- | --------------------------------------------------------------------------------- |
+| Kaskada AI       | `packages/api/ai/`                                                                |
+| Narzędzia / chat | `packages/api/ai/chat.ts`, `tools.ts`                                             |
+| Endpointy chat   | `packages/api/app.ts`                                                             |
+| UI chatu         | `packages/web/islands/ChatApp.tsx`                                                |
+| Markdown         | `packages/web/islands/MarkdownBody.tsx`                                           |
+| Historia/pamięć  | `packages/web/lib/chat-storage.ts`                                                |
+| Plan lekcji      | `packages/core/timetable.ts`, `packages/web/islands/TimetablePanel.tsx`           |
+| Grupy lekcyjne   | `packages/web/lib/timetable-storage.ts`                                           |
+| Style            | `packages/web/assets/styles.css`                                                  |
+| Typy shared      | `packages/core/types.ts`                                                          |
+| Env przykładowy  | `.env.example`                                                                    |
+| FS ↔ Claude Code | `scripts/fs-cli.ts` (`deno task fs list\|read\|write\|grep\|mkdir\|delete`)       |
+| Self-improvement | `~/dev/dla-claude-code.md` — prompty od ChatGPA, czytaj przez `deno task fs read` |
 
 ## Plan wieloepikowy (Faza 2+)
 

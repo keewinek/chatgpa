@@ -1,4 +1,4 @@
-import { and, eq, isNull, like, not, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, like, not, or, sql } from "drizzle-orm";
 import type { AppDatabase } from "../db/client.ts";
 import { fileNodes } from "../db/schema.ts";
 import { ensureFsSeeded } from "./seed.ts";
@@ -151,6 +151,91 @@ export async function fsRead(
     offset,
     limit,
   };
+}
+
+export type FsGrepMatch = {
+  path: string;
+  line: number;
+  snippet: string;
+};
+
+export type FsGrepResult = {
+  query: string;
+  matches: FsGrepMatch[];
+  truncated: boolean;
+};
+
+const GREP_DEFAULT_LIMIT = 20;
+const GREP_MAX_LIMIT = 50;
+const GREP_SNIPPET_RADIUS = 60;
+
+function snippetAround(line: string, query: string): string {
+  const idx = line.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return line.trim().slice(0, GREP_SNIPPET_RADIUS * 2);
+  const start = Math.max(0, idx - GREP_SNIPPET_RADIUS);
+  const end = Math.min(line.length, idx + query.length + GREP_SNIPPET_RADIUS);
+  const prefix = start > 0 ? "…" : "";
+  const suffix = end < line.length ? "…" : "";
+  return `${prefix}${line.slice(start, end).trim()}${suffix}`;
+}
+
+/** Full-text search across file contents under ~/ (optionally scoped to a subpath). */
+export async function fsGrep(
+  db: AppDatabase,
+  query: string,
+  options: { path?: string; limit?: number } = {},
+): Promise<FsGrepResult> {
+  await ensureFsSeeded(db);
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) throw new FsError("Brak zapytania", 400);
+
+  const resolved = resolveVirtualPath(options.path ?? "~");
+  if (!resolved.ok) throw new FsError(resolved.error, 400);
+
+  const limit = Math.min(
+    Math.max(1, options.limit ?? GREP_DEFAULT_LIMIT),
+    GREP_MAX_LIMIT,
+  );
+
+  const prefix = resolved.internal === USER_ROOT ? `${USER_ROOT}/` : `${resolved.internal}/`;
+  const scope = resolved.internal === USER_ROOT
+    ? like(fileNodes.path, `${prefix}%`)
+    : or(eq(fileNodes.path, resolved.internal), like(fileNodes.path, `${prefix}%`));
+
+  const rows = await db
+    .select()
+    .from(fileNodes)
+    .where(
+      and(
+        eq(fileNodes.kind, "file"),
+        isNull(fileNodes.deletedAt),
+        ilike(fileNodes.content, `%${trimmedQuery}%`),
+        scope,
+      ),
+    );
+
+  const matches: FsGrepMatch[] = [];
+  let truncated = false;
+
+  outer: for (const row of rows) {
+    const lines = (row.content ?? "").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.toLowerCase().includes(trimmedQuery.toLowerCase())) {
+        if (matches.length >= limit) {
+          truncated = true;
+          break outer;
+        }
+        matches.push({
+          path: toVirtualPath(row.path),
+          line: i + 1,
+          snippet: snippetAround(line, trimmedQuery),
+        });
+      }
+    }
+  }
+
+  return { query: trimmedQuery, matches, truncated };
 }
 
 export async function fsWrite(

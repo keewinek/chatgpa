@@ -4,15 +4,14 @@
 
 ## ▶ AKTUALNY PROMPT
 
-👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez
-`deno task epic:done` po każdym agencie.
+👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez `deno task epic:done` po każdym agencie.
 
-|                     |                                                          |
-| ------------------- | -------------------------------------------------------- |
-| **Epik**            | Prompt 14 — Agent core: dłuższa pętla narzędzi + fs.grep |
-| **Faza**            | 4A                                                       |
-| **Status**          | ⏳ **DO ZROBIENIA**                                      |
-| **Następny po tym** | Prompt 15 — Bezpieczne edycje plików: diff + undo        |
+| | |
+| --- | --- |
+| **Epik** | Prompt 15 — Bezpieczne edycje plików: diff + undo |
+| **Faza** | 4B |
+| **Status** | ⏳ **DO ZROBIENIA** |
+| **Następny po tym** | Prompt 16 — Polish do codziennego użytku |
 
 > Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
 
@@ -24,24 +23,24 @@
 
 ## Kolejka promptów (auto)
 
-| #  | Epik                                         | Status       |
-| -- | -------------------------------------------- | ------------ |
-| 1  | Serwer + PostgreSQL + Drizzle                | ✅           |
-| 2  | Wirtualny system plików                      | ✅           |
-| 3  | Pamięć short/long                            | ✅           |
-| 4  | Globalna TODO                                | ✅           |
-| 5  | Notatki Markdown                             | ✅           |
-| 6  | Lazy context + tools                         | ✅           |
-| 7  | Kalendarz + profil czasu                     | ✅           |
-| 8  | Komendy slash                                | ✅           |
-| 9  | Pomodoro                                     | ✅           |
-| 10 | Wtyczka Librus                               | ✅           |
-| 11 | Plan nauki + cron                            | ✅           |
-| 12 | Powiadomienia                                | ✅           |
-| 13 | Sync czatów multi-device                     | ✅           |
-| 14 | Agent core: dłuższa pętla narzędzi + fs.grep | ⏳ **TERAZ** |
-| 15 | Bezpieczne edycje plików: diff + undo        | ⬜           |
-| 16 | Polish do codziennego użytku                 | ⬜           |
+| # | Epik | Status |
+| --- | --- | --- |
+| 1 | Serwer + PostgreSQL + Drizzle | ✅ |
+| 2 | Wirtualny system plików | ✅ |
+| 3 | Pamięć short/long | ✅ |
+| 4 | Globalna TODO | ✅ |
+| 5 | Notatki Markdown | ✅ |
+| 6 | Lazy context + tools | ✅ |
+| 7 | Kalendarz + profil czasu | ✅ |
+| 8 | Komendy slash | ✅ |
+| 9 | Pomodoro | ✅ |
+| 10 | Wtyczka Librus | ✅ |
+| 11 | Plan nauki + cron | ✅ |
+| 12 | Powiadomienia | ✅ |
+| 13 | Sync czatów multi-device | ✅ |
+| 14 | Agent core: dłuższa pętla narzędzi + fs.grep | ✅ |
+| 15 | Bezpieczne edycje plików: diff + undo | ⏳ **TERAZ** |
+| 16 | Polish do codziennego użytku | ⬜ |
 
 <!-- EPIC_AUTO_END -->
 

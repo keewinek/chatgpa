@@ -14,7 +14,18 @@ export const SEED_DIRECTORIES = [
   "profile",
   "pomodoro",
   "school/librus",
+  "dev",
 ] as const;
+
+/** Self-improvement: ChatGPA writes prompts here for the student to paste into Claude Code. */
+export const DEV_PROMPT_PATH = "dev/dla-claude-code.md";
+const DEV_PROMPT_SEED_CONTENT = `# Prompty dla Claude Code (samodoskonalenie)
+
+Tu ChatGPA dopisuje gotowe do wklejenia prompty inżynierskie, gdy Ty albo agent zauważycie coś do
+poprawy w samej aplikacji (nie w nauce). Skopiuj wpis i wklej do Claude Code w repo \`chatgpa\`.
+
+---
+`;
 
 /** Seed `.ui` launchers — only calendar + timetable (rest is plain files). */
 export const SEED_UI_SHORTCUTS = [
@@ -41,7 +52,7 @@ const LEGACY_CAPITALIZED_DIRS = [
 ] as const;
 
 /** Bump when seed/cleanup behavior changes so existing isolates re-run once. */
-const SEED_VERSION = 3;
+const SEED_VERSION = 4;
 
 /** Per-DB gate so we don't re-seed / legacy-purge on every FS request. */
 const seededDbs = new WeakMap<object, number>();
@@ -137,6 +148,20 @@ export async function seedUiShortcuts(db: AppDatabase): Promise<void> {
   );
 }
 
+/** Idempotent — creates the self-improvement prompt file if missing (never overwrites). */
+export async function seedDevPrompt(db: AppDatabase): Promise<void> {
+  const now = new Date().toISOString();
+  const dirPath = `${USER_ROOT}/dev`;
+  await ensureDirectory(db, dirPath, now);
+  await ensureFile(
+    db,
+    `${USER_ROOT}/${DEV_PROMPT_PATH}`,
+    DEV_PROMPT_SEED_CONTENT,
+    "text/markdown",
+    now,
+  );
+}
+
 /** Soft-delete leftover capitalized Polish dirs (and their .ui shortcuts). */
 export async function removeLegacyCapitalizedDirs(db: AppDatabase): Promise<void> {
   const now = new Date().toISOString();
@@ -174,6 +199,7 @@ export async function ensureFsSeeded(db: AppDatabase): Promise<void> {
     await seedFs(db);
   }
   await seedUiShortcuts(db);
+  await seedDevPrompt(db);
   await removeLegacyCapitalizedDirs(db);
   await removeObsoleteUiShortcuts(db);
   seededDbs.set(db as object, SEED_VERSION);

@@ -11,6 +11,7 @@ Deno.test("SYSTEM_PROMPT is FS-first (Cursor-style) with minimal tools", () => {
   assertEquals(SYSTEM_PROMPT.includes("fs.list"), true);
   assertEquals(SYSTEM_PROMPT.includes("fs.read"), true);
   assertEquals(SYSTEM_PROMPT.includes("fs.write"), true);
+  assertEquals(SYSTEM_PROMPT.includes("fs.grep"), true);
   assertEquals(SYSTEM_PROMPT.includes("fs.mkdir"), true);
   assertEquals(SYSTEM_PROMPT.includes("fs.delete"), true);
   assertEquals(SYSTEM_PROMPT.includes("calendar.freeSlots"), true);

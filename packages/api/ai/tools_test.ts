@@ -135,6 +135,36 @@ withTestDb("fs.write and fs.read via tools", async ({ db }) => {
   }
 });
 
+withTestDb("fs.grep via tools finds matches and reports misses", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    const store = await createMemoryStore();
+    await executeActions(
+      [{
+        tool: "fs.write",
+        args: { path: "~/notes/kwasy.md", content: "Kwas solny to HCl." },
+      }],
+      store,
+    );
+
+    const hit = await executeActions(
+      [{ tool: "fs.grep", args: { query: "HCl" } }],
+      store,
+    );
+    assertEquals(hit.results[0].ok, true);
+    assertEquals(hit.results[0].output?.includes("kwasy.md"), true);
+
+    const miss = await executeActions(
+      [{ tool: "fs.grep", args: { query: "nieistniejące-słowo" } }],
+      store,
+    );
+    assertEquals(miss.results[0].ok, true);
+    assertEquals(miss.results[0].output?.includes("Brak wyników"), true);
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
 withTestDb("memory.remember syncs long-term.memory file", async ({ db }) => {
   setDbForTests(db);
   try {

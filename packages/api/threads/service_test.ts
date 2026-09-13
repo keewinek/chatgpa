@@ -44,6 +44,24 @@ withTestDb("thread CRUD", async ({ db }) => {
   assertEquals(list.length, 0);
 });
 
+withTestDb("createThread revives a soft-deleted id instead of crashing", async ({ db }) => {
+  const thread = await createThread(db, { id: "t1", title: "Rozmowa" });
+  await createMessage(db, thread.id, { id: "m1", role: "user", content: "Cześć" });
+  await deleteThread(db, thread.id);
+
+  // Same id as before deletion — simulates a client re-pushing a locally cached
+  // thread whose server copy was soft-deleted (e.g. deleted on another device).
+  const revived = await createThread(db, { id: "t1", title: "Rozmowa wznowiona" });
+  assertEquals(revived.id, "t1");
+  assertEquals(revived.title, "Rozmowa wznowiona");
+
+  const found = await getThread(db, "t1");
+  assertEquals(found?.title, "Rozmowa wznowiona");
+
+  const revivedMsg = await createMessage(db, "t1", { id: "m1", role: "user", content: "Cześć!" });
+  assertEquals(revivedMsg?.content, "Cześć!");
+});
+
 withTestDb("migrateLocalStore imports sessions", async ({ db }) => {
   const migrated = await migrateLocalStore(db, {
     activeSessionId: "s1",
@@ -68,3 +86,33 @@ withTestDb("migrateLocalStore imports sessions", async ({ db }) => {
   assertEquals(threads[0].title, "Stara rozmowa");
   assertEquals(threads[0].messages?.[0].content, "Hej");
 });
+
+withTestDb(
+  "migrateLocalStore is retry-safe (no crash on already-migrated data)",
+  async ({ db }) => {
+    const input = {
+      activeSessionId: "s1",
+      sessions: [{
+        id: "s1",
+        title: "Stara rozmowa",
+        createdAt: 1_700_000_000_000,
+        updatedAt: 1_700_000_100_000,
+        messages: [{ id: "m1", role: "user" as const, content: "Hej" }],
+      }],
+    };
+
+    const first = await migrateLocalStore(db, input);
+    assertEquals(first.threads, 1);
+    assertEquals(first.messages, 1);
+
+    // Simulates the client retrying after its "serverMigrated" flag failed to persist
+    // (e.g. a network hiccup) — must not throw a duplicate-key error.
+    const retry = await migrateLocalStore(db, input);
+    assertEquals(retry.threads, 0);
+    assertEquals(retry.messages, 0);
+
+    const threads = await listThreads(db, { includeMessages: true });
+    assertEquals(threads.length, 1);
+    assertEquals(threads[0].messages?.length, 1);
+  },
+);

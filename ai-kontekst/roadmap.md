@@ -48,10 +48,12 @@ Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
 który czyta/pisze `~/` — żeby faktycznie działał jak Cursor/Claude Code/Codex, nie tylko wyglądał.
 Szczegóły promptów: [plan-implementacji.md](./plan-implementacji.md), epiki 14–16.
 
-- [ ] Dłuższa, mądrzejsza pętla narzędzi (więcej niż 3 rundy, lepsza heurystyka finalizacji)
-- [ ] `fs.grep` / pełnotekstowe wyszukiwanie po `~/` (agent znajduje fakty bez zgadywania ścieżki)
+- [x] Dłuższa, mądrzejsza pętla narzędzi (3 → 8 rund, koniec gdy model nie woła już tools)
+- [x] `fs.grep` / pełnotekstowe wyszukiwanie po `~/` (agent znajduje fakty bez zgadywania ścieżki)
+- [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` (most FS ↔ Claude Code)
+- [x] Fix: reanimacja soft-deleted wątków czatu (crash na duplicate-key przy migracji/tworzeniu)
 - [ ] Bezpieczne edycje: diff przed/po przy `fs.write`, prosty undo/historia wersji pliku
-- [ ] Polish do codziennego użytku: naprawić szumiące 404 przy tworzeniu wątków (patrz
+- [ ] Polish do codziennego użytku: kosmetyczny 404 z GET-then-create przy tworzeniu wątków (patrz
       [decyzje.md](./decyzje.md), wpis 2026-09-13), pełny manualny przegląd paneli
 
 ## Później / someday (poza zakresem MVP)

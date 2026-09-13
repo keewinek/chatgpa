@@ -9,19 +9,19 @@ import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import type { AiAttempt, ChatMessage, ToolResultPublic } from "./types.ts";
 
-const MAX_TOOL_ROUNDS = 3;
+const MAX_TOOL_ROUNDS = 8;
 
 function toolContinuePrompt(results: ToolResult[], finalRound: boolean): string {
   const base = `Wyniki narzędzi:\n${formatToolResults(results)}`;
   if (finalRound) {
     return `${base}\n\nTo ostatnia runda narzędzi. NIE wołaj już żadnych tools — odpowiedz uczniowi wyłącznie tekstem na podstawie WSZYSTKICH wyników narzędzi w tej rozmowie (także wcześniejszych rund). Jeśli był plan.generate — przedstaw ten plan.`;
   }
-  return `${base}\n\nKontynuuj odpowiedź dla ucznia.`;
+  return `${base}\n\nKontynuuj odpowiedź dla ucznia, albo wywołaj kolejne narzędzia jeśli faktycznie potrzebujesz więcej danych.`;
 }
 
-function shouldFinalize(results: ToolResult[], round: number): boolean {
-  if (round === MAX_TOOL_ROUNDS - 1) return true;
-  return results.some((r) => r.ok && r.tool === "plan.generate");
+/** Model decides when it's done (no more actions) — this is only the hard safety cap. */
+function shouldFinalize(round: number): boolean {
+  return round === MAX_TOOL_ROUNDS - 1;
 }
 
 export type ChatStreamEvent =
@@ -110,7 +110,7 @@ export async function* runChatStream(
     }
     yield { type: "tool", results };
 
-    const finalRound = shouldFinalize(results, round);
+    const finalRound = shouldFinalize(round);
     yield { type: "replace", text: stripped || "(wywołano narzędzia)" };
     thread = [
       ...thread,

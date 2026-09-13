@@ -147,13 +147,21 @@ export async function createThread(db: AppDatabase, input: CreateThreadInput): P
   if (typeof input.createdAt === "number") metadata.clientCreatedAt = input.createdAt;
   if (typeof input.updatedAt === "number") metadata.clientUpdatedAt = input.updatedAt;
 
-  await db.insert(chatThreads).values({
+  const values = {
     id,
     title: input.title?.trim() || "Nowa rozmowa",
     mode: input.mode,
     metadata: Object.keys(metadata).length ? metadata : null,
     createdAt,
     updatedAt,
+  };
+
+  // Revive instead of crashing when `id` belongs to a soft-deleted row (or a racing
+  // request already created it) — same convention as the virtual FS tombstone revive
+  // in fs/service.ts fsWrite. A caller-supplied id makes this an upsert by design.
+  await db.insert(chatThreads).values(values).onConflictDoUpdate({
+    target: chatThreads.id,
+    set: { ...values, deletedAt: null },
   });
 
   return (await getThread(db, id, { includeMessages: false }))!;
@@ -292,7 +300,7 @@ export async function createMessage(
   if (input.toolResults?.length) metadata.toolResults = input.toolResults;
   if (input.attachments?.length) metadata.attachments = input.attachments;
 
-  await db.insert(chatMessages).values({
+  const values = {
     id,
     threadId,
     role: input.role,
@@ -302,6 +310,12 @@ export async function createMessage(
     metadata: Object.keys(metadata).length ? metadata : null,
     createdAt,
     updatedAt,
+  };
+
+  // Revive on conflict — see createThread above for why.
+  await db.insert(chatMessages).values(values).onConflictDoUpdate({
+    target: chatMessages.id,
+    set: { ...values, deletedAt: null },
   });
 
   const threadUpdatedAt = typeof input.updatedAt === "number"
@@ -454,6 +468,12 @@ export interface MigrateLocalStoreInput {
   }>;
 }
 
+/**
+ * Idempotent — safe to retry. A partial/repeated migration (e.g. the client's
+ * "serverMigrated" flag not persisting after a network hiccup) must not crash on
+ * already-migrated threads/messages, or every reload re-triggers the whole batch and
+ * fails on the first duplicate id.
+ */
 export async function migrateLocalStore(
   db: AppDatabase,
   input: MigrateLocalStoreInput,
@@ -464,17 +484,21 @@ export async function migrateLocalStore(
     let messageCount = 0;
 
     for (const session of input.sessions) {
-      await createThread(tdb, {
-        id: session.id,
-        title: session.title,
-        notificationContext: session.notificationContext,
-        createdAt: session.createdAt,
-        updatedAt: session.updatedAt,
-      });
-      threadCount++;
+      const existingThread = await getThread(tdb, session.id, { includeMessages: false });
+      if (!existingThread) {
+        await createThread(tdb, {
+          id: session.id,
+          title: session.title,
+          notificationContext: session.notificationContext,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+        });
+        threadCount++;
+      }
 
       for (let i = 0; i < session.messages.length; i++) {
         const msg = session.messages[i];
+        if (await getMessage(tdb, session.id, msg.id)) continue;
         const msgTs = session.createdAt + i * 1000;
         await createMessage(tdb, session.id, {
           id: msg.id,
