@@ -77,6 +77,24 @@
       "title": "Sync czatów multi-device",
       "phase": "2F",
       "body": "Przenieś historię czatów z localStorage na serwer z sync.\n\nPrzeczytaj:\n- ai-kontekst/serwer-i-sync.md\n- packages/web/lib/chat-storage.ts\n\nZadanie:\n1. CRUD /api/threads i messages.\n2. Migracja jednorazowa z localStorage.\n3. Klient: pull on start, push po wysłaniu wiadomości.\n4. IndexedDB jako cache offline.\n5. Zachowaj kompatybilność wsteczną do czasu migracji."
+    },
+    {
+      "id": 14,
+      "title": "Agent core: dłuższa pętla narzędzi + fs.grep",
+      "phase": "4A",
+      "body": "Implementuj Fazę 4A ChatGPA: dojrzalszy silnik agenta (poziom Cursor/Claude Code/Codex).\n\nPrzeczytaj:\n- ai-kontekst/wizja.md (sekcja „Metafora Cursor / Claude Code / Codex”)\n- ai-kontekst/dla-agenta.md\n- ai-kontekst/decyzje.md (2026-09-04 „Agent FS-first”, 2026-09-13 „Faza 4”)\n- packages/api/ai/chat.ts, packages/api/ai/tools.ts, packages/api/ai/system-prompt.ts\n\nZadanie:\n1. Podnieś MAX_TOOL_ROUNDS w packages/api/ai/chat.ts (np. 3 → 8) i zamień sztywną shouldFinalize na mądrzejszą heurystykę (koniec gdy model nie woła już narzędzi, nie tylko po liczbie rund lub specjalnym przypadku plan.generate).\n2. Dodaj narzędzie fs.grep({ query, path?, limit? }) w tools.ts — pełnotekstowe wyszukiwanie po plikach pod ~/ (case-insensitive substring wystarczy na start), zwraca listę { path, line, snippet }.\n3. Zaktualizuj SYSTEM_PROMPT (system-prompt.ts) o fs.grep — kiedy używać zamiast zgadywania ścieżki / przeglądania katalogów po kolei.\n4. Testy: tools_test.ts dla fs.grep (trafienia, brak wyników, limit); test w chat.ts na >3 rundy narzędzi.\n5. Zsynchronizuj ai-kontekst/system-plikow.md z nową listą narzędzi.\n\nNie rób jeszcze: diff/undo (epik 15), polish UI (epik 16)."
+    },
+    {
+      "id": 15,
+      "title": "Bezpieczne edycje plików: diff + undo",
+      "phase": "4B",
+      "body": "Implementuj Fazę 4B ChatGPA: diff i undo dla zapisu plików wirtualnego FS.\n\nPrzeczytaj:\n- ai-kontekst/system-plikow.md\n- ai-kontekst/decyzje.md (2026-09-04 „Pliki wirtualnego FS = source of truth”, „Revive soft-deleted file paths”)\n- packages/api/fs/**, packages/api/db (schemat file_nodes)\n\nZadanie:\n1. fs.write zwraca w wyniku narzędzia prosty diff (przed/po, linia po linii) zamiast tylko potwierdzenia zapisu — pokaż go w UI (panel Plików / dymek narzędzia w czacie).\n2. Prosta historia wersji: przy nadpisaniu istniejącego pliku zachowaj poprzednią treść (nowa tabela wersji albo pole w file_nodes), np. ostatnie 5 wersji na plik.\n3. Endpoint/tool do cofnięcia: fs.history({ path }) + przycisk „Cofnij” w panelu Plików na poprzednią wersję.\n4. Testy: nadpisanie zachowuje starą wersję; undo przywraca dokładnie poprzednią treść.\n5. Zaktualizuj system-plikow.md o wersjonowanie/undo.\n\nZależy od: epik 14 (fs.grep) niekoniecznie, ale kończ chat.ts/tools.ts zmiany z epiku 14 najpierw żeby uniknąć konfliktów."
+    },
+    {
+      "id": 16,
+      "title": "Polish do codziennego użytku",
+      "phase": "4C",
+      "body": "Zamknij Fazę 4 ChatGPA: polish i pełny ręczny przegląd przed codziennym użyciem.\n\nPrzeczytaj:\n- ai-kontekst/decyzje.md (2026-09-13 „Ręczny test end-to-end”)\n- packages/web/lib/threads-api.ts\n- ai-kontekst/roadmap.md (sekcja Definition of Done)\n\nZadanie:\n1. Napraw szumiące 404 w threads-api.ts — GET „czy wątek/wiadomość istnieje” przed POST zawsze failuje dla nowej rozmowy. Zamień na idempotentny POST/upsert albo inny sposób bez zbędnego requestu, który zawsze 404uje.\n2. Manualny przegląd end-to-end wszystkich paneli (Pliki, TODO, Notatki, Kalendarz, Profil, status Librus, Pomodoro, Powiadomienia) w deno task dev — napraw drobne błędy znalezione po drodze, nie dodawaj nowych funkcji.\n3. Przejrzyj ai-kontekst/ — skróć/zarchiwizuj nieaktualne fragmenty (np. archiwum promptów 1–13 w plan-implementacji.md), żeby kontekst nie puchł bez końca.\n4. Upewnij się, że roadmap.md „Definition of Done” jest w pełni odhaczone, włącznie z nowym punktem o agencie poziomu Cursor/Claude Code.\n\nPo tym epiku: ChatGPA to gotowy, przetestowany osobisty produkt — kolejne funkcje (sekcja „Później / someday” w roadmap.md) tylko na wyraźną prośbę."
     }
   ]
 }

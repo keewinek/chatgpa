@@ -91,5 +91,5 @@ jakiegokolwiek klucza = 503 z instrukcją.
 
 ## Skalowanie (nie teraz)
 
-Single-user lokalnie wystarczy. Gdy DB: jeden user_id, bez multi-tenant. Ollama jako ostatni offline
-slot w kaskadzie.
+Single-user lokalnie wystarczy. Gdy DB: jeden user_id, bez multi-tenant. Świadomie bez lokalnego
+offline slota (Ollama) — patrz [AI-dostawcy.md](./AI-dostawcy.md).

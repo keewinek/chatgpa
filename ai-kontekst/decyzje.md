@@ -208,6 +208,42 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Konsekwencje:** nowe funkcje jako format pliku; brak trybu apps/dane w UI; aktualizacja
   `system-plikow.md`, `zasady.md`, `wizja.md`.
 
+## 2026-09-13 — Bez Ollama / lokalnego modelu
+
+- **Decyzja:** usunięto Ollama i „offline slot” / „privacy mode” z roadmapy i dokumentów
+  (`AI-dostawcy.md`, `architektura.md`, `bezpieczenstwo.md`, `roadmap.md`, `ui-ux.md`).
+- **Kontekst:** jeden użytkownik ma zawsze internet; darmowa kaskada (Gemini/Groq/Z.AI/Mistral)
+  wystarcza. Dodatkowy lokalny tor to koszt utrzymania bez realnego zysku.
+- **Konsekwencje:** brak trybu offline w produkcie; jeśli kiedyś potrzebny, to osobna decyzja z
+  konkretnym powodem, nie „na zapas”.
+
+## 2026-09-13 — Faza 4: Agent Core (Cursor / Claude Code / Codex)
+
+- **Decyzja:** po ukończeniu epików 1–13 (Faza 0–3) następny priorytet to nie nowa domena, tylko
+  **dojrzewanie silnika agenta** — żeby ChatGPA faktycznie działało jak Cursor/Claude Code/Codex,
+  nie tylko przypominało je z nazwy. Dodano epiki 14–16 do `epics.json` / `plan-implementacji.md`:
+  14 (dłuższa/mądrzejsza pętla narzędzi + `fs.grep`), 15 (diff + undo przy `fs.write`), 16 (polish:
+  naprawić szumiące 404 przy tworzeniu wątków, manualny przegląd wszystkich paneli).
+- **Kontekst:** użytkownik potwierdził wizję — „ultimate Agent for learning, but for me”, wzorowany
+  na Cursor/Claude Code/Codex; reszta funkcji z Fazy 3/4 (ROI ranking, `/diff`, weekly review,
+  spaced repetition, RAG po książkach) świadomie przesunięta do „Później / someday” w `roadmap.md` —
+  nie blokuje „gotowego” produktu.
+- **Konsekwencje:** `epic-state.json.current = 14`; `aktualny-prompt.md` wskazuje epik 14 jako
+  następny do wklejenia nowemu agentowi.
+
+## 2026-09-13 — Ręczny test end-to-end (dev)
+
+- **Test:** `deno task dev` (Fresh/Vite, :5173), realny chat z pytaniem o plan dnia — agent
+  poprawnie rozpoznał niedzielę (brak lekcji), odczytał `~/todo/global.todo` i plan lekcji na
+  poniedziałek w 5 rundach narzędzi (`gemini/gemini-3.5-flash`); panel Plików (drzewo `~/`, edycja
+  `global.todo` + Save) działa. `deno task test` → 154/154 ok.
+- **Znaleziony drobny problem:** `packages/web/lib/threads-api.ts` robi `GET` „czy wątek/wiadomość
+  już istnieje” przed `POST` tworzącym — zawsze 404 przy nowej rozmowie, widoczne jako błąd w
+  konsoli przeglądarki (nieszkodliwe funkcjonalnie, tylko szum). Do ogarnięcia w epiku 16 (polish),
+  niżej priorytet niż FS.
+- **Konsekwencje:** epiki 1–13 uznane za faktycznie zweryfikowane działające, nie tylko odhaczone w
+  roadmapie.
+
 ## 2026-09-04 — Agent FS-first (Cursor-style tools)
 
 - **Decyzja:** agent runtime widzi tylko `fs.list|read|write|mkdir|delete` + `plan.generate`,

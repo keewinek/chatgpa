@@ -34,21 +34,30 @@ zł**:
 | Wieczór         | Retrospektywa: co zrobione, co przełożyć, energia      |
 | Niedziela       | Plan tygodnia + sync Librus                            |
 
-## Metafora „Cursor”
+## Metafora „Cursor / Claude Code / Codex”
 
-| Cursor (kod)       | ChatGPA (szkoła)                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------------- |
-| Workspace projektu | Profil ucznia + kontekst szkoły                                                              |
-| Pliki / git        | **Wirtualny FS `~/`** — single source of truth ([system-plikow.md](./system-plikow.md))       |
-| Agent / chat       | Chat edukacyjny z narzędziami; edycja plików = zmiana stanu OS                               |
-| Autocomplete       | Sugestie planu nauki                                                                         |
-| Background agents  | Automatyzacje w tle (plan dnia, alerty)                                                      |
-| Diff / PR          | Diff wiedzy / zmiana średniej                                                                |
-| Rules / AGENTS.md  | Ten folder `ai-kontekst/` + profil                                                           |
-| MCP / tools        | Głównie `fs.*` (+ `plan.generate`, `web.search`, …) — szkoła jak codebase |
+ChatGPA to **ultymatywny osobisty agent do nauki — zbudowany dla jednej osoby (Ciebie)**, nie
+produkt masowy. Wzorzec działania = narzędzia agentowe do kodu (Cursor, Claude Code, Codex): agent
+nie dostaje wszystkiego w promptcie, tylko **eksploruje** `~/` narzędziami, tak jak dobry agent
+kodujący eksploruje repo, zanim coś zmieni.
+
+| Cursor / Claude Code / Codex | ChatGPA (szkoła)                                                                        |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| Workspace projektu           | Profil ucznia + kontekst szkoły                                                         |
+| Pliki / git                  | **Wirtualny FS `~/`** — single source of truth ([system-plikow.md](./system-plikow.md)) |
+| Agent / chat                 | Chat edukacyjny z narzędziami; edycja plików = zmiana stanu OS                          |
+| `grep` / code search         | `fs.grep` — pełnotekstowe wyszukiwanie po `~/` (Faza 4)                                 |
+| Autocomplete                 | Sugestie planu nauki                                                                    |
+| Background agents            | Automatyzacje w tle (plan dnia, alerty)                                                 |
+| Diff przed zapisem pliku     | Diff `fs.write` (przed/po) + undo (Faza 4)                                              |
+| Rules / AGENTS.md            | Ten folder `ai-kontekst/` + profil                                                      |
+| MCP / tools                  | Głównie `fs.*` (+ `plan.generate`, `web.search`, …) — szkoła jak codebase               |
 
 **Kierunek:** im więcej funkcji, tym więcej z nich powinno być „po prostu plikiem” (`.todo`, `.cal`,
 `.plan`, `.profile`, `.ui`, `groups.json`…). Panele UI nie trzymają osobnej prawdy — renderują FS.
+Agent runtime celowo widzi tylko `fs.*` + kilka wąskich narzędzi (nie setki domenowych) — jak Cursor
+w dużym repo, nie stary chatbot z pełnym kontekstem w promptcie. Patrz decyzja „Agent FS-first” w
+[decyzje.md](./decyzje.md).
 
 ## North-star metrics (osobiste)
 

@@ -4,29 +4,44 @@
 
 ## ▶ AKTUALNY PROMPT
 
-👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez `deno task epic:done` po każdym agencie.
+👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez
+`deno task epic:done` po każdym agencie.
 
-### ✅ Wszystkie epiki ukończone
+|                     |                                                          |
+| ------------------- | -------------------------------------------------------- |
+| **Epik**            | Prompt 14 — Agent core: dłuższa pętla narzędzi + fs.grep |
+| **Faza**            | 4A                                                       |
+| **Status**          | ⏳ **DO ZROBIENIA**                                      |
+| **Następny po tym** | Prompt 15 — Bezpieczne edycje plików: diff + undo        |
 
-Ukończone: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13
+> Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
+
+### Po zakończeniu epiku (agent — obowiązkowo)
+
+1. `deno task test`
+2. `roadmap.md` — odhacz punkt
+3. **`deno task epic:done`** — przesuwa prompt (nie rób ręcznie!)
 
 ## Kolejka promptów (auto)
 
-| # | Epik | Status |
-| --- | --- | --- |
-| 1 | Serwer + PostgreSQL + Drizzle | ✅ |
-| 2 | Wirtualny system plików | ✅ |
-| 3 | Pamięć short/long | ✅ |
-| 4 | Globalna TODO | ✅ |
-| 5 | Notatki Markdown | ✅ |
-| 6 | Lazy context + tools | ✅ |
-| 7 | Kalendarz + profil czasu | ✅ |
-| 8 | Komendy slash | ✅ |
-| 9 | Pomodoro | ✅ |
-| 10 | Wtyczka Librus | ✅ |
-| 11 | Plan nauki + cron | ✅ |
-| 12 | Powiadomienia | ✅ |
-| 13 | Sync czatów multi-device | ✅ |
+| #  | Epik                                         | Status       |
+| -- | -------------------------------------------- | ------------ |
+| 1  | Serwer + PostgreSQL + Drizzle                | ✅           |
+| 2  | Wirtualny system plików                      | ✅           |
+| 3  | Pamięć short/long                            | ✅           |
+| 4  | Globalna TODO                                | ✅           |
+| 5  | Notatki Markdown                             | ✅           |
+| 6  | Lazy context + tools                         | ✅           |
+| 7  | Kalendarz + profil czasu                     | ✅           |
+| 8  | Komendy slash                                | ✅           |
+| 9  | Pomodoro                                     | ✅           |
+| 10 | Wtyczka Librus                               | ✅           |
+| 11 | Plan nauki + cron                            | ✅           |
+| 12 | Powiadomienia                                | ✅           |
+| 13 | Sync czatów multi-device                     | ✅           |
+| 14 | Agent core: dłuższa pętla narzędzi + fs.grep | ⏳ **TERAZ** |
+| 15 | Bezpieczne edycje plików: diff + undo        | ⬜           |
+| 16 | Polish do codziennego użytku                 | ⬜           |
 
 <!-- EPIC_AUTO_END -->
 
@@ -84,6 +99,14 @@ flowchart TD
 | 3A   | [librus.md](./librus.md) — wtyczka                          | P2        | duży     |
 | 3B   | [plan-nauki.md](./plan-nauki.md) — cron + generowanie planu | P2        | duży     |
 | 3C   | [powiadomienia.md](./powiadomienia.md) — Web Push           | P3        | średni   |
+| 4A   | Agent core — dłuższa pętla narzędzi + `fs.grep`             | **P0**    | średni   |
+| 4B   | Diff + undo przy `fs.write`                                 | P1        | średni   |
+| 4C   | Polish do codziennego użytku                                | P1        | mały     |
+
+> Fazy 0–3 (epiki 1–13) ukończone i ręcznie zweryfikowane 2026-09-13 — patrz
+> [decyzje.md](./decyzje.md). Faza 4 (epiki 14–16) to obecny priorytet: dojrzewanie silnika agenta
+> (Cursor/Claude Code/Codex), nie nowa domena. Kolejne pomysły → „Później / someday” w
+> [roadmap.md](./roadmap.md).
 
 ## Kolejność rekomendowana
 
@@ -413,6 +436,78 @@ Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO
 
 ---
 
+### Prompt 14 — Agent core: dłuższa pętla narzędzi + fs.grep
+
+```
+Implementuj Fazę 4A ChatGPA: dojrzalszy silnik agenta (poziom Cursor/Claude Code/Codex).
+
+Przeczytaj:
+- ai-kontekst/wizja.md (sekcja „Metafora Cursor / Claude Code / Codex”)
+- ai-kontekst/dla-agenta.md
+- ai-kontekst/decyzje.md (2026-09-04 „Agent FS-first”, 2026-09-13 „Faza 4”)
+- packages/api/ai/chat.ts, packages/api/ai/tools.ts, packages/api/ai/system-prompt.ts
+
+Zadanie:
+1. Podnieś MAX_TOOL_ROUNDS w packages/api/ai/chat.ts (np. 3 → 8) i zamień sztywną shouldFinalize na mądrzejszą heurystykę (koniec gdy model nie woła już narzędzi, nie tylko po liczbie rund lub specjalnym przypadku plan.generate).
+2. Dodaj narzędzie fs.grep({ query, path?, limit? }) w tools.ts — pełnotekstowe wyszukiwanie po plikach pod ~/ (case-insensitive substring wystarczy na start), zwraca listę { path, line, snippet }.
+3. Zaktualizuj SYSTEM_PROMPT (system-prompt.ts) o fs.grep — kiedy używać zamiast zgadywania ścieżki / przeglądania katalogów po kolei.
+4. Testy: tools_test.ts dla fs.grep (trafienia, brak wyników, limit); test w chat.ts na >3 rundy narzędzi.
+5. Zsynchronizuj ai-kontekst/system-plikow.md z nową listą narzędzi.
+
+Nie rób jeszcze: diff/undo (epik 15), polish UI (epik 16).
+
+Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 15
+```
+
+---
+
+### Prompt 15 — Bezpieczne edycje plików: diff + undo
+
+```
+Implementuj Fazę 4B ChatGPA: diff i undo dla zapisu plików wirtualnego FS.
+
+Przeczytaj:
+- ai-kontekst/system-plikow.md
+- ai-kontekst/decyzje.md (2026-09-04 „Pliki wirtualnego FS = source of truth”, „Revive soft-deleted file paths”)
+- packages/api/fs/**, packages/api/db (schemat file_nodes)
+
+Zadanie:
+1. fs.write zwraca w wyniku narzędzia prosty diff (przed/po, linia po linii) zamiast tylko potwierdzenia zapisu — pokaż go w UI (panel Plików / dymek narzędzia w czacie).
+2. Prosta historia wersji: przy nadpisaniu istniejącego pliku zachowaj poprzednią treść (nowa tabela wersji albo pole w file_nodes), np. ostatnie 5 wersji na plik.
+3. Endpoint/tool do cofnięcia: fs.history({ path }) + przycisk „Cofnij” w panelu Plików na poprzednią wersję.
+4. Testy: nadpisanie zachowuje starą wersję; undo przywraca dokładnie poprzednią treść.
+5. Zaktualizuj system-plikow.md o wersjonowanie/undo.
+
+Zależy od: epik 14 (dokończ zmiany w chat.ts/tools.ts najpierw, żeby uniknąć konfliktów).
+
+Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 16
+```
+
+---
+
+### Prompt 16 — Polish do codziennego użytku
+
+```
+Zamknij Fazę 4 ChatGPA: polish i pełny ręczny przegląd przed codziennym użyciem.
+
+Przeczytaj:
+- ai-kontekst/decyzje.md (2026-09-13 „Ręczny test end-to-end”)
+- packages/web/lib/threads-api.ts
+- ai-kontekst/roadmap.md (sekcja Definition of Done)
+
+Zadanie:
+1. Napraw szumiące 404 w threads-api.ts — GET „czy wątek/wiadomość istnieje” przed POST zawsze failuje dla nowej rozmowy. Zamień na idempotentny POST/upsert albo inny sposób bez zbędnego requestu, który zawsze 404uje.
+2. Manualny przegląd end-to-end wszystkich paneli (Pliki, TODO, Notatki, Kalendarz, Profil, status Librus, Pomodoro, Powiadomienia) w deno task dev — napraw drobne błędy znalezione po drodze, nie dodawaj nowych funkcji.
+3. Przejrzyj ai-kontekst/ — skróć/zarchiwizuj nieaktualne fragmenty (np. to archiwum promptów 1–13), żeby kontekst nie puchł bez końca.
+4. Upewnij się, że roadmap.md „Definition of Done” jest w pełni odhaczone, włącznie z nowym punktem o agencie poziomu Cursor/Claude Code.
+
+Po tym epiku: ChatGPA to gotowy, przetestowany osobisty produkt — kolejne funkcje (sekcja „Później / someday” w roadmap.md) tylko na wyraźną prośbę.
+
+Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO”
+```
+
+---
+
 ## Równoległa praca (subagenci)
 
 | Równolegle                    | Warunek               |
@@ -422,16 +517,19 @@ Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO
 | Prompt 8 + 9                  | niezależne od DB (UI) |
 | Prompt 6                      | po podstawowych tools |
 
-**Nie równolegle:** 10, 11, 12 przed 1, 2, 7.
+**Nie równolegle:** 10, 11, 12 przed 1, 2, 7. Epiki 14 → 15 → 16 też sekwencyjnie — wszystkie
+dotykają `chat.ts`/`tools.ts`/`threads-api.ts`, równoległa praca = konflikty.
 
 ## Checklist „gotowe do produkcji osobistej”
 
-- [ ] Telefon i laptop widzą te same czaty, TODO, notatki, pamięć
-- [ ] Agent pobiera kontekst przez tools, nie z promptu
-- [ ] `/clear short memory`, `/plan`, `/pomodoro` działają
-- [ ] Powiadomienie po szkole z planem na dziś
-- [ ] Librus sync co najmniej oceny + plan lekcji
-- [ ] T-7 przypomnienie przed sprawdzianem
+- [x] Telefon i laptop widzą te same czaty, TODO, notatki, pamięć
+- [x] Agent pobiera kontekst przez tools, nie z promptu
+- [x] `/clear short memory`, `/plan`, `/pomodoro` działają
+- [x] Powiadomienie po szkole z planem na dziś
+- [x] Librus sync co najmniej oceny + plan lekcji
+- [x] T-7 przypomnienie przed sprawdzianem
+- [ ] Agent ma pętlę narzędzi jak Cursor/Claude Code: długie rundy, `fs.grep`, diff + undo (epiki
+      14–16)
 
 ## Jak podmienić AKTUALNY PROMPT
 

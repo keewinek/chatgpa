@@ -32,12 +32,12 @@ Na mobile: chat full-bleed; panele jako bottom sheet / osobne trasy.
 
 ## Stany
 
-| Stan                | UI                                                               |
-| ------------------- | ---------------------------------------------------------------- |
-| Brak kluczy AI      | status w headerze + komunikat w chacie                           |
-| API down            | „uruchom deno task dev:api”                                      |
-| Streaming (później) | tokeny na żywo + model znany na koniec / wcześniej jeśli wybrany |
-| Offline             | Ollama / cached last reply (później)                             |
+| Stan           | UI                                                               |
+| -------------- | ---------------------------------------------------------------- |
+| Brak kluczy AI | status w headerze + komunikat w chacie                           |
+| API down       | „uruchom deno task dev:api”                                      |
+| Streaming      | tokeny na żywo + model znany na koniec / wcześniej jeśli wybrany |
+| Brak sieci     | cache ostatniej odpowiedzi (read-only), bez lokalnego modelu     |
 
 ## Dostępność
 

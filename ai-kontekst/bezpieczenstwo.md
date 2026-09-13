@@ -23,9 +23,8 @@
 - Gemini free tier może trenować na promptach (poza niektórymi regionami) — świadoma decyzja.
 - Groq deklaruje brak trainingu na free (weryfikuj aktualny ToS).
 - OpenRouter — zależy od modelu/providera.
-- Ollama lokalnie = maksymalna prywatność, niższa jakość.
-
-Opcja: flaga `PRIVACY_MODE=strict` → tylko Ollama / lokalne.
+- Świadomie bez lokalnego modelu (Ollama) jako trybu „strict privacy” — jeden użytkownik, ryzyko
+  akceptowalne; nie warto dodatkowego toru utrzymania dla marginalnego zysku.
 
 ## Auth (później, jeśli potrzebne)
 

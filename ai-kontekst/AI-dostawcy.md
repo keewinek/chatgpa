@@ -8,26 +8,26 @@ być zsynchronizowany z kodem.
 
 ## Ranking (aktualny)
 
-| Priorytet | Dostawca         | Model                    | Env               | Rola                          |
-| --------- | ---------------- | ------------------------ | ----------------- | ----------------------------- |
-| 100       | Google AI Studio | `gemini-3.5-flash`       | `GEMINI_API_KEY`  | Najmądrzejszy free Flash      |
-| 95        | Google AI Studio | `gemini-3-flash-preview` | `GEMINI_API_KEY`  | Gemini 3 Flash                |
-| 90        | Google AI Studio | `gemini-flash-latest`    | `GEMINI_API_KEY`  | Alias „latest”                |
-| 85        | Google AI Studio | `gemini-2.5-flash`       | `GEMINI_API_KEY`  | Starszy Flash (często 429)    |
-| 80        | Groq             | `openai/gpt-oss-120b`    | `GROQ_API_KEY`    | Duży open fallback (~0.5s)    |
-| 70        | Z.AI             | `glm-4.7-flash`          | `ZAI_API_KEY`     | **Darmowy** GLM (200K ctx)    |
-| 65        | Mistral          | `mistral-small-latest`   | `MISTRAL_API_KEY` | Experiment tier               |
-| 60        | Groq             | `openai/gpt-oss-20b`     | `GROQ_API_KEY`    | Szybki/słabszy (~0.1s)        |
-| 55        | Z.AI             | `glm-4.5-flash`          | `ZAI_API_KEY`     | **Darmowy** GLM fallback      |
-| 50        | Mistral          | `open-mistral-nemo`      | `MISTRAL_API_KEY` | 12B, 128k ctx                 |
+| Priorytet | Dostawca         | Model                    | Env               | Rola                       |
+| --------- | ---------------- | ------------------------ | ----------------- | -------------------------- |
+| 100       | Google AI Studio | `gemini-3.5-flash`       | `GEMINI_API_KEY`  | Najmądrzejszy free Flash   |
+| 95        | Google AI Studio | `gemini-3-flash-preview` | `GEMINI_API_KEY`  | Gemini 3 Flash             |
+| 90        | Google AI Studio | `gemini-flash-latest`    | `GEMINI_API_KEY`  | Alias „latest”             |
+| 85        | Google AI Studio | `gemini-2.5-flash`       | `GEMINI_API_KEY`  | Starszy Flash (często 429) |
+| 80        | Groq             | `openai/gpt-oss-120b`    | `GROQ_API_KEY`    | Duży open fallback (~0.5s) |
+| 70        | Z.AI             | `glm-4.7-flash`          | `ZAI_API_KEY`     | **Darmowy** GLM (200K ctx) |
+| 65        | Mistral          | `mistral-small-latest`   | `MISTRAL_API_KEY` | Experiment tier            |
+| 60        | Groq             | `openai/gpt-oss-20b`     | `GROQ_API_KEY`    | Szybki/słabszy (~0.1s)     |
+| 55        | Z.AI             | `glm-4.5-flash`          | `ZAI_API_KEY`     | **Darmowy** GLM fallback   |
+| 50        | Mistral          | `open-mistral-nemo`      | `MISTRAL_API_KEY` | 12B, 128k ctx              |
 
-> Usunięto `gemini-2.5-flash-lite` (404 — Google wycofał dla nowych użytkowników).
-> Kaskada jest **smart→dumb**: najpierw Gemini, potem Groq/Z.AI/Mistral. Po 429 cooldown ~10 min.
+> Usunięto `gemini-2.5-flash-lite` (404 — Google wycofał dla nowych użytkowników). Kaskada jest
+> **smart→dumb**: najpierw Gemini, potem Groq/Z.AI/Mistral. Po 429 cooldown ~10 min.
 
 ## Cooldown (w procesie)
 
-Po `429` / quota model jest pomijany ~10 min; po `404` / „no longer available” ~24 h.
-Dzięki temu rundy tooli nie płacą ponownie za martwe sloty.
+Po `429` / quota model jest pomijany ~10 min; po `404` / „no longer available” ~24 h. Dzięki temu
+rundy tooli nie płacą ponownie za martwe sloty.
 
 > **OpenRouter** — kod wspiera (`OPENROUTER_API_KEY`), ale brak slotów w kaskadzie. Dodaj w
 > `cascade-config.ts` jeśli potrzebujesz.
@@ -57,11 +57,13 @@ Tylko **Gemini**. Przy załącznikach wizyjnych kaskada filtruje sloty do `provi
 
 ## Kandydaci na później
 
-| Dostawca           | Po co                        | Env (propozycja)     |
-| ------------------ | ---------------------------- | -------------------- |
-| OpenRouter `:free` | agregator free modeli        | `OPENROUTER_API_KEY` |
-| Cerebras           | szybkość                     | `CEREBRAS_API_KEY`   |
-| Ollama (lokalnie)  | offline, ostateczny fallback | brak (localhost)     |
+| Dostawca           | Po co                 | Env (propozycja)     |
+| ------------------ | --------------------- | -------------------- |
+| OpenRouter `:free` | agregator free modeli | `OPENROUTER_API_KEY` |
+| Cerebras           | szybkość              | `CEREBRAS_API_KEY`   |
+
+> Świadomie **bez** lokalnego/offline fallbacku (np. Ollama) — jeden użytkownik ma zawsze internet;
+> prościej utrzymać samą kaskadę darmowych API niż dodatkowy lokalny tor.
 
 ## Zachowanie kaskady
 
