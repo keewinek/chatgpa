@@ -398,7 +398,7 @@ export default function NotesPanel({ onBack, initialPath, embedded = false }: No
               : (
                 <div class="notes-empty">
                   <p>Wybierz notatkę z listy lub utwórz nową.</p>
-                  <p class="notes-muted">Agent może zapisywać notatki narzędziem notes.write.</p>
+                  <p class="notes-muted">Agent może zapisywać notatki narzędziem fs.write.</p>
                 </div>
               )}
           </section>

@@ -346,33 +346,6 @@ export default function ChatApp() {
     const promptSeed = slash?.type === "prompt" ? slash.seed : undefined;
     const displayText = slash?.type === "prompt" ? slash.display : text;
 
-    if (text === "/calendar" || text.startsWith("/calendar ")) {
-      filesUi.value = "calendar";
-      notesInitialPath.value = null;
-      view.value = "files";
-      input.value = "";
-      sidebarOpen.value = false;
-      return;
-    }
-
-    if (text === "/profile" || text.startsWith("/profile ")) {
-      filesUi.value = "profile";
-      notesInitialPath.value = null;
-      view.value = "files";
-      input.value = "";
-      sidebarOpen.value = false;
-      return;
-    }
-
-    if (text === "/timetable" || text.startsWith("/timetable ")) {
-      filesUi.value = "timetable";
-      notesInitialPath.value = null;
-      view.value = "files";
-      input.value = "";
-      sidebarOpen.value = false;
-      return;
-    }
-
     let attachments: ChatAttachment[] = [];
     if (pending.value.length) {
       try {

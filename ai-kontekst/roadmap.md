@@ -42,7 +42,7 @@ Szczegóły: [plan-implementacji.md](./plan-implementacji.md)
 - [x] Klik powiadomienia → czat z agentem + TODO dziś
 - [x] Negocjacja planu („dziś lekarz” → przesunięcie)
 
-## Faza 4 — Agent Core: poziom Cursor / Claude Code / Codex (NOWA — priorytet)
+## Faza 4 — Agent Core: poziom Cursor / Claude Code / Codex ✅
 
 **Cel:** wszystkie domenowe funkcje (Faza 0–3) są zrobione. Teraz dojrzewa sam **agent** — silnik,
 który czyta/pisze `~/` — żeby faktycznie działał jak Cursor/Claude Code/Codex, nie tylko wyglądał.
@@ -53,8 +53,12 @@ Szczegóły promptów: [plan-implementacji.md](./plan-implementacji.md), epiki 1
 - [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` (most FS ↔ Claude Code)
 - [x] Fix: reanimacja soft-deleted wątków czatu (crash na duplicate-key przy migracji/tworzeniu)
 - [x] Bezpieczne edycje: diff przed/po przy `fs.write`, prosty undo/historia wersji pliku
-- [ ] Polish do codziennego użytku: kosmetyczny 404 z GET-then-create przy tworzeniu wątków (patrz
-      [decyzje.md](./decyzje.md), wpis 2026-09-13), pełny manualny przegląd paneli
+- [x] Polish: usunięty GET-then-create przed każdym push wątku/wiadomości (`pushSessionToServer`
+      teraz po prostu upsertuje — serwer już to obsługuje), `/calendar`/`/timetable`/`/profile`
+      dodane do autocomplete komend (działały, ale nie były odkrywalne), stała notka w Notatkach
+      (`notes.write` → `fs.write`)
+- [x] Manualny przegląd end-to-end wszystkich paneli (Pliki, TODO, Notatki, Kalendarz, Plan lekcji,
+      Profil, status Librus, Pomodoro, Powiadomienia) — patrz [decyzje.md](./decyzje.md)
 
 ## Później / someday (poza zakresem MVP)
 
@@ -87,9 +91,8 @@ solidne:
 
 ## Kontekst (wrzesień 2026)
 
-Wszystkie epiki Fazy 0–3 (1–13) ukończone i przetestowane ręcznie 2026-09-13 (chat, streaming,
-multi-round tools, panel Plików — patrz [decyzje.md](./decyzje.md)). Następny krok: Faza 4 —
-dojrzewanie silnika agenta, nie nowe domeny. Pełna specyfikacja:
-[plan-implementacji.md](./plan-implementacji.md)
-
-- pliki w sekcji „Funkcje” w [README.md](./README.md).
+Wszystkie epiki Faz 0–4 (1–16) ukończone 2026-09-13 — ChatGPA to gotowy, przetestowany (ręcznie,
+end-to-end, wszystkie panele) osobisty produkt. Kolejne funkcje tylko na wyraźną prośbę — patrz
+sekcja „Później / someday” wyżej. Pełna specyfikacja w
+[plan-implementacji.md](./plan-implementacji.md) i sekcji „Funkcje” w [README.md](./README.md); log
+decyzji w [decyzje.md](./decyzje.md).

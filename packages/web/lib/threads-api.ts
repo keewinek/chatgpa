@@ -59,24 +59,6 @@ export async function createThreadApi(input: {
   return data.thread ?? null;
 }
 
-export async function updateThreadApi(
-  id: string,
-  patch: {
-    title?: string;
-    updatedAt?: number;
-    notificationContext?: ChatSession["notificationContext"] | null;
-  },
-): Promise<ThreadDto | null> {
-  const res = await fetch(`${API}/api/threads/${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
-  });
-  if (!res.ok) return null;
-  const data = await res.json() as { thread?: ThreadDto };
-  return data.thread ?? null;
-}
-
 export async function deleteThreadApi(id: string): Promise<boolean> {
   const res = await fetch(`${API}/api/threads/${encodeURIComponent(id)}`, {
     method: "DELETE",
@@ -105,24 +87,6 @@ export async function createMessageApi(
       updatedAt,
     }),
   });
-  if (!res.ok) return null;
-  const data = await res.json() as { message?: ThreadMessageDto };
-  return data.message ?? null;
-}
-
-export async function updateMessageApi(
-  threadId: string,
-  messageId: string,
-  patch: Partial<StoredMessage> & { updatedAt?: number },
-): Promise<ThreadMessageDto | null> {
-  const res = await fetch(
-    `${API}/api/threads/${encodeURIComponent(threadId)}/messages/${encodeURIComponent(messageId)}`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    },
-  );
   if (!res.ok) return null;
   const data = await res.json() as { message?: ThreadMessageDto };
   return data.message ?? null;
@@ -187,44 +151,29 @@ export async function pullThreadsFromServer(): Promise<ChatStore | null> {
   };
 }
 
+/**
+ * Upsert a whole session (thread + messages) to the server. `createThreadApi` /
+ * `createMessageApi` POST to routes backed by `onConflictDoUpdate` (see
+ * packages/api/threads/service.ts) — they create on a fresh id and revive/overwrite on
+ * a conflict (already-migrated session, soft-deleted thread, retried push after a
+ * network hiccup), so there's no need to GET-check existence before deciding whether to
+ * POST or PATCH: that used to 404 on every genuinely-new session/message.
+ */
 export async function pushSessionToServer(session: ChatSession): Promise<string | null> {
-  let threadUpdatedAt: string | null = null;
-  const existing = await fetch(`${API}/api/threads/${encodeURIComponent(session.id)}`);
-  if (existing.ok) {
-    const thread = await updateThreadApi(session.id, {
-      title: session.title,
-      updatedAt: session.updatedAt,
-      notificationContext: session.notificationContext ?? null,
-    });
-    if (!thread) return null;
-    threadUpdatedAt = thread.updatedAt;
-  } else {
-    const thread = await createThreadApi({
-      id: session.id,
-      title: session.title,
-      createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
-      notificationContext: session.notificationContext,
-    });
-    if (!thread) return null;
-    threadUpdatedAt = thread.updatedAt;
-  }
+  const thread = await createThreadApi({
+    id: session.id,
+    title: session.title,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+    notificationContext: session.notificationContext,
+  });
+  if (!thread) return null;
+  let threadUpdatedAt = thread.updatedAt;
 
   for (const message of session.messages) {
-    const msgRes = await fetch(
-      `${API}/api/threads/${encodeURIComponent(session.id)}/messages/${
-        encodeURIComponent(message.id)
-      }`,
-    );
-    if (msgRes.ok) {
-      const updated = await updateMessageApi(session.id, message.id, message);
-      if (!updated) return null;
-      if (updated.updatedAt > (threadUpdatedAt ?? "")) threadUpdatedAt = updated.updatedAt;
-    } else {
-      const created = await createMessageApi(session.id, message);
-      if (!created) return null;
-      if (created.updatedAt > (threadUpdatedAt ?? "")) threadUpdatedAt = created.updatedAt;
-    }
+    const created = await createMessageApi(session.id, message);
+    if (!created) return null;
+    if (created.updatedAt > threadUpdatedAt) threadUpdatedAt = created.updatedAt;
   }
 
   return threadUpdatedAt;

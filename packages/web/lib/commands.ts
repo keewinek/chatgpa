@@ -1,6 +1,13 @@
 import { PLAN_TODAY_SEED, PLAN_WEEK_SEED } from "./command-seeds.ts";
 
-export type UiCommand = "pomodoro" | "todo" | "notes" | "files";
+export type UiCommand =
+  | "pomodoro"
+  | "todo"
+  | "notes"
+  | "files"
+  | "calendar"
+  | "profile"
+  | "timetable";
 
 export type ParsedCommand =
   | { type: "ui"; command: UiCommand; notesPath?: string | null }
@@ -55,6 +62,24 @@ export const COMMAND_REGISTRY: CommandEntry[] = [
     id: "files",
     trigger: "/files",
     description: "Otwórz system plików",
+    category: "ui",
+  },
+  {
+    id: "calendar",
+    trigger: "/calendar",
+    description: "Otwórz kalendarz",
+    category: "ui",
+  },
+  {
+    id: "timetable",
+    trigger: "/timetable",
+    description: "Otwórz plan lekcji",
+    category: "ui",
+  },
+  {
+    id: "profile",
+    trigger: "/profile",
+    description: "Otwórz profil czasu",
     category: "ui",
   },
 ];
@@ -118,6 +143,18 @@ export function parseSlashCommand(text: string): ParsedCommand | null {
 
   if (lower === "/files" || lower.startsWith("/files ")) {
     return { type: "ui", command: "files" };
+  }
+
+  if (lower === "/calendar" || lower.startsWith("/calendar ")) {
+    return { type: "ui", command: "calendar" };
+  }
+
+  if (lower === "/timetable" || lower.startsWith("/timetable ")) {
+    return { type: "ui", command: "timetable" };
+  }
+
+  if (lower === "/profile" || lower.startsWith("/profile ")) {
+    return { type: "ui", command: "profile" };
   }
 
   return null;

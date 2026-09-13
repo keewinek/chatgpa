@@ -208,6 +208,38 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Konsekwencje:** nowe funkcje jako format pliku; brak trybu apps/dane w UI; aktualizacja
   `system-plikow.md`, `zasady.md`, `wizja.md`.
 
+## 2026-09-13 — Epik 16: polish, ostatni epik Fazy 4 — ChatGPA gotowe
+
+- **Fix (realny bug, nie tylko kosmetyka):** `pushSessionToServer` w `threads-api.ts` robił GET „czy
+  wątek/wiadomość istnieje” przed każdym POST/PATCH — zawsze 404 dla nowej rozmowy. Skoro
+  `createThread`/`createMessage` już upsertują (epik 14/15-adjacent fix, patrz „Fix: reanimacja
+  wątków czatu” wyżej), ten check jest zbędny — usunięty. `pushSessionToServer` teraz zawsze woła
+  `createThreadApi`/`createMessageApi` (upsert). Usunięto martwe
+  `updateThreadApi`/`updateMessageApi` (jedyni wywołujący). Zweryfikowane w przeglądarce: nowa
+  wiadomość → `POST → 201`, zero 404.
+- **Fix (prawdziwy bug znaleziony w przeglądzie):** `/calendar`, `/timetable`, `/profile` działały,
+  ale były zahardkodowane osobno w `ChatApp.tsx` (duplikacja logiki z `commands.ts`) i **nie były w
+  `COMMAND_REGISTRY`** — niewidoczne w autocomplete „/”, więc praktycznie nieodkrywalne. Dodane do
+  registry + `parseSlashCommand`; trzy zduplikowane bloki w `ChatApp.tsx` usunięte na rzecz
+  istniejącej generycznej ścieżki `slash?.type === "ui"` (już obsługiwała te widoki przez
+  `viewFromSlash`). `filterCommands("/")` teraz zwraca 10 komend (było 7).
+- **Fix (drobny):** panel Notatek pokazywał nieaktualną podpowiedź „Agent może zapisywać notatki
+  narzędziem notes.write” — narzędzie zapisane w agencie to `fs.write` (FS-first od 2026-09-04).
+- **Manualny przegląd end-to-end (`deno task dev`, desktop 1280×900):** Pliki (diff/undo — patrz
+  epik 15), TODO (filtry, dodawanie), Notatki (pusty stan + linki), Kalendarz (siatka tygodnia,
+  prawdziwe wydarzenie), Plan lekcji (siatka klasy 3A), Profil czasu (wartości zgodne z decyzją
+  „Profil czasu (domyślne)”), Sync Librus (bez wtyczki → czytelny błąd, nie crash), Pomodoro (timer
+  25:00 render), Powiadomienia (dzwonek poprawnie nic nie robi przy zerze nieprzeczytanych). Zero
+  błędów w konsoli / sieci poza oczekiwanymi (brak wtyczki Librus).
+- **Kontekst posprzątany:** archiwum promptów 1–15 w `plan-implementacji.md` (pełna treść, ~300
+  linii) zwinięte do tabeli skrótów — źródło prawdy zostaje w `epics.json` / historii gita; plik 548
+  → 222 linie. `roadmap.md` „Definition of Done” w pełni odhaczone; `ai-kontekst/README.md` sekcja
+  „Stan” (mocno nieaktualna, sprzed Fazy 2) zaktualizowana.
+- **Konsekwencje:** to był ostatni epik w kolejce (`epics.json`, 16/16) — `deno task epic:done`
+  ustawia `epic-state.json.current = null`. Wszystkie 16 epików (Faza 0–4) ukończone; ChatGPA to
+  gotowy, ręcznie przetestowany osobisty produkt. Kolejne funkcje → sekcja „Później / someday” w
+  `roadmap.md`, tylko na wyraźną prośbę użytkownika, nie z automatu.
+
 ## 2026-09-13 — Epik 15: diff + undo dla fs.write
 
 - **Decyzja:** `fs.write` na istniejącym pliku liczy prosty diff linia-po-linii (LCS,

@@ -45,6 +45,9 @@ Deno.test("parseSlashCommand — komendy UI", () => {
   assertEquals(parseSlashCommand("/todo"), { type: "ui", command: "todo" });
   assertEquals(parseSlashCommand("/files"), { type: "ui", command: "files" });
   assertEquals(parseSlashCommand("/notes"), { type: "ui", command: "notes", notesPath: null });
+  assertEquals(parseSlashCommand("/calendar"), { type: "ui", command: "calendar" });
+  assertEquals(parseSlashCommand("/timetable"), { type: "ui", command: "timetable" });
+  assertEquals(parseSlashCommand("/profile"), { type: "ui", command: "profile" });
 });
 
 Deno.test("parseSlashCommand — /notes otwórz ze ścieżką", () => {
@@ -75,7 +78,7 @@ Deno.test("filterCommands — dopasowuje prefiks", () => {
 });
 
 Deno.test("filterCommands — pusty slash zwraca wszystkie", () => {
-  assertEquals(filterCommands("/").length, 7);
+  assertEquals(filterCommands("/").length, 10);
 });
 
 Deno.test("filterCommands — bez slasha pusta lista", () => {

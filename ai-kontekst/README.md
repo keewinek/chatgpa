@@ -67,8 +67,11 @@ między urządzeniami. AI pobiera kontekst przez **tools**, nie dostaje wszystki
 
 ## Stan (wrzesień 2026)
 
-**Zrobione:** chat, streaming, kaskada AI, pamięć v1 (localStorage), załączniki, narzędzia
-`memory.*`, **plan lekcji 3A** (UI + AI).
+**Wszystkie 16 epików ukończone** (Faza 0–4, patrz [plan-implementacji.md](./plan-implementacji.md)
+i [roadmap.md](./roadmap.md)) — serwer + DB, wirtualny FS z sync, pamięć short/long, TODO, notatki,
+kalendarz + profil czasu, Librus, plan nauki (T-7), powiadomienia, sync czatów multi-device, i —
+Faza 4 — agent dojrzały do poziomu Cursor/Claude Code: długie rundy narzędzi, `fs.grep`,
+samodoskonalenie (`~/dev/dla-claude-code.md` → Claude Code), diff + undo przy `fs.write`.
 
-**Następne (wg [plan-implementacji.md](./plan-implementacji.md)):** serwer + DB → system plików →
-pamięć short/long → lazy context → TODO/notatki → kalendarz → Librus → powiadomienia.
+ChatGPA to gotowy, ręcznie przetestowany end-to-end osobisty produkt. Kolejne funkcje tylko na
+wyraźną prośbę — patrz „Później / someday” w [roadmap.md](./roadmap.md).

@@ -6,20 +6,9 @@
 
 👉 **Skopiuj stąd:** [aktualny-prompt.md](./aktualny-prompt.md) — plik aktualizowany przez `deno task epic:done` po każdym agencie.
 
-| | |
-| --- | --- |
-| **Epik** | Prompt 16 — Polish do codziennego użytku |
-| **Faza** | 4C |
-| **Status** | ⏳ **DO ZROBIENIA** |
-| **Następny po tym** | ✅ koniec kolejki |
+### ✅ Wszystkie epiki ukończone
 
-> Otwórz **aktualny-prompt.md** i skopiuj blok \`\`\` … \`\`\`.
-
-### Po zakończeniu epiku (agent — obowiązkowo)
-
-1. `deno task test`
-2. `roadmap.md` — odhacz punkt
-3. **`deno task epic:done`** — przesuwa prompt (nie rób ręcznie!)
+Ukończone: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
 
 ## Kolejka promptów (auto)
 
@@ -40,7 +29,7 @@
 | 13 | Sync czatów multi-device | ✅ |
 | 14 | Agent core: dłuższa pętla narzędzi + fs.grep | ✅ |
 | 15 | Bezpieczne edycje plików: diff + undo | ✅ |
-| 16 | Polish do codziennego użytku | ⏳ **TERAZ** |
+| 16 | Polish do codziennego użytku | ✅ |
 
 <!-- EPIC_AUTO_END -->
 
@@ -126,361 +115,35 @@ flowchart TD
 
 Każdy prompt zakłada: przeczytaj `ai-kontekst/` (wskazane pliki), Deno monorepo, koszt 0 zł, testy
 po zmianach. **Źródło prawdy promptów:** `ai-kontekst/epics.json` → generuje
-[aktualny-prompt.md](./aktualny-prompt.md). Poniżej archiwum treści; po `epic:done` kopiuj z
-`aktualny-prompt.md`.
-
----
-
-### Prompt 1 — Serwer + PostgreSQL + Drizzle
-
-```
-Implementuj Fazę 2A ChatGPA: serwer i baza danych.
-
-Przeczytaj:
-- ai-kontekst/serwer-i-sync.md
-- ai-kontekst/architektura.md
-- ai-kontekst/model-danych.md
-- ai-kontekst/dla-agenta.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Dodaj PostgreSQL + Drizzle do packages/api (migracje, connection z env DATABASE_URL).
-2. Tabele na start: profile, chat_threads, chat_messages, memory_entries, tasks, file_nodes (wirtualny FS).
-3. Endpointy health sprawdzające DB.
-4. Szkielet sync: GET /api/sync/pull, POST /api/sync/push (minimalna implementacja).
-5. .env.example z DATABASE_URL.
-6. Testy integracyjne z mockiem lub testcontainers jeśli możliwe.
-
-Nie rób jeszcze: Librus, powiadomień, pełnego UI sync — tylko backend + migracje.
-
-Po zakończeniu:
-- Uruchom deno task test
-- Zaktualizuj ai-kontekst/roadmap.md (odhacz PostgreSQL)
-- Zaktualizuj sekcję „AKTUALNY PROMPT” w ai-kontekst/plan-implementacji.md → Prompt 2
-```
-
----
-
-### Prompt 2 — Wirtualny system plików
-
-```
-Implementuj Fazę 2B ChatGPA: wirtualny system plików (metafora OS).
-
-Przeczytaj:
-- ai-kontekst/system-plikow.md
-- ai-kontekst/serwer-i-sync.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. API /api/fs/* — list, read, write, mkdir, delete (ścieżki sanityzowane pod ~/).
-2. Seed struktury katalogów przy pierwszym uruchomieniu: memory/, todo/, notes/, calendar/, books/, plans/, profile/, school/librus/.
-3. Tools dla agenta: fs.list, fs.read, fs.write (w packages/api/ai/tools.ts).
-4. Prosty panel UI „Pliki” w packages/web (drzewo + podgląd tekstu).
-5. Testy API fs.
-
-Zależy od: Faza 2A (DB) — musi być gotowa.
-
-Po zakończeniu:
-- deno task test
-- roadmap.md + sekcja AKTUALNY PROMPT → Prompt 3 (lub 4+5 równolegle jeśli wolisz)
-```
-
----
-
-### Prompt 3 — Pamięć short-term i long-term
-
-```
-Implementuj system pamięci ChatGPA (short + long term).
-
-Przeczytaj:
-- ai-kontekst/pamiec.md
-- ai-kontekst/system-plikow.md
-- ai-kontekst/komendy.md (sekcja /clear short memory)
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. MemoryEntry z kind short|long, expiresAt dla short.
-2. Migracja obecnego string[] memory z localStorage → long-term.
-3. Zaktualizuj tools memory.remember|list|forget|clear.
-4. Plik ~/memory/long-term.memory zsynchronizowany z DB.
-5. Cleanup wygasłych wpisów short (lazy lub cron).
-6. Usuń wstrzykiwanie całej pamięci do system promptu — tylko przez tools.
-7. UI: zakładki krótka/długa w sidebarze.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 6 (lazy context) lub 4 (TODO)
-```
-
----
-
-### Prompt 4 — Globalna TODO
-
-```
-Implementuj globalny system TODO ChatGPA.
-
-Przeczytaj:
-- ai-kontekst/todo.md
-- ai-kontekst/system-plikow.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Plik ~/todo/global.todo + tabela tasks w DB (dual write lub DB jako source of truth).
-2. API CRUD /api/todos.
-3. Tools todo.list, todo.add, todo.update, todo.complete, todo.delete.
-4. Panel UI + komenda /todo (jeśli parser komend istnieje — jeśli nie, sam panel).
-5. Testy parsera .todo i API.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → kolejny wg kolejki
-```
-
----
-
-### Prompt 5 — Notatki Markdown
-
-```
-Implementuj system notatek Markdown ChatGPA.
-
-Przeczytaj:
-- ai-kontekst/notatki.md
-- ai-kontekst/system-plikow.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Notatki w ~/notes/ przez API fs lub dedykowane /api/notes.
-2. UI: lista katalogów + edytor Markdown (split preview).
-3. Tools notes.list, notes.read, notes.write (lub fs.* w notes/).
-4. Komenda /notes otwiera panel.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → kolejny wg kolejki
-```
-
----
-
-### Prompt 6 — Lazy context i rozszerzone tools
-
-```
-Przeprojektuj kontekst AI ChatGPA na model lazy (tool-based).
-
-Przeczytaj:
-- ai-kontekst/prompty.md
-- ai-kontekst/pamiec.md
-- ai-kontekst/dla-agenta.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. System prompt: agent NIE dostaje ocen, TODO, kalendarza, pamięci na start — tylko instrukcję użycia tools.
-2. Usuń buildMemoryBlock z domyślnego promptu (memory tylko przez memory.list).
-3. Dodaj tools (stuby OK jeśli brak backendu): grades.get, calendar.list, calendar.freeSlots, todo.list, fs.read.
-4. Dokumentacja w prompcie: kiedy którego toola użyć.
-5. Test: pytanie o oceny bez wcześniejszego sync → agent woła tool, nie zmyśla.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 13 (sync czatów) lub 7 (kalendarz)
-```
-
----
-
-### Prompt 7 — Kalendarz i profil czasu
-
-```
-Implementuj kalendarz i profil czasowy użytkownika.
-
-Przeczytaj:
-- ai-kontekst/kalendarz.md
-- ai-kontekst/plan-nauki.md
-- ai-kontekst/system-plikow.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Pliki ~/calendar/YYYY-MM.cal + API.
-2. Profil ~/profile/me.profile z: commute 60min, studyEnd 21:00/21:30, notification +30min po lekcjach.
-3. Tool calendar.freeSlots({ date }) — liczy okna nauki wg profilu i planu lekcji (schedule.json stub jeśli brak Librus).
-4. UI widok kalendarza (miesiąc/tydzień).
-5. Formularz edycji profilu czasu.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 8 (komendy) lub 10 (Librus)
-```
-
----
-
-### Prompt 8 — Komendy slash
-
-```
-Implementuj system komend slash w ChatGPA.
-
-Przeczytaj:
-- ai-kontekst/komendy.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Parser w packages/web/lib/commands.ts.
-2. Komendy: /plan, /clear short memory, /pomodoro (UI), /todo, /notes, /files.
-3. Autocomplete przy wpisywaniu / w composerze.
-4. Seed prompty po polsku dla /plan i /plan tydzień.
-5. Testy jednostkowe parsera.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 9 (Pomodoro)
-```
-
----
-
-### Prompt 9 — Pomodoro
-
-```
-Dodaj Pomodoro do ChatGPA (komenda /pomodoro).
-
-Przeczytaj:
-- ai-kontekst/komendy.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Island PomodoroTimer: 25/5, start/pause/reset, dźwięk opcjonalny.
-2. Otwieranie z /pomodoro i przycisku w UI.
-3. Styl zgodny z packages/web/assets/styles.css.
-4. Bez integracji z planem dnia na razie.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 10 (Librus)
-```
-
----
-
-### Prompt 10 — Wtyczka Librus
-
-```
-Zbuduj integrację Librus (wtyczka przeglądarki + endpoint sync).
-
-Przeczytaj:
-- ai-kontekst/librus.md
-- ai-kontekst/kalendarz.md
-- ai-kontekst/system-plikow.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. packages/extension (lub osobny folder) — content script na librus.pl.
-2. Pobierz: oceny, plan lekcji, terminarz, zmiany planu.
-3. POST /api/librus/sync → zapis do ~/school/librus/*.json + merge calendar.
-4. Przycisk „Sync Librus” w UI + timestamp.
-5. AI-assisted merge: endpoint lub job który porównuje snapshoty (nie ślepe nadpisanie).
-
-Bezpieczeństwo: hasło Librus nie idzie do ChatGPA.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 11
-```
-
----
-
-### Prompt 11 — Plan nauki i cron
-
-```
-Implementuj automatyczny plan nauki i anty-prokrastynację.
-
-Przeczytaj:
-- ai-kontekst/plan-nauki.md
-- ai-kontekst/kalendarz.md
-- ai-kontekst/todo.md
-- ai-kontekst/powiadomienia.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Deno.cron: generuj plan dzienny (plik ~/plans/YYYY-MM-DD.plan).
-2. Rozkładaj naukę przed sprawdzianami od T-7 (małe porcje).
-3. Aktualizuj todo.scheduledFor i study_block w kalendarzu.
-4. Endpoint POST /api/plan/generate?date=...
-5. Jedno wywołanie AI z wąskim promptem (dane z tools/DB, nie pełny chat).
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 12
-```
-
----
-
-### Prompt 12 — Powiadomienia (in-app + Web Push)
-
-```
-Implementuj powiadomienia ChatGPA.
-
-Przeczytaj:
-- ai-kontekst/powiadomienia.md
-- ai-kontekst/plan-nauki.md
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. Cron: 30 min po ostatniej lekcji (z schedule.json) → utwórz notification + wiadomość czatu.
-2. Kliknięcie powiadomienia → nowy czat z prefill wiadomością agenta + lista TODO na dziś + budżet minut.
-3. In-app lista powiadomień (banner).
-4. Service worker + Web Push (VAPID) — opcjonalnie w tym samym PR jeśli czas.
-5. Negocjacja: odpowiedź użytkownika w czacie → przesunięcie planu (hook do istniejących tools).
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO” lub Prompt 13 jeśli sync czatów był pominięty
-```
-
----
-
-### Prompt 13 — Sync czatów multi-device
-
-```
-Przenieś historię czatów z localStorage na serwer z sync.
-
-Przeczytaj:
-- ai-kontekst/serwer-i-sync.md
-- packages/web/lib/chat-storage.ts
-- ai-kontekst/plan-implementacji.md (sekcja „Checklist po epiku”)
-
-Zadanie:
-1. CRUD /api/threads i messages.
-2. Migracja jednorazowa z localStorage.
-3. Klient: pull on start, push po wysłaniu wiadomości.
-4. IndexedDB jako cache offline.
-5. Zachowaj kompatybilność wsteczną do czasu migracji.
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → „✅ WSZYSTKO”
-```
-
----
-
-### Prompt 14 — Agent core: dłuższa pętla narzędzi + fs.grep
-
-```
-Implementuj Fazę 4A ChatGPA: dojrzalszy silnik agenta (poziom Cursor/Claude Code/Codex).
-
-Przeczytaj:
-- ai-kontekst/wizja.md (sekcja „Metafora Cursor / Claude Code / Codex”)
-- ai-kontekst/dla-agenta.md
-- ai-kontekst/decyzje.md (2026-09-04 „Agent FS-first”, 2026-09-13 „Faza 4”)
-- packages/api/ai/chat.ts, packages/api/ai/tools.ts, packages/api/ai/system-prompt.ts
-
-Zadanie:
-1. Podnieś MAX_TOOL_ROUNDS w packages/api/ai/chat.ts (np. 3 → 8) i zamień sztywną shouldFinalize na mądrzejszą heurystykę (koniec gdy model nie woła już narzędzi, nie tylko po liczbie rund lub specjalnym przypadku plan.generate).
-2. Dodaj narzędzie fs.grep({ query, path?, limit? }) w tools.ts — pełnotekstowe wyszukiwanie po plikach pod ~/ (case-insensitive substring wystarczy na start), zwraca listę { path, line, snippet }.
-3. Zaktualizuj SYSTEM_PROMPT (system-prompt.ts) o fs.grep — kiedy używać zamiast zgadywania ścieżki / przeglądania katalogów po kolei.
-4. Testy: tools_test.ts dla fs.grep (trafienia, brak wyników, limit); test w chat.ts na >3 rundy narzędzi.
-5. Zsynchronizuj ai-kontekst/system-plikow.md z nową listą narzędzi.
-
-Nie rób jeszcze: diff/undo (epik 15), polish UI (epik 16).
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 15
-```
-
----
-
-### Prompt 15 — Bezpieczne edycje plików: diff + undo
-
-```
-Implementuj Fazę 4B ChatGPA: diff i undo dla zapisu plików wirtualnego FS.
-
-Przeczytaj:
-- ai-kontekst/system-plikow.md
-- ai-kontekst/decyzje.md (2026-09-04 „Pliki wirtualnego FS = source of truth”, „Revive soft-deleted file paths”)
-- packages/api/fs/**, packages/api/db (schemat file_nodes)
-
-Zadanie:
-1. fs.write zwraca w wyniku narzędzia prosty diff (przed/po, linia po linii) zamiast tylko potwierdzenia zapisu — pokaż go w UI (panel Plików / dymek narzędzia w czacie).
-2. Prosta historia wersji: przy nadpisaniu istniejącego pliku zachowaj poprzednią treść (nowa tabela wersji albo pole w file_nodes), np. ostatnie 5 wersji na plik.
-3. Endpoint/tool do cofnięcia: fs.history({ path }) + przycisk „Cofnij” w panelu Plików na poprzednią wersję.
-4. Testy: nadpisanie zachowuje starą wersję; undo przywraca dokładnie poprzednią treść.
-5. Zaktualizuj system-plikow.md o wersjonowanie/undo.
-
-Zależy od: epik 14 (dokończ zmiany w chat.ts/tools.ts najpierw, żeby uniknąć konfliktów).
-
-Po zakończeniu: deno task test, roadmap.md, AKTUALNY PROMPT → Prompt 16
-```
+[aktualny-prompt.md](./aktualny-prompt.md). Poniżej tylko epik aktywny w pełnej treści; po
+`epic:done` kopiuj z `aktualny-prompt.md`.
+
+### Archiwum epików 1–15 (ukończone)
+
+Pełna historyczna treść tych promptów żyje w `ai-kontekst/epics.json` (i w historii gita tego pliku
+— `git log -p -- ai-kontekst/plan-implementacji.md`) — usunięta stąd, żeby ten dokument nie puchł
+bez końca teraz, gdy są zrobione. Skrót: co, w jakiej fazie, który plik kontekstu przeczytać jeśli
+coś w tym obszarze trzeba kiedyś zmienić.
+
+| #  | Epik                                  | Faza | Kontekst                               |
+| -- | ------------------------------------- | ---- | -------------------------------------- |
+| 1  | Serwer + PostgreSQL + Drizzle         | 2A   | [serwer-i-sync.md](./serwer-i-sync.md) |
+| 2  | Wirtualny system plików               | 2B   | [system-plikow.md](./system-plikow.md) |
+| 3  | Pamięć short/long                     | 2C   | [pamiec.md](./pamiec.md)               |
+| 4  | Globalna TODO                         | 2D   | [todo.md](./todo.md)                   |
+| 5  | Notatki Markdown                      | 2E   | [notatki.md](./notatki.md)             |
+| 6  | Lazy context + tools                  | 2H   | [prompty.md](./prompty.md)             |
+| 7  | Kalendarz + profil czasu              | 2G   | [kalendarz.md](./kalendarz.md)         |
+| 8  | Komendy slash                         | 2I   | [komendy.md](./komendy.md)             |
+| 9  | Pomodoro                              | 2J   | [komendy.md](./komendy.md)             |
+| 10 | Wtyczka Librus                        | 3A   | [librus.md](./librus.md)               |
+| 11 | Plan nauki + cron                     | 3B   | [plan-nauki.md](./plan-nauki.md)       |
+| 12 | Powiadomienia                         | 3C   | [powiadomienia.md](./powiadomienia.md) |
+| 13 | Sync czatów multi-device              | 2F   | [serwer-i-sync.md](./serwer-i-sync.md) |
+| 14 | Agent core: dłuższa pętla + `fs.grep` | 4A   | [system-plikow.md](./system-plikow.md) |
+| 15 | Diff + undo dla `fs.write`            | 4B   | [system-plikow.md](./system-plikow.md) |
+
+Decyzje/konsekwencje każdego epiku → [decyzje.md](./decyzje.md) (wpisy z datami).
 
 ---
 
