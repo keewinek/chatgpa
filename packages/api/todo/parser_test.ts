@@ -64,3 +64,18 @@ Deno.test("parseTodoFile ignores non-checkbox lines", () => {
   const { tasks } = parseTodoFile("# Nagłówek\n\nBrak zadań.\n");
   assertEquals(tasks.length, 0);
 });
+
+Deno.test("parseTodoFile accepts plain bullet and numbered lists as open tasks", () => {
+  const content = `# Globalna TODO
+
+- Powtórka: kwasy
+* Zrobić zadanie z historii
+1. Przeczytać rozdział 3
+`;
+  const { tasks } = parseTodoFile(content);
+  assertEquals(tasks.length, 3);
+  assertEquals(tasks.every((t) => t.status === "open"), true);
+  assertEquals(tasks[0].title, "Powtórka: kwasy");
+  assertEquals(tasks[1].title, "Zrobić zadanie z historii");
+  assertEquals(tasks[2].title, "Przeczytać rozdział 3");
+});

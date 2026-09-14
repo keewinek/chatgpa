@@ -59,6 +59,26 @@ async function queryTasks(
     });
 }
 
+/** True when the file has non-empty, non-heading, non-frontmatter body lines. */
+function hasUnparsedContent(content: string): boolean {
+  const lines = content.split("\n");
+  let inFrontmatter = false;
+  let frontmatterDone = false;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!frontmatterDone && line === "---") {
+      inFrontmatter = !inFrontmatter;
+      if (!inFrontmatter) frontmatterDone = true;
+      continue;
+    }
+    if (inFrontmatter || !line || line.startsWith("#") || line.startsWith("_")) continue;
+    return true;
+  }
+
+  return false;
+}
+
 async function readTodoFileContent(db: AppDatabase): Promise<string> {
   try {
     const file = await fsRead(db, GLOBAL_TODO_PATH, 0, 1_000_000);
@@ -81,6 +101,13 @@ export async function importTodoFromFile(db: AppDatabase): Promise<number> {
     .select()
     .from(tasks)
     .where(isNull(tasks.deletedAt));
+
+  // Guard against a formatting slip in the file wiping every task: if the file has
+  // real content but the parser found nothing, and the DB currently holds tasks,
+  // treat this as an unparseable file rather than "user deleted everything".
+  if (fromFile.length === 0 && dbRows.length > 0 && hasUnparsedContent(content)) {
+    return 0;
+  }
 
   const fileById = new Map(fromFile.map((t) => [t.id, t]));
 

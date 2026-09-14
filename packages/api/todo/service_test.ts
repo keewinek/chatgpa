@@ -7,6 +7,7 @@ import {
   completeTask,
   deleteTask,
   GLOBAL_TODO_PATH,
+  importTodoFromFile,
   listTasks,
   syncGlobalTodoFile,
 } from "./service.ts";
@@ -63,6 +64,25 @@ withTestDb("editing global.todo removes tasks from list", async ({ db }) => {
     const after = await listTasks(db);
     assertEquals(after.length, 1);
     assertEquals(after[0].title, "Zadanie B");
+  } finally {
+    setDbForTests(undefined);
+  }
+});
+
+withTestDb("unparseable global.todo content does not wipe existing tasks", async ({ db }) => {
+  setDbForTests(db);
+  try {
+    await addTask(db, { title: "Zadanie A" });
+    await addTask(db, { title: "Zadanie B" });
+    assertEquals((await listTasks(db)).length, 2);
+
+    // Simulate a formatting slip: prose with no checkbox/bullet markers at all.
+    await fsWrite(db, GLOBAL_TODO_PATH, "Notatki agenta bez formatowania listy.\n");
+
+    const changed = await importTodoFromFile(db);
+    assertEquals(changed, 0);
+    const after = await listTasks(db);
+    assertEquals(after.length, 2);
   } finally {
     setDbForTests(undefined);
   }

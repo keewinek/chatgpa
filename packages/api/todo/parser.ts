@@ -1,6 +1,10 @@
 import type { Task, TaskPriority, TaskSource, TaskStatus } from "@chatgpa/core";
 
-const CHECKBOX_RE = /^-\s+\[([ xX])\]\s+(.+)$/;
+const CHECKBOX_RE = /^[-*+]\s+\[([ xX])\]\s+(.+)$/;
+// Plain bullet/numbered lines without a checkbox — e.g. an agent-simplified "- Zrobić X"
+// or "1. Zrobić X" list. Treated as open tasks so a formatting slip doesn't silently
+// drop the line (and, via importTodoFromFile's file-is-source-of-truth sync, wipe it).
+const PLAIN_BULLET_RE = /^(?:[-*+]|\d+[.)])\s+(.+)$/;
 const META_SEP = " — ";
 
 export function newTaskId(): string {
@@ -40,11 +44,12 @@ function parseSource(value: string): TaskSource | undefined {
 }
 
 function parseLine(line: string): Task | null {
-  const match = line.match(CHECKBOX_RE);
-  if (!match) return null;
+  const checkboxMatch = line.match(CHECKBOX_RE);
+  const plainMatch = checkboxMatch ? null : line.match(PLAIN_BULLET_RE);
+  if (!checkboxMatch && !plainMatch) return null;
 
-  const checked = match[1].toLowerCase() === "x";
-  const rest = match[2].trim();
+  const checked = checkboxMatch ? checkboxMatch[1].toLowerCase() === "x" : false;
+  const rest = (checkboxMatch ? checkboxMatch[2] : plainMatch![1]).trim();
   const parts = rest.split(META_SEP);
   const title = parts[0]?.trim();
   if (!title) return null;
