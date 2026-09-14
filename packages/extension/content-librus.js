@@ -56,11 +56,17 @@ function parseGradesDoc(doc) {
 
   const subjects = [];
   const grades = [];
-  const skip = new Set(["przedmiot", "zachowanie"]);
+  const skip = new Set(["zachowanie"]);
 
   for (const row of table.rows) {
     if (row.style.display === "none") continue; // hidden breakdown row, read via its summary row below
     if (row.cells.length < 2) continue;
+    // Only real subject rows carry the per-subject collapse icon (id="przedmioty_<numeric id>_node")
+    // in cells[0] — the header rows don't ("Przedmiot" row uses "przedmioty_all_node", the
+    // "Oceny bieżące, Śr.I, I, ..." row has no icon at all), and would otherwise be mis-read as
+    // subjects named "Przedmiot" / "Śr.I".
+    const icon = row.cells[0]?.querySelector("img[id]");
+    if (!icon || !/^przedmioty_\d+_node$/.test(icon.id)) continue;
     const name = row.cells[1]?.textContent?.trim();
     if (!name || skip.has(name.toLowerCase())) continue;
 
