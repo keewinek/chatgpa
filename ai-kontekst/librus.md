@@ -9,6 +9,11 @@ zadań.
 Statyczny plan 3A nadal w `@chatgpa/core` ([plan-lekcji.md](./plan-lekcji.md)); sync Librus zapisuje
 `~/school/librus/schedule.json`.
 
+Od 2026-09-14: sync jest zero-click — content script syncuje się sam (throttle 15 min) na każdej
+wizycie na `librus.pl`, ciągnąc oceny + plan lekcji + terminarz (bieżący i 2 kolejne miesiące) za
+jednym razem. Selektory DOM dla terminarza i planu lekcji zweryfikowane na żywym Synergii; oceny
+pozostają best-effort (zob. `packages/extension/README.md`).
+
 ## Preferowana architektura: wtyczka przeglądarki
 
 ```
