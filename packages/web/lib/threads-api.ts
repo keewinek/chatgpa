@@ -204,6 +204,7 @@ export async function syncPull(cursor?: string | null): Promise<
   {
     cursor: string;
     store: ChatStore | null;
+    deletedThreadIds: string[];
   } | null
 > {
   const since = cursor ?? "1970-01-01T00:00:00.000Z";
@@ -218,6 +219,8 @@ export async function syncPull(cursor?: string | null): Promise<
         title?: string;
         updated_at?: string;
         updatedAt?: string;
+        deleted_at?: string | null;
+        deletedAt?: string | null;
         metadata?: { notificationContext?: ChatSession["notificationContext"] };
       }>;
       chat_messages?: Array<{
@@ -232,6 +235,8 @@ export async function syncPull(cursor?: string | null): Promise<
         createdAt?: string;
         updated_at?: string;
         updatedAt?: string;
+        deleted_at?: string | null;
+        deletedAt?: string | null;
         metadata?: {
           error?: boolean;
           streaming?: boolean;
@@ -245,14 +250,23 @@ export async function syncPull(cursor?: string | null): Promise<
   const threadRows = data.changes.chat_threads ?? [];
   const messageRows = data.changes.chat_messages ?? [];
 
+  // Tombstones: soft-deleted rows still show up here (pull is by updatedAt, not
+  // deletedAt-filtered — that's what lets a delete on one device reach the others). Track
+  // them separately instead of rebuilding a "live" session/message out of a dead row.
+  const deletedThreadIds = new Set<string>();
+  for (const row of threadRows) {
+    if (row.deletedAt ?? row.deleted_at) deletedThreadIds.add(row.id);
+  }
+
   if (!threadRows.length && !messageRows.length) {
-    return { cursor: data.cursor, store: null };
+    return { cursor: data.cursor, store: null, deletedThreadIds: [...deletedThreadIds] };
   }
 
   const sessionsMap = new Map<string, ChatSession>();
   const messageOrder = new Map<string, Array<{ msg: StoredMessage; ts: number }>>();
 
   for (const row of threadRows) {
+    if (deletedThreadIds.has(row.id)) continue;
     const updatedAt = row.updatedAt ?? row.updated_at ?? new Date().toISOString();
     sessionsMap.set(row.id, {
       id: row.id,
@@ -265,8 +279,9 @@ export async function syncPull(cursor?: string | null): Promise<
   }
 
   for (const row of messageRows) {
+    if (row.deletedAt ?? row.deleted_at) continue;
     const threadId = row.threadId ?? row.thread_id ?? "";
-    if (!threadId) continue;
+    if (!threadId || deletedThreadIds.has(threadId)) continue;
     let session = sessionsMap.get(threadId);
     if (!session) {
       const remote = await fetchThreadById(threadId);
@@ -313,7 +328,9 @@ export async function syncPull(cursor?: string | null): Promise<
   }
 
   const sessions = [...sessionsMap.values()].sort((a, b) => b.updatedAt - a.updatedAt);
-  if (!sessions.length) return { cursor: data.cursor, store: null };
+  if (!sessions.length) {
+    return { cursor: data.cursor, store: null, deletedThreadIds: [...deletedThreadIds] };
+  }
 
   return {
     cursor: data.cursor,
@@ -323,5 +340,6 @@ export async function syncPull(cursor?: string | null): Promise<
       sessions,
       memoryMigrated: true,
     },
+    deletedThreadIds: [...deletedThreadIds],
   };
 }

@@ -225,7 +225,24 @@ function mergeSessionMessages(local: ChatSession, remote: ChatSession): ChatSess
   };
 }
 
-function mergeStores(local: ChatStore, remote: ChatStore): ChatStore {
+function pruneDeleted(store: ChatStore, deletedThreadIds: readonly string[]): ChatStore {
+  if (!deletedThreadIds.length) return store;
+  const dead = new Set(deletedThreadIds);
+  const sessions = store.sessions.filter((s) => !dead.has(s.id));
+  if (sessions.length === store.sessions.length) return store;
+
+  const activeSessionId = dead.has(store.activeSessionId)
+    ? sessions[0]?.id ?? store.activeSessionId
+    : store.activeSessionId;
+
+  return { ...store, sessions, activeSessionId };
+}
+
+function mergeStores(
+  local: ChatStore,
+  remote: ChatStore,
+  deletedThreadIds: readonly string[] = [],
+): ChatStore {
   const map = new Map<string, ChatSession>();
   for (const session of local.sessions) map.set(session.id, session);
   for (const session of remote.sessions) {
@@ -236,6 +253,10 @@ function mergeStores(local: ChatStore, remote: ChatStore): ChatStore {
       map.set(session.id, mergeSessionMessages(existing, session));
     }
   }
+  // remote never includes tombstoned threads (syncPull filters them out), so anything a
+  // device just deleted needs pruning here explicitly or it survives forever via `local`.
+  for (const id of deletedThreadIds) map.delete(id);
+
   const sessions = [...map.values()].sort((a, b) => b.updatedAt - a.updatedAt);
   const activeExists = sessions.some((s) => s.id === local.activeSessionId);
   const activeSessionId = activeExists
@@ -294,14 +315,14 @@ export async function initChatSync(): Promise<ChatStore> {
   const pullResult = await syncPull(cursor);
   if (pullResult) {
     await idbSet(IDB_KEYS.syncCursor, pullResult.cursor);
-    if (pullResult.store) {
-      store = mergeStores(store, pullResult.store);
-    }
+    store = pullResult.store
+      ? mergeStores(store, pullResult.store, pullResult.deletedThreadIds)
+      : pruneDeleted(store, pullResult.deletedThreadIds);
   }
 
   if (!pullResult?.store) {
     const fullPull = await pullThreadsFromServer();
-    if (fullPull) store = mergeStores(store, fullPull);
+    if (fullPull) store = mergeStores(store, fullPull, pullResult?.deletedThreadIds ?? []);
   }
 
   await idbSet(IDB_KEYS.store, store);
