@@ -4,16 +4,18 @@
  * oceny) in September 2026 — Librus can change its markup without notice, so if sync goes quiet
  * again these are the first place to check.
  *
- * Grades (parseGradesDoc) are the one part that is still best-effort: at verification time the
- * logged-in account had zero grades issued, so the grade-badge markup itself couldn't be checked.
- * Subject names are reliable; individual grade values may need another pass once real grades exist.
+ * Grades (parseGradesDoc) are grounded in the real table structure (verified live) but the
+ * per-grade column mapping is still unverified against an actual populated grade row — the
+ * account used to verify this had zero grades issued. Subject names are reliable either way.
  */
 
 const DEFAULT_API = "https://chatgpa.keewinek.deno.net";
 const AUTO_SYNC_THROTTLE_MS = 15 * 60 * 1000;
 
+// "-ówka" łapie kartkówkę/klasówkę/mapówkę i literówki nauczycieli (np. "Mpówka" bez "a") —
+// szerszy niż wymienianie każdego wariantu osobno, bo nauczyciele piszą to na milion sposobów.
 const EXAM_RE =
-  /sprawdzian|kartk[oó]wk|klas[oó]wk|egzamin|praca klasowa|map[oó]wk|powt[oó]rzeni|test\b/i;
+  /sprawdzian|egzamin|praca klasowa|powt[oó]rzeni|test\b|[a-ząęółśżźćń]*[oó]wk[aęi]/i;
 const HOMEWORK_RE = /praca domowa|zadanie domowe|^pd\b/i;
 
 function slugId(prefix, parts) {
@@ -39,6 +41,14 @@ async function fetchDoc(url, init) {
 
 /* ---------- Oceny (grades) ---------- */
 
+// Real table shape (verified live): row 0-1 are headers (rowspan "Przedmiot" + column labels),
+// then each subject is a *pair* of <tr>: a visible summary row (cells[0] = collapse-icon,
+// cells[1] = subject name, then "Brak ocen"/average per period) followed immediately by a
+// `display:none` row holding a nested `table.stretch` with the real per-grade breakdown
+// (columns: Ocena, K/komentarz, Kategoria, Data, Nauczyciel, Poprawa oceny, Dodał). That nested
+// table currently only ever contains the "Brak ocen" placeholder row (no grades issued yet on the
+// verification account), so the column-index mapping below is grounded in the real header but
+// unverified against an actual populated grade row — revisit once real grades exist.
 function parseGradesDoc(doc) {
   const tables = [...doc.querySelectorAll("table.decorated.stretch")];
   const table = tables.find((t) => /Przedmiot/.test(t.textContent) && /Śr\.I/.test(t.textContent));
@@ -48,19 +58,25 @@ function parseGradesDoc(doc) {
   const grades = [];
   const skip = new Set(["przedmiot", "zachowanie"]);
 
-  for (const row of table.querySelectorAll("tbody tr, tr")) {
-    const nameCell = row.querySelector("td:first-child, th:first-child");
-    const name = nameCell?.textContent?.trim();
+  for (const row of table.rows) {
+    if (row.style.display === "none") continue; // hidden breakdown row, read via its summary row below
+    if (row.cells.length < 2) continue;
+    const name = row.cells[1]?.textContent?.trim();
     if (!name || skip.has(name.toLowerCase())) continue;
 
     const subjectGrades = [];
-    for (const badge of row.querySelectorAll("[title]")) {
-      const value = badge.textContent?.trim();
-      if (!value || value.length > 3) continue;
+    const detailTable = row.nextElementSibling?.querySelector("table.stretch");
+    for (const gradeRow of detailTable?.tBodies?.[0]?.rows ?? []) {
+      if (gradeRow.cells.length < 5) continue; // "Brak ocen" placeholder is a single colspan cell
+      const rawValue = gradeRow.cells[0]?.textContent?.trim();
+      if (!rawValue) continue;
+      const numeric = parseFloat(rawValue.replace(",", "."));
       const grade = {
-        id: slugId("grade", [name, value, badge.getAttribute("title")?.slice(0, 20)]),
+        id: slugId("grade", [name, rawValue, gradeRow.cells[3]?.textContent, gradeRow.cells[2]?.textContent]),
         subjectName: name,
-        value: Number.isNaN(parseFloat(value.replace(",", "."))) ? value : parseFloat(value.replace(",", ".")),
+        value: Number.isNaN(numeric) ? rawValue : numeric,
+        category: gradeRow.cells[2]?.textContent?.trim() || undefined,
+        date: gradeRow.cells[3]?.textContent?.trim() || undefined,
       };
       subjectGrades.push(grade);
       grades.push(grade);
@@ -133,44 +149,49 @@ function parseCalendarDoc(doc, month, year) {
   return { exams, homeworks };
 }
 
+async function fetchCalendarMonth(month, year, requestkey) {
+  const body = new URLSearchParams({
+    requestkey: requestkey || "",
+    miesiac: String(month),
+    rok: String(year),
+  });
+  return await fetchDoc("https://synergia.librus.pl/terminarz", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+}
+
 async function extractCalendarEvents() {
   const exams = [];
   const homeworks = [];
 
-  let doc = await fetchDoc("https://synergia.librus.pl/terminarz");
-  if (!doc) return { exams, homeworks };
+  const bootstrapDoc = await fetchDoc("https://synergia.librus.pl/terminarz");
+  if (!bootstrapDoc) return { exams, homeworks };
 
-  let month = parseInt(doc.querySelector('select[name="miesiac"]')?.value || "", 10);
-  let year = parseInt(doc.querySelector('select[name="rok"]')?.value || "", 10);
-  let requestkey = doc.querySelector('input[name="requestkey"]')?.value;
+  // Librus remembers server-side which month you last viewed in this session — a plain GET can
+  // come back showing a stale month (verified: browsing ahead once shifts every later GET, even
+  // in a fresh request). Never trust the page's own month/year selection; always force today's,
+  // via an explicit POST, same as the calendar's own prev/next form does.
+  const now = new Date();
+  let month = now.getMonth() + 1;
+  let year = now.getFullYear();
+  let requestkey = bootstrapDoc.querySelector('input[name="requestkey"]')?.value;
 
-  if (!Number.isNaN(month) && !Number.isNaN(year)) {
-    const first = parseCalendarDoc(doc, month, year);
-    exams.push(...first.exams);
-    homeworks.push(...first.homeworks);
+  // bieżący miesiąc + 2 kolejne, żeby złapać nadchodzące sprawdziany z wyprzedzeniem
+  for (let i = 0; i < 3; i++) {
+    const doc = await fetchCalendarMonth(month, year, requestkey);
+    if (!doc) break;
+    requestkey = doc.querySelector('input[name="requestkey"]')?.value || requestkey;
 
-    // dociągnij kolejne 2 miesiące, żeby złapać nadchodzące sprawdziany z wyprzedzeniem
-    for (let i = 0; i < 2; i++) {
-      month += 1;
-      if (month > 12) {
-        month = 1;
-        year += 1;
-      }
-      const body = new URLSearchParams({
-        requestkey: requestkey || "",
-        miesiac: String(month),
-        rok: String(year),
-      });
-      const nextDoc = await fetchDoc("https://synergia.librus.pl/terminarz", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: body.toString(),
-      });
-      if (!nextDoc) break;
-      requestkey = nextDoc.querySelector('input[name="requestkey"]')?.value || requestkey;
-      const parsed = parseCalendarDoc(nextDoc, month, year);
-      exams.push(...parsed.exams);
-      homeworks.push(...parsed.homeworks);
+    const parsed = parseCalendarDoc(doc, month, year);
+    exams.push(...parsed.exams);
+    homeworks.push(...parsed.homeworks);
+
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
     }
   }
 
