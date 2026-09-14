@@ -81,7 +81,7 @@ withTestDb("freeSlots weekend has morning start", async ({ db }) => {
     const slots = await computeFreeSlots(db, "2026-09-06", DEFAULT_GROUP_PREFS);
     assertEquals(slots.isSchoolDay, false);
     assertEquals(slots.studyWindowStart, "09:00");
-    assertEquals(slots.notificationAt, null);
+    assertEquals(slots.notificationAt, "09:00");
   } finally {
     setDbForTests(undefined);
   }
