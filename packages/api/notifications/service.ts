@@ -280,7 +280,7 @@ export async function runScheduledNotifications(
   const afterSchoolDue = freeSlots.notificationAt &&
     clock.timeMinutes >= parseTimeToMinutes(freeSlots.notificationAt);
 
-  if (afterSchoolDue && freeSlots.isSchoolDay) {
+  if (afterSchoolDue) {
     dailyPlan = await createDailyPlanNotification(db, clock.date);
   }
 

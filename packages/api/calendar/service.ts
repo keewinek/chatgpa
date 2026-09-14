@@ -275,6 +275,7 @@ export async function computeFreeSlots(
     }
   } else {
     studyStartMin = parseTimeToMinutes("09:00");
+    notificationAt = "09:00";
   }
 
   const studyEndPreferredMin = parseTimeToMinutes(profile.studyEndPreferred);

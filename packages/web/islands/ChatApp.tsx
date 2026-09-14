@@ -8,6 +8,7 @@ import ChatSidebar from "./ChatSidebar.tsx";
 import FilesPanel from "./FilesPanel.tsx";
 import PomodoroPanel from "./PomodoroPanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
+import InstallAppBanner from "./InstallAppBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
 import Icon from "./Icon.tsx";
 import ResizablePanels from "./ResizablePanels.tsx";
@@ -619,6 +620,7 @@ export default function ChatApp() {
               </header>
 
               <div class="chat-body">
+                <InstallAppBanner />
                 <NotificationsBanner
                   notifications={unreadNotifications.value}
                   onOpen={(n) => void handleOpenNotification(n)}
