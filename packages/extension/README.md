@@ -6,15 +6,21 @@ Wtyczka MV3 synchronizująca dane z Librus Synergia do ChatGPA.
 
 - Hasło Librus **nigdy** nie opuszcza przeglądarki.
 - Wtyczka czyta tylko DOM aktywnej karty `*.librus.pl` (gdy jesteś zalogowany).
-- POST idzie wyłącznie na skonfigurowany host ChatGPA (domyślnie `http://localhost:8000`).
+- POST idzie wyłącznie na skonfigurowany host ChatGPA (domyślnie
+  `https://chatgpa.keewinek.deno.net`, produkcja — możesz zmienić na `http://localhost:8000` w
+  popupie do lokalnego dev).
 
-## Instalacja (Chrome / Edge)
+## Instalacja (Chrome / Edge) — jednorazowo
 
-1. Uruchom ChatGPA API: `deno task dev:api`
-2. Otwórz `chrome://extensions` → **Developer mode** → **Load unpacked**
-3. Wskaż folder `packages/extension`
-4. Zaloguj się na [synergia.librus.pl](https://synergia.librus.pl)
-5. Kliknij ikonę wtyczki **Sync Librus → ChatGPA** lub przycisk w UI ChatGPA
+1. Otwórz `chrome://extensions` → **Developer mode** → **Load unpacked**
+2. Wskaż folder `packages/extension`
+3. Przypnij ikonkę wtyczki do paska (opcjonalnie, mniej klików później)
+
+## Sync (za każdym razem — 2 kliki)
+
+1. Zaloguj się na [synergia.librus.pl](https://synergia.librus.pl) (jeśli sesja wygasła)
+2. Kliknij ikonę wtyczki **Sync Librus → ChatGPA** — dane lecą prosto na produkcję, widoczne od razu
+   w aplikacji na telefonie
 
 ## Co syncuje (MVP)
 

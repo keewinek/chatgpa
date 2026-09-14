@@ -1,4 +1,5 @@
-/** Bridge on ChatGPA origin — forwards sync requests to the extension background worker. */
+/** Bridge on ChatGPA origin (localhost or the deployed app) — forwards sync requests to the
+ * extension background worker. */
 
 const EXTENSION_PING = "chatgpa-librus-bridge";
 

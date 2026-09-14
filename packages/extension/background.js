@@ -1,4 +1,4 @@
-const DEFAULT_API = "http://localhost:8000";
+const DEFAULT_API = "https://chatgpa.keewinek.deno.net";
 
 async function getApiBase() {
   const stored = await chrome.storage.sync.get(["chatgpaApiBase"]);
