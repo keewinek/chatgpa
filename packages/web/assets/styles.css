@@ -849,25 +849,61 @@ body {
   margin-top: 0.65rem;
 }
 
-.tool-chip {
+.tool-item {
   font-size: 0.72rem;
-  padding: 0.25rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 0.5rem;
   border: 1px solid var(--line);
   background: var(--bg-elevated);
   color: var(--muted);
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.tool-chip--ok {
+.tool-item-summary {
+  padding: 0.25rem 0.55rem;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-item-summary::-webkit-details-marker {
+  display: none;
+}
+
+.tool-item-summary::before {
+  content: "▸ ";
+}
+
+.tool-item[open] > .tool-item-summary::before {
+  content: "▾ ";
+}
+
+.tool-item-output {
+  margin: 0;
+  padding: 0.4rem 0.55rem 0.5rem;
+  border-top: 1px solid var(--line);
+  max-height: 16rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.7rem;
+}
+
+.tool-item--ok {
   border-color: rgba(90, 120, 100, 0.45);
+}
+
+.tool-item--ok > .tool-item-summary {
   color: #b8d4be;
 }
 
-.tool-chip--err {
+.tool-item--err {
   border-color: rgba(224, 122, 106, 0.45);
+}
+
+.tool-item--err > .tool-item-summary {
   color: var(--danger);
 }
 

@@ -58,9 +58,10 @@ export default function ChatBubble({ message, onRetry }: ChatBubbleProps) {
           <summary class="bubble-tools-summary">Narzędzia ({message.toolResults.length})</summary>
           <div class="bubble-tools">
             {message.toolResults.map((t, i) => (
-              <span key={i} class={`tool-chip${t.ok ? " tool-chip--ok" : " tool-chip--err"}`}>
-                {t.ok ? t.output ?? t.tool : `${t.tool}: ${t.error}`}
-              </span>
+              <details key={i} class={`tool-item${t.ok ? " tool-item--ok" : " tool-item--err"}`}>
+                <summary class="tool-item-summary">{t.tool}</summary>
+                <pre class="tool-item-output">{t.ok ? t.output ?? "" : t.error ?? ""}</pre>
+              </details>
             ))}
           </div>
         </details>
