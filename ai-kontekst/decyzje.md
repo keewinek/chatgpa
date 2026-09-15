@@ -373,3 +373,24 @@ Format: data · decyzja · kontekst · konsekwencje.
 - **Kontekst:** zbyt wiele tools zapychało context window; metafora Cursor/Claude Code = codebase.
 - **Konsekwencje:** krótszy `system-prompt.ts`; slash nadal otwiera panele bez `.ui`; seed v3
   soft-delete obsolete `.ui`.
+
+## 2026-09-15 — MCP most: Claude Code ↔ ChatGPA live, dwukierunkowo
+
+- **Decyzja:** `packages/api/mcp/server.ts` — MCP stdio server (`@modelcontextprotocol/sdk`)
+  cienko owijający `fs/service.ts` (`fsList|Read|Grep|Write|Mkdir|Delete`) jako narzędzia
+  `fs_list|read|grep|write|mkdir|delete`. Zarejestrowany dla repo w `.mcp.json` (`deno task mcp`) —
+  Claude Code łączy się automatycznie, bez ręcznego `deno task fs …`. Druga strona
+  samodoskonalenia: nowy plik `~/dev/od-claude-code.md` (seed v5, `fs/seed.ts`) — Claude Code
+  odpisuje tam status po przeczytaniu zgłoszenia; `system-prompt.ts` mówi ChatGPA, żeby go czytała
+  (fs.read), gdy uczeń pyta o status zgłoszenia.
+- **Kontekst:** prośba użytkownika — chciał, żeby czat ChatGPA i Claude Code mogły „ze sobą
+  rozmawiać” jako wspólny projekt (organizacja czasu, nie budowanie kolejnej apki). Istniejący
+  most (`scripts/fs-cli.ts`) działał, ale wymagał ręcznego kopiowania promptu do Claude Code i był
+  jednokierunkowy.
+- **Test:** `deno task test` → 176/176. Ręczny smoke test klientem MCP (`Client` +
+  `StdioClientTransport`) — `tools/list` zwraca 6 narzędzi, `fs_read` na `~/dev/dla-claude-code.md`
+  i `~/dev/od-claude-code.md` działa na lokalnym DB.
+- **Konsekwencje:** `deno check packages/api/mcp/server.ts` zgłasza TS2307 dla podścieżek SDK
+  (`server/mcp.js`, `server/stdio.js`) — ograniczenie resolvera typów Deno dla npm-paczek z
+  wildcard `exports`, nie błąd runtime (serwer działa, potwierdzone smoke testem); plik celowo
+  poza `deno task check`. `scripts/fs-cli.ts` zostaje jako fallback poza sesją MCP.

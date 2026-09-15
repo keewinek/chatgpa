@@ -22,7 +22,12 @@ if (!db) {
 const server = new McpServer({ name: "chatgpa-fs", version: "0.1.0" });
 
 function text(value: unknown) {
-  return { content: [{ type: "text" as const, text: typeof value === "string" ? value : JSON.stringify(value, null, 2) }] };
+  return {
+    content: [{
+      type: "text" as const,
+      text: typeof value === "string" ? value : JSON.stringify(value, null, 2),
+    }],
+  };
 }
 
 function asError(err: unknown) {

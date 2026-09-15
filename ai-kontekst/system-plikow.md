@@ -56,7 +56,8 @@ Dane użytkownika żyją jako pliki z rozpoznawalnymi rozszerzeniami. UI paneli 
 │   └── me.profile
 ├── pomodoro/                     # katalog (panel przez /pomodoro, bez .ui)
 └── dev/
-    └── dla-claude-code.md        # samodoskonalenie — patrz sekcja niżej
+    ├── dla-claude-code.md        # ChatGPA → Claude Code — patrz sekcja niżej
+    └── od-claude-code.md         # Claude Code → ChatGPA (odpowiedzi/status)
 ```
 
 ## Rozszerzenia plików
@@ -110,17 +111,21 @@ Handlery legacy (`todo.*`, `notes.*`, …) mogą istnieć w kodzie dla kompatybi
 - `.ui` (calendar, timetable) → panel; slash (`/todo`, `/notes`, …) otwiera panele bez `.ui`
 - Komenda `/files` i ikona folderu
 
-## Samodoskonalenie (`~/dev/dla-claude-code.md`)
+## Samodoskonalenie (`~/dev/dla-claude-code.md` ↔ `~/dev/od-claude-code.md`)
 
 ChatGPA (agent w apce) nie zmienia własnego kodu. Zamiast tego dopisuje do
 `~/dev/dla-claude-code.md` gotowe do wklejenia prompty inżynierskie dla **Claude Code** — patrz
-[dla-agenta.md](./dla-agenta.md) i [decyzje.md](./decyzje.md) (2026-09-13, „Samodoskonalenie”).
-Uczeń kopiuje wpis stamtąd do Claude Code w repo. Zawsze append (fs.read + fs.write całości), nigdy
-nadpisanie — historia wpisów ma zostać.
+[dla-agenta.md](./dla-agenta.md) i [decyzje.md](./decyzje.md) (2026-09-13, „Samodoskonalenie”;
+2026-09-15, „MCP most”). Zawsze append (fs.read + fs.write całości), nigdy nadpisanie — historia
+wpisów ma zostać. Claude Code odpisuje (status, pytania, co zmienił) do
+`~/dev/od-claude-code.md`, tym samym trybem append.
 
-**Claude Code ↔ wirtualny FS:** ten sam Postgres, te same ścieżki `~/…`, co widzi apka i agent w
-czacie — most to `scripts/fs-cli.ts` (`deno task fs list|read|write|grep|mkdir|delete`). Claude Code
-może więc czytać `~/dev/dla-claude-code.md` (i każdy inny plik) bez odpalania `deno task dev`, np.:
+**Claude Code ↔ wirtualny FS — MCP server (`chatgpa-fs`):** ten sam Postgres, te same ścieżki
+`~/…`, co widzi apka i agent w czacie. Serwer `packages/api/mcp/server.ts` (uruchamiany przez
+`.mcp.json` / `deno task mcp`) wystawia `fs_list|read|grep|write|mkdir|delete` jako narzędzia MCP —
+Claude Code łączy się z nim automatycznie w tym repo i czyta/pisze `~/…` na żywo, bez ręcznego
+kopiowania i bez odpalania `deno task dev`. CLI (`scripts/fs-cli.ts`, `deno task fs
+list|read|write|grep|mkdir|delete`) zostaje jako prosty fallback / debug spoza sesji MCP, np.:
 
 ```bash
 deno task fs read ~/dev/dla-claude-code.md
@@ -156,7 +161,8 @@ minimalnym zestawem `fs.*` dla modelu (agent i tak dostaje diff automatycznie w 
 - [x] UI: drzewo + edytor + tworzenie plików/katalogów
 - [x] TODO / memory jako SoT plików
 - [x] `fs.grep` — pełnotekstowe wyszukiwanie po `~/`
-- [x] Samodoskonalenie: `~/dev/dla-claude-code.md` + `scripts/fs-cli.ts` most dla Claude Code
+- [x] Samodoskonalenie: `~/dev/dla-claude-code.md` ↔ `~/dev/od-claude-code.md` + MCP server
+      `chatgpa-fs` (`.mcp.json`) most dla Claude Code, `scripts/fs-cli.ts` jako fallback
 - [x] Diff + undo przy `fs.write` (`file_versions`, panel Plików „Cofnij”)
 - [ ] Pełna zbieżność: każdy panel = wyłącznie projekcja plików
 - [ ] Eksport `~/` zip

@@ -6,8 +6,11 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 
 1. Trzymaj **koszt = 0 zł**. Nie proponuj płatnych API, SaaS ani „pro” planów jako wymaganych.
 2. Czytaj `ai-kontekst/` przed większą zmianą — to źródło prawdy ponad luźną rozmową.
-3. Sprawdź `~/dev/dla-claude-code.md` (`deno task fs read ~/dev/dla-claude-code.md`) — ChatGPA
-   (agent w apce) mógł tam zostawić prompt z prośbą użytkownika o konkretną zmianę.
+3. Sprawdź `~/dev/dla-claude-code.md` (masz do tego MCP server `chatgpa-fs`, patrz `.mcp.json` i
+   [system-plikow.md](./system-plikow.md) — narzędzia `fs_read` itp.; `deno task fs read
+   ~/dev/dla-claude-code.md` też działa) — ChatGPA (agent w apce) mógł tam zostawić prompt z
+   prośbą użytkownika o konkretną zmianę. Po realizacji dopisz status do
+   `~/dev/od-claude-code.md` (fs_read + fs_write całości, append) — ChatGPA to odczyta.
 4. Kod w Deno monorepo: `packages/core`, `packages/api`, `packages/web`.
 5. Po zmianach: `deno task test` (i sensowny check pakietu, którego dotyczy zmiana).
 6. Branch: pracuj na `main`; **nigdy nie pushuj na `prod`** bez wyraźnej prośby.
@@ -47,7 +50,7 @@ Instrukcje dla AI (Cursor / Copilot / ChatGPA w przyszłości), które pracuje w
 | Style            | `packages/web/assets/styles.css`                                                  |
 | Typy shared      | `packages/core/types.ts`                                                          |
 | Env przykładowy  | `.env.example`                                                                    |
-| FS ↔ Claude Code | `scripts/fs-cli.ts` (`deno task fs list\|read\|write\|grep\|mkdir\|delete`)       |
+| FS ↔ Claude Code | MCP server `packages/api/mcp/server.ts` (`.mcp.json`, `deno task mcp`); CLI fallback `scripts/fs-cli.ts` (`deno task fs list\|read\|write\|grep\|mkdir\|delete`) |
 | Self-improvement | `~/dev/dla-claude-code.md` — prompty od ChatGPA, czytaj przez `deno task fs read` |
 
 ## Plan wieloepikowy (Faza 2+)

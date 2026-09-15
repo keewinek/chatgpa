@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "chatgpa-fs": {
+      "command": "deno",
+      "args": ["task", "mcp"]
+    }
+  }
+}
