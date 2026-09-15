@@ -173,6 +173,39 @@ body {
   cursor: not-allowed;
 }
 
+.sidebar-plan {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.sidebar-plan:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--bg-elevated);
+}
+
+.sidebar-plan--active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.sidebar-plan:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .sidebar-nav {
   display: none;
 }
@@ -2453,6 +2486,66 @@ textarea.files-preview-editor {
 
 .todo-item-delete:hover {
   color: var(--danger);
+}
+
+/* ── Today plan panel ── */
+
+.today-plan {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mini-agent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.mini-agent-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--bg-input);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-pill);
+}
+
+.mini-agent-input::placeholder {
+  color: var(--muted);
+}
+
+.mini-agent-input:disabled {
+  opacity: 0.6;
+}
+
+.mini-agent-send {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: #1a1208;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.12s ease;
+}
+
+.mini-agent-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* ── Notes panel ── */

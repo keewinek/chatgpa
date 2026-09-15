@@ -11,12 +11,14 @@ interface ChatSidebarProps {
   open: boolean;
   memory: MemoryEntry[];
   filesActive: boolean;
+  todayPlanActive: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
   onClearShortMemory: () => void;
   onOpenFiles: () => void;
+  onOpenTodayPlan: () => void;
 }
 
 export default function ChatSidebar({
@@ -26,12 +28,14 @@ export default function ChatSidebar({
   open,
   memory,
   filesActive,
+  todayPlanActive,
   onSelect,
   onNew,
   onDelete,
   onClose,
   onClearShortMemory,
   onOpenFiles,
+  onOpenTodayPlan,
 }: ChatSidebarProps) {
   const memoryOpen = useSignal(false);
   const memoryTab = useSignal<"short" | "long">("long");
@@ -65,6 +69,15 @@ export default function ChatSidebar({
           <button class="sidebar-new" type="button" onClick={onNew} disabled={loading}>
             <Icon name="plus" class="sidebar-new-icon" />
             Nowa rozmowa
+          </button>
+          <button
+            class={`sidebar-plan${todayPlanActive ? " sidebar-plan--active" : ""}`}
+            type="button"
+            onClick={onOpenTodayPlan}
+            disabled={loading}
+          >
+            <Icon name="list-check" class="sidebar-plan-icon" />
+            Plan dzisiejszy
           </button>
         </div>
 

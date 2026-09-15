@@ -6,6 +6,7 @@ import ChatComposer from "./ChatComposer.tsx";
 import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import FilesPanel from "./FilesPanel.tsx";
+import TodayPlanPanel from "./TodayPlanPanel.tsx";
 import PomodoroPanel from "./PomodoroPanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
@@ -84,7 +85,7 @@ export default function ChatApp() {
   const loading = useSignal(false);
   const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
-  const view = useSignal<"chat" | "files">("chat");
+  const view = useSignal<"chat" | "files" | "today">("chat");
   const filesUi = useSignal<UiView | null>(null);
   const notesInitialPath = useSignal<string | null>(null);
   const pomodoroOpen = useSignal(false);
@@ -265,6 +266,12 @@ export default function ChatApp() {
     view.value = "chat";
     input.value = "";
     sidebarOpen.value = false;
+  }
+
+  function askAgent(text: string) {
+    if (loading.value || !store.value) return;
+    newChat();
+    void send(text);
   }
 
   function deleteChat(id: string) {
@@ -512,6 +519,7 @@ export default function ChatApp() {
           open={sidebarOpen.value}
           memory={memoryEntries.value}
           filesActive={view.value === "files"}
+          todayPlanActive={view.value === "today"}
           onSelect={switchSession}
           onNew={newChat}
           onDelete={deleteChat}
@@ -525,9 +533,25 @@ export default function ChatApp() {
             view.value = "files";
             sidebarOpen.value = false;
           }}
+          onOpenTodayPlan={() => {
+            view.value = "today";
+            sidebarOpen.value = false;
+          }}
         />
 
-        {view.value === "files"
+        {view.value === "today"
+          ? (
+            <div class="chat-main">
+              <TodayPlanPanel
+                loading={loading.value}
+                onBack={() => {
+                  view.value = "chat";
+                }}
+                onAskAgent={askAgent}
+              />
+            </div>
+          )
+          : view.value === "files"
           ? (
             <div class="chat-main">
               <FilesPanel
