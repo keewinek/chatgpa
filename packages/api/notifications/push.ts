@@ -49,7 +49,12 @@ export async function sendPushToAll(
   payload: PushPayload,
 ): Promise<number> {
   const vapid = getVapidKeys();
-  if (!vapid) return 0;
+  if (!vapid) {
+    console.warn(
+      "[push] brak VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY w środowisku — push wyłączony",
+    );
+    return 0;
+  }
 
   let webpush: {
     setVapidDetails: (subject: string, publicKey: string, privateKey: string) => void;
@@ -61,7 +66,11 @@ export async function sendPushToAll(
 
   try {
     webpush = await import("web-push");
-  } catch {
+  } catch (err) {
+    console.error(
+      "[push] nie udało się załadować modułu web-push:",
+      err instanceof Error ? err.message : String(err),
+    );
     return 0;
   }
 
@@ -72,6 +81,11 @@ export async function sendPushToAll(
     .select()
     .from(pushSubscriptions)
     .where(isNull(pushSubscriptions.deletedAt));
+
+  if (!rows.length) {
+    console.warn("[push] brak zapisanych subskrypcji push — nikt się nie zasubskrybował");
+    return 0;
+  }
 
   const body = JSON.stringify({
     title: payload.title,

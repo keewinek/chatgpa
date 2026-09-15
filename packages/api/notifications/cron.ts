@@ -47,6 +47,9 @@ export function registerNotificationCronJobs(): void {
       if (result.examAlerts.length) {
         console.log(`[cron] alerty sprawdzianowe: ${result.examAlerts.length}`);
       }
+      console.log(
+        `[cron] tick ${clock.date} ${clock.hour}:${String(clock.timeMinutes % 60).padStart(2, "0")} — utworzono: ${created.length}, quiet: ${quiet}`,
+      );
     } catch (err) {
       console.error(
         "[cron] scheduled notifications failed:",
