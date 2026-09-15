@@ -9,9 +9,11 @@
   },
   "imports": {
     "@electric-sql/pglite": "npm:@electric-sql/pglite@^0.3.16",
+    "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.20.0",
     "drizzle-orm": "npm:drizzle-orm@^0.44.7",
     "hono": "jsr:@hono/hono@^4",
     "postgres": "npm:postgres@^3.4.9",
-    "web-push": "npm:web-push@3"
+    "web-push": "npm:web-push@3",
+    "zod": "npm:zod@^3.24.0"
   }
 }
