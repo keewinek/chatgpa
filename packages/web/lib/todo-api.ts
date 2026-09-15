@@ -1,35 +1,47 @@
+import { getWarsawNow } from "@chatgpa/core";
 import type { Task } from "@chatgpa/core";
 
 const API = "";
 
 export type TodoFilter = "all" | "open" | "done" | "today" | "week";
 
+async function fetchByParams(params: URLSearchParams): Promise<Task[]> {
+  const qs = params.toString();
+  const res = await fetch(`${API}/api/todos${qs ? `?${qs}` : ""}`);
+  if (!res.ok) return [];
+  const data = await res.json() as { tasks?: Task[] };
+  return Array.isArray(data.tasks) ? data.tasks : [];
+}
+
+function dedupeById(tasks: Task[]): Task[] {
+  const byId = new Map<string, Task>();
+  for (const task of tasks) byId.set(task.id, task);
+  return [...byId.values()];
+}
+
 export async function fetchTasks(filter: TodoFilter = "all"): Promise<Task[]> {
+  if (filter === "today") {
+    // "Dziś" = zadania zaplanowane przez Plan dnia na dziś (scheduledFor) *lub*
+    // z terminem dziś/zaległym (dueDate) — Plan może przypisać dziś zadanie, którego
+    // dueDate jest odległe (np. nauka do sprawdzianu za 5 dni), więc nie wystarczy dueDate.
+    const today = todayIso();
+    const [byDue, byScheduled] = await Promise.all([
+      fetchByParams(new URLSearchParams({ status: "open", dueBefore: today })),
+      fetchByParams(new URLSearchParams({ status: "open", scheduledFor: today })),
+    ]);
+    return dedupeById([...byDue, ...byScheduled]);
+  }
+
   const params = new URLSearchParams();
   if (filter === "open" || filter === "done") {
     params.set("status", filter);
-  }
-  if (filter === "today") {
-    params.set("status", "open");
-    params.set("dueBefore", todayIso());
   }
   if (filter === "week") {
     params.set("status", "open");
     params.set("dueBefore", weekEndIso());
   }
 
-  const qs = params.toString();
-  const res = await fetch(`${API}/api/todos${qs ? `?${qs}` : ""}`);
-  if (!res.ok) return [];
-  const data = await res.json() as { tasks?: Task[] };
-  let tasks = Array.isArray(data.tasks) ? data.tasks : [];
-
-  if (filter === "today") {
-    const today = todayIso();
-    tasks = tasks.filter((t) => !t.dueDate || t.dueDate <= today);
-  }
-
-  return tasks;
+  return await fetchByParams(params);
 }
 
 export async function createTask(input: {
@@ -91,13 +103,18 @@ export function formatDueDate(dueDate?: string): string | null {
   return date.toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 }
 
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${
+    String(date.getDate()).padStart(2, "0")
+  }`;
+}
+
 function todayIso(): string {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
+  return dateKey(getWarsawNow());
 }
 
 function weekEndIso(): string {
-  const d = new Date();
+  const d = getWarsawNow();
   d.setDate(d.getDate() + 7);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
