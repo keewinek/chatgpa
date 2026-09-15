@@ -1,0 +1,18 @@
+name: Scheduled notifications
+
+# Deno.cron on the deployed instance wasn't firing (0 notifications ever created in prod,
+# despite conditions being met — see notifications/cron.ts for the actual scheduling logic).
+# This workflow calls the same endpoint independently as a reliable trigger, and doubles as
+# a manual "Run workflow" test button.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger notification check
+        run: curl -sf -X POST https://chatgpa.keewinek.deno.net/api/notifications/run
