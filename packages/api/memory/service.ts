@@ -184,6 +184,7 @@ export async function importLongTermFromFile(db: AppDatabase): Promise<MemoryEnt
     });
   }
 
+  longTermImported.set(db as object, true);
   return fromFile;
 }
 
@@ -215,6 +216,13 @@ export async function cleanupExpiredShort(db: AppDatabase): Promise<number> {
 
 const memoryCleanupDone = new WeakMap<object, true>();
 
+// Long-term file→DB sync already happens eagerly on every write (see
+// maybeReconcileDomainFiles in fs/service.ts). Re-running it on every read serializes
+// 3-4 extra DB round trips into each listMemory() call for no benefit in the common
+// case, so gate it to once per db handle (same convention as memoryCleanupDone above) —
+// covers the rare case of memoryEntries drifting from the file outside of fsWrite.
+const longTermImported = new WeakMap<object, true>();
+
 export async function listMemory(
   db: AppDatabase,
   options: { kind?: MemoryKind; includeExpired?: boolean } = {},
@@ -225,7 +233,7 @@ export async function listMemory(
   }
 
   // Long-term: file wins — pull edits from ~/memory/long-term.memory into DB.
-  if (options.kind !== "short") {
+  if (options.kind !== "short" && !longTermImported.has(db as object)) {
     await importLongTermFromFile(db);
   }
 
