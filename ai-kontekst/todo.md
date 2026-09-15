@@ -77,4 +77,5 @@ Tools HTTP `todo.*` mogą istnieć dla UI/API, ale nie są w system prompcie.
 - [x] Tools `todo.*` dla agenta
 - [x] Panel UI + `/todo`
 - [ ] Sync między urządzeniami
-- [ ] Integracja z planem dnia
+- [x] Integracja z planem dnia — filtr „Dziś" honoruje `scheduledFor`, nie tylko `dueDate`
+      (`packages/web/lib/todo-api.ts`)
