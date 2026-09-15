@@ -67,6 +67,7 @@ export async function streamChat(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let terminal = false;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -81,11 +82,26 @@ export async function streamChat(
       const payload = line.slice(5).trim();
       if (!payload) continue;
       try {
-        onEvent(JSON.parse(payload) as ChatStreamEvent);
+        const event = JSON.parse(payload) as ChatStreamEvent;
+        if (event.type === "done" || event.type === "error") terminal = true;
+        onEvent(event);
       } catch {
         // skip malformed events
       }
     }
+  }
+
+  // The connection can drop (tab backgrounded, network blip, a long multi-tool-call turn
+  // hitting Deno Deploy's request timeout) before the server ever sends its own "done"/"error"
+  // line. Without this, the message is left with streaming:true forever — a permanently
+  // blinking cursor with no way to retry, since nothing ever clears it.
+  if (!terminal) {
+    onEvent({
+      type: "error",
+      error: "Połączenie przerwane w trakcie odpowiedzi — spróbuj ponownie.",
+      attempts: [],
+      memory: [],
+    });
   }
 }
 

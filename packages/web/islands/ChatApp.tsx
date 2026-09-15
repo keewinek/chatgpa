@@ -434,8 +434,13 @@ export default function ChatApp() {
         const messages = s.messages.map((m) =>
           m.id === assistantId
             ? {
+              // Preserve whatever the model had already streamed before the connection
+              // dropped instead of overwriting it — losing a mostly-finished reply on a
+              // mid-stream interruption is worse than a short error note appended after it.
               ...m,
-              content: `${event.error}${detail ? `\n\nPróby: ${detail}` : ""}`,
+              content: m.content
+                ? `${m.content}\n\n---\n*${event.error}${detail ? ` (${detail})` : ""}*`
+                : `${event.error}${detail ? `\n\nPróby: ${detail}` : ""}`,
               error: true,
               streaming: false,
             }
