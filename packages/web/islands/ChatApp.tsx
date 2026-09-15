@@ -6,7 +6,6 @@ import ChatComposer from "./ChatComposer.tsx";
 import ChatEmpty from "./ChatEmpty.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import FilesPanel from "./FilesPanel.tsx";
-import TodayPlanPanel from "./TodayPlanPanel.tsx";
 import PomodoroPanel from "./PomodoroPanel.tsx";
 import NotificationsBanner from "./NotificationsBanner.tsx";
 import NotificationPlanCard from "./NotificationPlanCard.tsx";
@@ -57,6 +56,7 @@ import {
 } from "../lib/notifications-api.ts";
 import type { AppNotification } from "@chatgpa/core";
 import { type UiView, viewFromSlash } from "../lib/ui-shortcuts.ts";
+import type { TodoFilter } from "../lib/todo-api.ts";
 
 function msgId() {
   return sessionId();
@@ -85,9 +85,11 @@ export default function ChatApp() {
   const loading = useSignal(false);
   const status = useSignal("Łączenie…");
   const sidebarOpen = useSignal(false);
-  const view = useSignal<"chat" | "files" | "today">("chat");
+  const view = useSignal<"chat" | "files">("chat");
   const filesUi = useSignal<UiView | null>(null);
   const notesInitialPath = useSignal<string | null>(null);
+  const todoInitialFilter = useSignal<TodoFilter | null>(null);
+  const todayPlanView = useSignal(false);
   const pomodoroOpen = useSignal(false);
   const pending = useSignal<PendingFile[]>([]);
   const librusSyncedAt = useSignal<string | null>(null);
@@ -313,6 +315,8 @@ export default function ChatApp() {
       if (slash.command === "files") {
         filesUi.value = null;
         notesInitialPath.value = null;
+        todoInitialFilter.value = null;
+        todayPlanView.value = false;
         view.value = "files";
         return;
       }
@@ -323,6 +327,8 @@ export default function ChatApp() {
         } else {
           notesInitialPath.value = null;
         }
+        todoInitialFilter.value = null;
+        todayPlanView.value = false;
         filesUi.value = ui;
         view.value = "files";
         return;
@@ -519,7 +525,7 @@ export default function ChatApp() {
           open={sidebarOpen.value}
           memory={memoryEntries.value}
           filesActive={view.value === "files"}
-          todayPlanActive={view.value === "today"}
+          todayPlanActive={todayPlanView.value}
           onSelect={switchSession}
           onNew={newChat}
           onDelete={deleteChat}
@@ -530,33 +536,29 @@ export default function ChatApp() {
           onOpenFiles={() => {
             filesUi.value = null;
             notesInitialPath.value = null;
+            todoInitialFilter.value = null;
+            todayPlanView.value = false;
             view.value = "files";
             sidebarOpen.value = false;
           }}
           onOpenTodayPlan={() => {
-            view.value = "today";
+            filesUi.value = "todo";
+            todoInitialFilter.value = "today";
+            todayPlanView.value = true;
+            view.value = "files";
             sidebarOpen.value = false;
           }}
         />
 
-        {view.value === "today"
-          ? (
-            <div class="chat-main">
-              <TodayPlanPanel
-                loading={loading.value}
-                onBack={() => {
-                  view.value = "chat";
-                }}
-                onAskAgent={askAgent}
-              />
-            </div>
-          )
-          : view.value === "files"
+        {view.value === "files"
           ? (
             <div class="chat-main">
               <FilesPanel
                 initialUi={filesUi.value}
                 notesInitialPath={notesInitialPath.value}
+                todoInitialFilter={todoInitialFilter.value}
+                onAskAgent={askAgent}
+                agentLoading={loading.value}
                 onInitialUiConsumed={() => {
                   filesUi.value = null;
                 }}
@@ -567,6 +569,8 @@ export default function ChatApp() {
                   view.value = "chat";
                   filesUi.value = null;
                   notesInitialPath.value = null;
+                  todoInitialFilter.value = null;
+                  todayPlanView.value = false;
                 }}
               />
             </div>

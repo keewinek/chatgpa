@@ -20,6 +20,7 @@ import {
 import CalendarPanel from "./CalendarPanel.tsx";
 import TimetablePanel from "./TimetablePanel.tsx";
 import TodoPanel from "./TodoPanel.tsx";
+import type { TodoFilter } from "../lib/todo-api.ts";
 import NotesPanel from "./NotesPanel.tsx";
 import ProfilePanel from "./ProfilePanel.tsx";
 import ResizablePanels from "./ResizablePanels.tsx";
@@ -31,6 +32,9 @@ interface FilesPanelProps {
   onInitialUiConsumed?: () => void;
   onOpenPomodoro?: () => void;
   notesInitialPath?: string | null;
+  todoInitialFilter?: TodoFilter | null;
+  onAskAgent?: (text: string) => void;
+  agentLoading?: boolean;
 }
 
 type TreeNode = {
@@ -72,6 +76,9 @@ export default function FilesPanel({
   onInitialUiConsumed,
   onOpenPomodoro,
   notesInitialPath,
+  todoInitialFilter,
+  onAskAgent,
+  agentLoading,
 }: FilesPanelProps) {
   const loading = useSignal(true);
   const error = useSignal<string | null>(null);
@@ -449,7 +456,15 @@ export default function FilesPanel({
               />
             )}
             {ui.view === "timetable" && <TimetablePanel embedded onBack={closeUi} />}
-            {ui.view === "todo" && <TodoPanel embedded onBack={closeUi} />}
+            {ui.view === "todo" && (
+              <TodoPanel
+                embedded
+                onBack={closeUi}
+                initialFilter={todoInitialFilter ?? undefined}
+                onAskAgent={onAskAgent}
+                agentLoading={agentLoading}
+              />
+            )}
             {ui.view === "notes" && (
               <NotesPanel
                 embedded

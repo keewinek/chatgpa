@@ -15,6 +15,9 @@ import Icon from "./Icon.tsx";
 interface TodoPanelProps {
   onBack: () => void;
   embedded?: boolean;
+  initialFilter?: TodoFilter;
+  onAskAgent?: (text: string) => void;
+  agentLoading?: boolean;
 }
 
 const FILTERS: { id: TodoFilter; label: string }[] = [
@@ -25,13 +28,20 @@ const FILTERS: { id: TodoFilter; label: string }[] = [
   { id: "all", label: "Wszystkie" },
 ];
 
-export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) {
+export default function TodoPanel({
+  onBack,
+  embedded = false,
+  initialFilter,
+  onAskAgent,
+  agentLoading = false,
+}: TodoPanelProps) {
   const loading = useSignal(true);
   const error = useSignal<string | null>(null);
   const tasks = useSignal<Task[]>([]);
-  const filter = useSignal<TodoFilter>("open");
+  const filter = useSignal<TodoFilter>(initialFilter ?? "open");
   const newTitle = useSignal("");
   const adding = useSignal(false);
+  const askText = useSignal("");
 
   async function load() {
     loading.value = true;
@@ -66,6 +76,14 @@ export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) 
       return;
     }
     await load();
+  }
+
+  function submitAsk(e: Event) {
+    e.preventDefault();
+    const text = askText.value.trim();
+    if (!text || !onAskAgent || agentLoading) return;
+    askText.value = "";
+    onAskAgent(text);
   }
 
   async function handleAdd(e: Event) {
@@ -195,6 +213,33 @@ export default function TodoPanel({ onBack, embedded = false }: TodoPanelProps) 
             </ul>
           )}
       </div>
+
+      {onAskAgent && (
+        <form class="mini-agent" onSubmit={submitAsk}>
+          <input
+            type="text"
+            class="mini-agent-input"
+            placeholder="Zapytaj agenta…"
+            value={askText.value}
+            disabled={agentLoading}
+            onInput={(e) => {
+              askText.value = (e.target as HTMLInputElement).value;
+            }}
+          />
+          <button
+            type="submit"
+            class="mini-agent-send"
+            disabled={agentLoading || !askText.value.trim()}
+            aria-label="Wyślij"
+            title="Wyślij"
+          >
+            <Icon
+              name={agentLoading ? "spinner" : "arrow-up"}
+              class={agentLoading ? "fa-spin" : undefined}
+            />
+          </button>
+        </form>
+      )}
     </div>
   );
 }

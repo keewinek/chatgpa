@@ -2488,15 +2488,7 @@ textarea.files-preview-editor {
   color: var(--danger);
 }
 
-/* ── Today plan panel ── */
-
-.today-plan {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-}
+/* ── Mini agent composer (TODO panel, "Plan dzisiejszy") ── */
 
 .mini-agent {
   display: flex;
