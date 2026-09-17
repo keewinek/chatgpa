@@ -24,12 +24,11 @@ import { listMemory, rememberMemory } from "../memory/service.ts";
 import { loadStoredGroupPrefs } from "../fs/groups.ts";
 import {
   DEFAULT_GROUP_PREFS,
+  formatCurrentLesson,
   formatDaySchedule,
   formatTimetableForAi,
-  getCurrentLesson,
   getWarsawNow,
   weekdayFromDate,
-  WEEKDAY_LABELS,
 } from "@chatgpa/core";
 
 await loadEnv();
@@ -62,24 +61,6 @@ function asError(err: unknown) {
 
 async function groupPrefs() {
   return (await loadStoredGroupPrefs(db)) ?? DEFAULT_GROUP_PREFS;
-}
-
-function formatCurrentLesson(info: ReturnType<typeof getCurrentLesson>): string {
-  const now = getWarsawNow();
-  const timeStr = now.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
-
-  if (info.status === "weekend") return `Teraz jest ${timeStr} — weekend, brak lekcji.`;
-  if (info.status === "during" && info.lesson && info.time) {
-    return `Teraz (${timeStr}) trwa lekcja ${info.slot}: ${info.lesson.subject} ` +
-      `(${info.lesson.teacher}, sala ${info.lesson.room}), ${info.time.start}–${info.time.end}.`;
-  }
-  if (info.nextLesson) {
-    const dayLabel = WEEKDAY_LABELS[info.nextLesson.day];
-    const { lesson, time, slot } = info.nextLesson;
-    return `Teraz jest ${timeStr}. Następna lekcja: ${dayLabel}, ${slot}. ${time.start}–${time.end}: ` +
-      `${lesson.subject} (${lesson.teacher}, sala ${lesson.room}).`;
-  }
-  return `Teraz jest ${timeStr}. Brak kolejnych lekcji w tym tygodniu.`;
 }
 
 /* ---------- Virtual filesystem (general-purpose) ---------- */
@@ -412,7 +393,7 @@ server.registerTool(
   },
   async () => {
     try {
-      return text(formatCurrentLesson(getCurrentLesson(await groupPrefs())));
+      return text(formatCurrentLesson(await groupPrefs()));
     } catch (err) {
       return asError(err);
     }

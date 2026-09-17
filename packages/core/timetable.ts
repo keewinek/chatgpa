@@ -362,6 +362,30 @@ export function getCurrentLesson(
   };
 }
 
+export function formatCurrentLesson(
+  prefs: GroupPrefs = DEFAULT_GROUP_PREFS,
+  now: Date = getWarsawNow(),
+): string {
+  const info = getCurrentLesson(prefs, now);
+  const timeStr = now.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+
+  if (info.status === "weekend") {
+    return `Teraz jest ${timeStr} — weekend, brak lekcji.`;
+  }
+
+  if (info.status === "during" && info.lesson && info.time) {
+    return `Teraz (${timeStr}) trwa lekcja ${info.slot}: ${info.lesson.subject} (${info.lesson.teacher}, sala ${info.lesson.room}), ${info.time.start}–${info.time.end}.`;
+  }
+
+  if (info.nextLesson) {
+    const dayLabel = WEEKDAY_LABELS[info.nextLesson.day];
+    const { lesson, time, slot } = info.nextLesson;
+    return `Teraz jest ${timeStr}. Następna lekcja: ${dayLabel}, ${slot}. ${time.start}–${time.end}: ${lesson.subject} (${lesson.teacher}, sala ${lesson.room}).`;
+  }
+
+  return `Teraz jest ${timeStr}. Brak kolejnych lekcji w tym tygodniu.`;
+}
+
 function findNextLesson(
   fromDay: Weekday,
   afterSlot: number,

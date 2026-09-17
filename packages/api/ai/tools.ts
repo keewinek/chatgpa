@@ -3,14 +3,13 @@ import type { ChatAction } from "./actions.ts";
 import type { ChatAttachment } from "@chatgpa/core";
 import {
   DEFAULT_GROUP_PREFS,
+  formatCurrentLesson,
   formatDaySchedule,
   formatTimetableForAi,
   formatWarsawDateTime,
-  getCurrentLesson,
   getWarsawNow,
   type GroupPrefs,
   type Weekday,
-  WEEKDAY_LABELS,
   weekdayFromDate,
 } from "@chatgpa/core";
 import type { AppDatabase } from "../db/client.ts";
@@ -130,28 +129,6 @@ function parseKind(raw: unknown): MemoryKind {
 function parseExpiresInDays(raw: unknown): number | undefined {
   if (typeof raw !== "number" || !Number.isFinite(raw)) return undefined;
   return Math.max(1, Math.min(365, Math.round(raw)));
-}
-
-function formatCurrentLesson(prefs: GroupPrefs): string {
-  const info = getCurrentLesson(prefs);
-  const now = getWarsawNow();
-  const timeStr = now.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
-
-  if (info.status === "weekend") {
-    return `Teraz jest ${timeStr} — weekend, brak lekcji.`;
-  }
-
-  if (info.status === "during" && info.lesson && info.time) {
-    return `Teraz (${timeStr}) trwa lekcja ${info.slot}: ${info.lesson.subject} (${info.lesson.teacher}, sala ${info.lesson.room}), ${info.time.start}–${info.time.end}.`;
-  }
-
-  if (info.nextLesson) {
-    const dayLabel = WEEKDAY_LABELS[info.nextLesson.day];
-    const { lesson, time, slot } = info.nextLesson;
-    return `Teraz jest ${timeStr}. Następna lekcja: ${dayLabel}, ${slot}. ${time.start}–${time.end}: ${lesson.subject} (${lesson.teacher}, sala ${lesson.room}).`;
-  }
-
-  return `Teraz jest ${timeStr}. Brak kolejnych lekcji w tym tygodniu.`;
 }
 
 async function runMemoryAction(

@@ -21,6 +21,7 @@ export type {
 } from "./timetable.ts";
 export {
   DEFAULT_GROUP_PREFS,
+  formatCurrentLesson,
   formatDaySchedule,
   formatLessonLine,
   formatTimetableForAi,

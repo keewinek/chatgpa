@@ -20,6 +20,7 @@ import { createLibrusRoutes } from "./librus/routes.ts";
 import { createPlanRoutes } from "./plan/routes.ts";
 import { createNotificationRoutes } from "./notifications/routes.ts";
 import { createThreadRoutes } from "./threads/routes.ts";
+import { createTimetableRoutes } from "./timetable/routes.ts";
 import { createMigrateRoutes } from "./migrate/routes.ts";
 import { isChatMessage, sanitizeGroupPrefs, sanitizeMemory } from "./validate.ts";
 import { resolveGroupPrefs } from "./fs/groups.ts";
@@ -45,6 +46,7 @@ export function createApp() {
   app.route("/api/plan", createPlanRoutes(getDb));
   app.route("/api/notifications", createNotificationRoutes(getDb));
   app.route("/api/threads", createThreadRoutes(getDb));
+  app.route("/api/timetable", createTimetableRoutes(getDb));
   app.route("/api/migrate", createMigrateRoutes(getDb));
 
   app.post("/api/upload", async (c) => {
