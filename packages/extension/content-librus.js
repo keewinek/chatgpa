@@ -139,6 +139,7 @@ function parseCalendarDoc(doc, month, year) {
           priority: "medium",
           status: "open",
           source: "librus",
+          subjectId: subject,
         });
       } else if (EXAM_RE.test(haystack)) {
         exams.push({
@@ -147,6 +148,7 @@ function parseCalendarDoc(doc, month, year) {
           kind: "exam",
           start: `${date}T08:00:00+02:00`,
           source: "librus",
+          subject,
         });
       }
     }

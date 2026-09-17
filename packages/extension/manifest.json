@@ -17,6 +17,7 @@
     "default_title": "Sync Librus → ChatGPA",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "content_scripts": [
     {
       "matches": ["https://*.librus.pl/*", "https://synergia.librus.pl/*"],

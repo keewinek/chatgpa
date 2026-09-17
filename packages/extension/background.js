@@ -30,6 +30,8 @@ async function syncFromActiveTab(apiBase) {
   await chrome.storage.local.set({
     lastSync: body.syncedAt,
     lastCounts: body.counts,
+    lastNotes: body.merge?.notes,
+    lastError: undefined,
   });
 
   return body;
@@ -43,7 +45,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         const result = await syncFromActiveTab(apiBase);
         sendResponse({ ok: true, ...result });
       } catch (err) {
-        sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) });
+        const error = err instanceof Error ? err.message : String(err);
+        await chrome.storage.local.set({ lastError: error });
+        sendResponse({ ok: false, error });
       }
     })();
     return true;
