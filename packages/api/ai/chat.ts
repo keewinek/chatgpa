@@ -1,9 +1,8 @@
 import type { MemoryEntry } from "@chatgpa/core";
 import { hydrateMessageFiles } from "../files/store.ts";
 import { parseActions, stripActions } from "./actions.ts";
-import { runCascade } from "./cascade.ts";
+import { runCascade, withChatContext } from "./claude.ts";
 import { autoRememberFromTurn, formatMemoryContextHint } from "./memory-extract.ts";
-import { withChatContext } from "./providers.ts";
 import { createMemoryStore, executeActions, formatToolResults, type ToolResult } from "./tools.ts";
 import type { ChatAttachment, GroupPrefs } from "@chatgpa/core";
 import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";

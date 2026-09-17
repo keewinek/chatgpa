@@ -1,5 +1,5 @@
 import type { FreeSlotsResult } from "@chatgpa/core";
-import { runCascade } from "../ai/cascade.ts";
+import { runCascade } from "../ai/claude.ts";
 import type { ChatMessage } from "../ai/types.ts";
 import type { AiPlanResponse, DailyPlanResult, DayStudyItem, ExamAlert } from "./types.ts";
 

@@ -86,15 +86,14 @@ Create **one** project from this repo:
 | Build command | `deno task build`                             |
 | Entry / start | `deno task start` (serves `_fresh/server.js`) |
 
-Add AI keys in **Settings → Environment Variables** (`GEMINI_API_KEY`, `GROQ_API_KEY`,
-`ZAI_API_KEY`, `MISTRAL_API_KEY`, or `OPENROUTER_API_KEY` — at least one).
+Add `ANTHROPIC_API_KEY` and `CHAT_GPA_TOKEN` in **Settings → Environment Variables**.
 
 ## API endpoints
 
 | Method | Path             | Description                                   |
 | ------ | ---------------- | --------------------------------------------- |
 | GET    | `/api/health`    | Health check                                  |
-| GET    | `/api/ai/models` | Free model cascade + key status               |
+| GET    | `/api/ai/models` | Active chat model + key status                |
 | POST   | `/api/chat`      | Chat with memory, tools, and markdown replies |
 
 Chat requests accept `{ messages, memory?: string[] }` and return updated `memory` plus
@@ -102,14 +101,11 @@ Chat requests accept `{ messages, memory?: string[] }` and return updated `memor
 
 ## Environment variables
 
-Copy `.env.example` to `.env` and fill in **at least one** free AI key.
+Copy `.env.example` to `.env` and fill in `ANTHROPIC_API_KEY`.
 
-| Variable             | Description                  |
+| Variable            | Description                                          |
 | -------------------- | ---------------------------- |
-| `GEMINI_API_KEY`     | Google AI Studio (free)      |
-| `GROQ_API_KEY`       | Groq (free)                  |
-| `ZAI_API_KEY`        | Z.AI GLM Flash (free)        |
-| `MISTRAL_API_KEY`    | Mistral La Plateforme (free) |
-| `OPENROUTER_API_KEY` | OpenRouter `:free` models    |
+| `ANTHROPIC_API_KEY` | Claude — powers the in-app chat agent |
+| `CHAT_GPA_TOKEN`    | Bearer token required on `/api/*` (single-user auth) |
 | `PORT`               | Only for `deno task dev:api` |
 | Web dev port         | `5173` (Fresh/Vite)          |

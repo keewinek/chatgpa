@@ -394,3 +394,27 @@ Format: data · decyzja · kontekst · konsekwencje.
   (`server/mcp.js`, `server/stdio.js`) — ograniczenie resolvera typów Deno dla npm-paczek z
   wildcard `exports`, nie błąd runtime (serwer działa, potwierdzone smoke testem); plik celowo
   poza `deno task check`. `scripts/fs-cli.ts` zostaje jako fallback poza sesją MCP.
+
+## 2026-09-16 — Porzucenie "zero cost": Claude zamiast kaskady, token na /api/*
+
+- **Decyzja:** świadome odejście od zasady "zero cost" (epik 0). Kaskada darmowych modeli
+  (Gemini/Groq/Z.AI/Mistral, `cascade.ts`/`cascade-config.ts`/`providers.ts`/`slot-cooldown.ts`/
+  `stream-payload.ts`) usunięta i zastąpiona jednym modułem `ai/claude.ts` wołającym Anthropic
+  Messages API (Claude Sonnet 5 do czatu, Claude Haiku 4.5 do ekstrakcji pamięci). Konwencja
+  ` ```chatgpa-action``` ` (parseActions/stripActions, `tools.ts`) zostaje bez zmian — Claude
+  dostaje dokładnie ten sam system prompt i emituje te same bloki akcji co poprzednie modele;
+  zmienia się tylko to, kto odpowiada. `ANTHROPIC_API_KEY` zastępuje `GEMINI_API_KEY`/
+  `GROQ_API_KEY`/`ZAI_API_KEY`/`MISTRAL_API_KEY`/`OPENROUTER_API_KEY` w `.env`/Deno Deploy.
+  Dodatkowo: nowy `CHAT_GPA_TOKEN` chroni `/api/*` bearer-tokenem (wcześniej zakładany w
+  `bezpieczenstwo.md`, nigdy niezaimplementowany) — potrzebny, bo codzienny scheduled task Claude
+  woła te endpointy zdalnie (przez HTTPS, nie przez lokalne MCP).
+- **Kontekst:** decyzja właściciela projektu — jedynego użytkownika. Uznał, że przy pojedynczym
+  użytkowniku jakość odpowiedzi (Claude) jest ważniejsza niż koszt kaskady darmowych modeli, i że
+  chce, żeby to samo Claude (a nie słabszy model w appce) było codziennym agentem szkolnym — także
+  poza appką, przez scheduled task inicjujący kontakt.
+- **Konsekwencje:** sekcja "Samodoskonalenie" w `system-prompt.ts` uproszczona — zniknęło ramowanie
+  "słabszy model eskaluje do mądrzejszego Claude Code", bo agent w appce to teraz też Claude;
+  `~/dev/dla-claude-code.md`/`od-claude-code.md` zostają jako ogólny kanał zgłoszeń o samej
+  aplikacji. `cascade_test.ts` usunięty (testował multi-provider fallback, który już nie istnieje),
+  zastąpiony `claude_test.ts`. Utracony: automatyczny fallback na inny provider przy awarii
+  Anthropic API — świadomie zaakceptowane ryzyko przy pojedynczym użytkowniku.

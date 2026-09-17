@@ -283,9 +283,16 @@ async function autoSyncIfDue() {
     const data = await extractAll();
     const { chatgpaApiBase } = await chrome.storage.sync.get(["chatgpaApiBase"]);
     const body = await postSync(chatgpaApiBase || DEFAULT_API, data);
-    await chrome.storage.local.set({ lastSync: body.syncedAt, lastCounts: body.counts });
+    await chrome.storage.local.set({
+      lastSync: body.syncedAt,
+      lastCounts: body.counts,
+      lastNotes: body.merge?.notes,
+      lastError: undefined,
+    });
     console.log("[ChatGPA Librus] auto-sync OK", body.counts);
   } catch (err) {
+    const error = err instanceof Error ? err.message : String(err);
+    await chrome.storage.local.set({ lastError: error });
     console.warn("[ChatGPA Librus] auto-sync failed", err);
   }
 }

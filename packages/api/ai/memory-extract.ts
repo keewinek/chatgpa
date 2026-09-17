@@ -1,10 +1,9 @@
 import type { MemoryEntry, MemoryKind } from "@chatgpa/core";
-import { runCascade } from "./cascade.ts";
+import { CLAUDE_HAIKU_MODEL, isClaudeConfigured, runCascade } from "./claude.ts";
 import type { ChatAction } from "./actions.ts";
 import type { ChatMessage } from "./types.ts";
 import { executeActions } from "./tools.ts";
 import type { MemoryStore } from "../memory/service.ts";
-import { MODEL_CASCADE } from "./cascade-config.ts";
 
 export interface ExtractedMemoryFact {
   text: string;
@@ -79,16 +78,6 @@ export function parseExtractedFacts(raw: string): ExtractedMemoryFact[] {
   }
 }
 
-function cheapestConfiguredModel(): string | undefined {
-  const withKey = MODEL_CASCADE
-    .filter((s) => {
-      const v = Deno.env.get(s.apiKeyEnv)?.trim();
-      return Boolean(v);
-    })
-    .sort((a, b) => a.priority - b.priority);
-  return withKey[0]?.model;
-}
-
 function alreadyKnown(existing: MemoryEntry[], text: string): boolean {
   const needle = text.toLowerCase().trim();
   return existing.some((e) => e.content.toLowerCase().trim() === needle);
@@ -139,7 +128,7 @@ export async function autoRememberFromTurn(
 ): Promise<{ saved: number; facts: ExtractedMemoryFact[] }> {
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const text = typeof lastUser?.content === "string" ? lastUser.content : "";
-  if (!text.trim() || !looksLikePersonalFact(text)) {
+  if (!text.trim() || !looksLikePersonalFact(text) || !isClaudeConfigured()) {
     return { saved: 0, facts: [] };
   }
 
@@ -160,8 +149,9 @@ export async function autoRememberFromTurn(
     },
   ];
 
-  const forceModel = cheapestConfiguredModel();
-  const result = await runCascade(extractionMessages, forceModel, { skipSystemWrap: true });
+  const result = await runCascade(extractionMessages, CLAUDE_HAIKU_MODEL, {
+    skipSystemWrap: true,
+  });
   if (!result.ok) {
     console.warn(`[memory-extract] cascade failed: ${result.error}`);
     return { saved: 0, facts: [] };

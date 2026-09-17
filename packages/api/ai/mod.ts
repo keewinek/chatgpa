@@ -1,7 +1,6 @@
-export { runCascade, runCascadeStream } from "./cascade.ts";
+export { listPublicModels, runCascade, runCascadeStream } from "./claude.ts";
 export { runChat } from "./chat.ts";
 export { type ChatStreamEvent, runChatStream } from "./chat-stream.ts";
-export { listPublicModels } from "./providers.ts";
 export type {
   ChatAttachment,
   ChatMessage,

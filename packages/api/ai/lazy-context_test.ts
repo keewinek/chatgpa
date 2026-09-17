@@ -3,7 +3,7 @@ import { DEFAULT_GROUP_PREFS } from "@chatgpa/core";
 import { setDbForTests } from "../db/client.ts";
 import { withTestDb } from "../db/test-helpers.ts";
 import { parseActions } from "./actions.ts";
-import { withChatContext } from "./providers.ts";
+import { withChatContext } from "./claude.ts";
 import { SYSTEM_PROMPT } from "./system-prompt.ts";
 import { createMemoryStore, executeActions } from "./tools.ts";
 
